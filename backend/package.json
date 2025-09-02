@@ -1,20 +1,20 @@
 {
-  "name": "backend",
+  "name": "mindlink-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "MindLink Telepsychology Platform Backend API",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "node prisma/seed.js",
+    "db:reset": "prisma migrate reset --force"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["telepsychology", "telehealth", "mental-health", "therapy", "api"],
+  "author": "MindLink Team",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.17.2"
-  }
+  "description": ""
 }
+

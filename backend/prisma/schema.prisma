@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String   @unique
+  logo      String?
+  status    String   @default("active") // active, inactive, suspended
+  plan      String   @default("basic") // basic, professional, enterprise
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        User[]
+  sessions     Session[]
+  appointments Appointment[]
+  messages     Message[]
+  threads      Thread[]
+  assessments  Assessment[]
+  moodCheckins MoodCheckin[]
+  auditLogs    AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  name              String
+  avatar            String?
+  phone             String?
+  dateOfBirth       DateTime?
+  roles             String[]  @default(["patient"])
+  status            String    @default("active") // active, inactive, suspended
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
+  lastLoginAt       DateTime?
+  refreshToken      String?
+  resetPasswordToken String?
+  resetPasswordExpires DateTime?
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Patient-specific fields
+  emergencyContact String?
+  goals            String?
+  preferences      String?
+
+  // Therapist-specific fields
+  title            String?
+  bio              String?
+  specializations  String[]  @default([])
+  languages        String[]  @default([])
+  education        String?
+  licenses         String?
+  experience       Int?
+  rating           Float?
+  reviewCount      Int       @default(0)
+  sessionRate      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patientSessions    Session[]     @relation("PatientSessions")
+  therapistSessions  Session[]     @relation("TherapistSessions")
+  patientAppointments Appointment[] @relation("PatientAppointments")
+  therapistAppointments Appointment[] @relation("TherapistAppointments")
+  sentMessages       Message[]     @relation("SentMessages")
+  threadParticipants ThreadParticipant[]
+  availability       Availability[]
+  sessionNotes       SessionNote[]
+  assessments        Assessment[]
+  moodCheckins       MoodCheckin[]
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  status      String   @default("scheduled") // scheduled, active, ended, cancelled
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int      @default(60) // minutes
+  type        String   @default("therapy") // therapy, consultation, assessment
+  isRecording Boolean  @default(false)
+  recordingConsent Boolean @default(false)
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Participants
+  patientId   String
+  patient     User   @relation("PatientSessions", fields: [patientId], references: [id], onDelete: Cascade)
+  therapistId String
+  therapist   User   @relation("TherapistSessions", fields: [therapistId], references: [id], onDelete: Cascade)
+
+  // WebRTC signaling data
+  signals Json[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  appointment Appointment?
+  notes       SessionNote[]
+
+  @@map("sessions")
+}
+
+model Appointment {
+  id               String    @id @default(uuid())
+  datetime         DateTime
+  duration         Int       @default(60) // minutes
+  type             String    @default("therapy")
+  status           String    @default("scheduled") // scheduled, confirmed, cancelled, completed, no-show
+  notes            String?
+  cancellationReason String?
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Participants
+  patientId   String
+  patient     User   @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  therapistId String
+  therapist   User   @relation("TherapistAppointments", fields: [therapistId], references: [id], onDelete: Cascade)
+
+  // Optional session link
+  sessionId String? @unique
+  session   Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("appointments")
+}
+
+model Availability {
+  id        String @id @default(uuid())
+  dayOfWeek Int    // 0 = Sunday, 1 = Monday, etc.
+  startTime String // HH:MM format
+  endTime   String // HH:MM format
+  isActive  Boolean @default(true)
+
+  // Therapist relationship
+  therapistId String
+  therapist   User   @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("availability")
+}
+
+model Thread {
+  id           String   @id @default(uuid())
+  lastMessageAt DateTime @default(now())
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  participants ThreadParticipant[]
+  messages     Message[]
+
+  @@map("threads")
+}
+
+model ThreadParticipant {
+  id       String @id @default(uuid())
+  threadId String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  joinedAt DateTime @default(now())
+
+  @@unique([threadId, userId])
+  @@map("thread_participants")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  type      String   @default("text") // text, file, image
+  readAt    DateTime?
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Thread relationship
+  threadId String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  // Sender relationship
+  senderId String
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  // File attachment
+  attachment Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model SessionNote {
+  id        String  @id @default(uuid())
+  content   String
+  isVisibleToPatient Boolean @default(false)
+  
+  // Session relationship
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Author relationship
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session_notes")
+}
+
+model Assessment {
+  id       String @id @default(uuid())
+  type     String // phq9, gad7, custom
+  responses Json
+  score    Int?
+  severity String? // minimal, mild, moderate, severe
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Patient relationship
+  patientId String
+  patient   User   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("assessments")
+}
+
+model MoodCheckin {
+  id    String @id @default(uuid())
+  mood  Int    // 1-5 scale
+  notes String?
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Patient relationship
+  patientId String
+  patient   User   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mood_checkins")
+}
+
+model AuditLog {
+  id        String @id @default(uuid())
+  action    String // user.login, session.created, etc.
+  details   String
+  ipAddress String?
+  userAgent String?
+  
+  // Tenant relationship
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // User relationship
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
