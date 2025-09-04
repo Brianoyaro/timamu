@@ -3,22 +3,22 @@ import { apiService } from './apiService'
 export const tenantService = {
   async getTenants() {
     const response = await apiService.get('/tenants')
-    return response.tenants || []
+    return response.data || { tenants: [], pagination: {} }
   },
 
   async getTenant(tenantId) {
     const response = await apiService.get(`/tenants/${tenantId}`)
-    return response.tenant
+    return response.data?.tenant
   },
 
   async createTenant(tenantData) {
     const response = await apiService.post('/tenants', tenantData)
-    return response.tenant
+    return response.data?.tenant
   },
 
   async updateTenant(tenantId, updates) {
     const response = await apiService.patch(`/tenants/${tenantId}`, updates)
-    return response.tenant
+    return response.data?.tenant
   },
 
   async deleteTenant(tenantId) {
@@ -27,16 +27,16 @@ export const tenantService = {
 
   async getTenantUsers(tenantId, filters = {}) {
     const response = await apiService.get(`/tenants/${tenantId}/users`, filters)
-    return response.users || []
+    return response.data || { users: [], pagination: {} }
   },
 
   async getTenantSettings(tenantId) {
     const response = await apiService.get(`/tenants/${tenantId}/settings`)
-    return response.settings
+    return response.data?.settings
   },
 
   async updateTenantSettings(tenantId, settings) {
     const response = await apiService.patch(`/tenants/${tenantId}/settings`, settings)
-    return response.settings
+    return response.data?.settings
   }
 }

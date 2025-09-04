@@ -1,4 +1,5 @@
 import { apiService } from './apiService'
+import { useAuthStore } from '../store/authStore'
 
 export const authService = {
   async signIn(email, password) {
@@ -6,12 +7,12 @@ export const authService = {
       email,
       password
     })
-    return response
+    return response.data
   },
 
   async signUp(userData) {
     const response = await apiService.post('/auth/register', userData)
-    return response
+    return response.data
   },
 
   async signOut() {
@@ -27,7 +28,7 @@ export const authService = {
     const response = await apiService.post('/auth/forgot-password', {
       email
     })
-    return response
+    return response.data
   },
 
   async resetPassword(token, newPassword) {
@@ -35,23 +36,28 @@ export const authService = {
       token,
       password: newPassword
     })
-    return response
+    return response.data
   },
 
-  async validateToken(token) {
-    // Temporarily set token for validation request
-    const originalToken = useAuthStore?.getState?.()?.token
-    
+  async validateToken() {
     try {
       const response = await apiService.get('/auth/me')
-      return response.user
+      return response.data?.user
     } catch (error) {
       throw new Error('Invalid token')
     }
   },
 
   async refreshToken() {
-    const response = await apiService.post('/auth/refresh')
-    return response
+    const { refreshToken } = useAuthStore.getState()
+    
+    if (!refreshToken) {
+      throw new Error('No refresh token available')
+    }
+    
+    const response = await apiService.post('/auth/refresh', {
+      refreshToken
+    })
+    return response.data
   }
 }

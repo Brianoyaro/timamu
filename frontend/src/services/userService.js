@@ -2,13 +2,13 @@ import { apiService } from './apiService'
 
 export const userService = {
   async getProfile() {
-    const response = await apiService.get('/users/me')
-    return response.user
+    const response = await apiService.get('/auth/me')
+    return response.data?.user
   },
 
-  async updateProfile(updates) {
-    const response = await apiService.patch('/users/me', updates)
-    return response.user
+  async updateProfile(userId, updates) {
+    const response = await apiService.patch(`/users/${userId}`, updates)
+    return response.data?.user
   },
 
   async getTherapists(filters = {}) {
@@ -16,12 +16,12 @@ export const userService = {
       role: 'therapist',
       ...filters 
     })
-    return response.users || []
+    return response.data || { users: [], pagination: {} }
   },
 
   async getTherapist(therapistId) {
     const response = await apiService.get(`/users/${therapistId}`)
-    return response.user
+    return response.data?.user
   },
 
   async getPatients(filters = {}) {
@@ -29,26 +29,26 @@ export const userService = {
       role: 'patient',
       ...filters 
     })
-    return response.users || []
+    return response.data || { users: [], pagination: {} }
   },
 
   async updateUserRoles(userId, roles) {
     const response = await apiService.patch(`/users/${userId}/roles`, { roles })
-    return response.user
+    return response.data?.user
   },
 
   async uploadAvatar(file, onProgress) {
     const response = await apiService.uploadFile('/users/me/avatar', file, onProgress)
-    return response.url
+    return response.data?.url
   },
 
   async exportUserData() {
     const response = await apiService.post('/users/me/data-export')
-    return response
+    return response.data
   },
 
   async requestDataDeletion() {
     const response = await apiService.post('/users/me/data-delete')
-    return response
+    return response.data
   }
 }

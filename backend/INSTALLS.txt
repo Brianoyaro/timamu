@@ -1,0 +1,4 @@
+npm add express@latest cors@latest helmet@latest bcryptjs@latest jsonwebtoken@latest express-rate-limit@latest express-validator@latest multer@latest dotenv@latest prisma@latest @prisma/client@latest nodemailer@latest uuid@latest
+
+npm add -D nodemon@latest
+
