@@ -11,6 +11,9 @@ import { format } from 'date-fns'
 export function RecentActivityCard() {
   const { t } = useTranslation()
 
+  // MAKE A REAL API CALL HERE AND REPLACE THE NEXT COMMENT BELOW. Also, shelve out the view all messages. While at it, how can we get recent activity from the database seeing that we have no table for RecentActivities?  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  
   // Mock recent activity data - replace with real API call
   const recentActivity = [
     {

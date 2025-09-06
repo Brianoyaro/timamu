@@ -4,9 +4,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { 
   CalendarIcon, 
   ClockIcon, 
-  VideoIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
+import { Video } from 'lucide-react'
 import { format, isToday, isTomorrow } from 'date-fns'
 
 export function NextSessionCard() {
@@ -14,6 +14,7 @@ export function NextSessionCard() {
   const navigate = useNavigate()
   const { tenantId } = useParams()
 
+  // MAKE A REAL API CALL HERE. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // Mock next session data - replace with real API call
   const nextSession = {
     id: '1',
@@ -108,7 +109,7 @@ export function NextSessionCard() {
           onClick={handleJoinSession}
           className="flex-1 btn btn-primary flex items-center justify-center"
         >
-          <VideoIcon className="h-4 w-4 mr-2" />
+          <Video className="h-4 w-4 mr-2" />
           {t('dashboard.joinSession')}
         </button>
         

@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import { useTranslation } from 'react-i18next'
-import { LanguageIcon } from '@heroicons/react/24/outline'
+import { Languages, Check } from 'lucide-react'
 import clsx from 'clsx'
 
 const languages = [
@@ -20,7 +20,7 @@ export function LanguageSwitcher() {
     <Menu as="div" className="relative">
       <Menu.Button className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
         <span className="sr-only">Change language</span>
-        <LanguageIcon className="h-5 w-5" />
+        <Languages className="h-5 w-5" />
       </Menu.Button>
       
       <Transition
@@ -50,7 +50,7 @@ export function LanguageSwitcher() {
                     <span className="mr-3 text-base">{lang.flag}</span>
                     {lang.name}
                     {i18n.language === lang.code && (
-                      <span className="ml-auto text-primary-600">✓</span>
+                      <Check className="ml-auto h-4 w-4 text-primary-600 dark:text-primary-400" />
                     )}
                   </button>
                 )}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Bars3Icon } from '@heroicons/react/24/outline'
+import { Menu } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { TenantSwitcher } from './TenantSwitcher'
 import { NotificationCenter } from '../notifications/NotificationCenter'
@@ -19,7 +19,7 @@ export function Header({ onMenuClick }) {
               onClick={onMenuClick}
               aria-label="Open main menu"
             >
-              <Bars3Icon className="h-6 w-6" />
+              <Menu className="h-6 w-6" />
             </button>
             
             <div className="flex items-center space-x-2 ml-2 lg:ml-0">

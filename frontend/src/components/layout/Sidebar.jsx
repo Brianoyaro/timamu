@@ -1,7 +1,7 @@
 import React from 'react'
 import { NavLink, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { navigationItems } from '../../config/navigation'
 import clsx from 'clsx'
@@ -31,7 +31,7 @@ export function Sidebar({ onClose }) {
             className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             aria-label="Close menu"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
       )}

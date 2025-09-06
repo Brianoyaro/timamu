@@ -1,6 +1,6 @@
 import React, { Fragment, useState } from 'react'
 import { Menu, Transition } from '@headlessui/react'
-import { BellIcon } from '@heroicons/react/24/outline'
+import { Bell } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
@@ -51,7 +51,7 @@ export function NotificationCenter() {
   return (
     <Menu as="div" className="relative">
       <Menu.Button className="relative p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-        <BellIcon className="h-5 w-5" />
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -88,7 +88,7 @@ export function NotificationCenter() {
           <div className="max-h-96 overflow-y-auto scrollbar-thin">
             {notifications.length === 0 ? (
               <div className="p-4 text-center">
-                <BellIcon className="mx-auto h-8 w-8 text-gray-400" />
+                <Bell className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   No notifications
                 </p>

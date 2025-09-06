@@ -9,6 +9,14 @@ import { useAuthStore } from '../store/authStore'
 
 export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // TODO
+  // It is 'default' i.e /t/default after login. I smell a potential bug because it is a string and the database returns id.!!!!!!!!!!!!
+  // unless it also checks therapist.domain. [default therapist for new users = domain: 'default.mindlink.com']
+
+  // Possible solution: if it is tenantId = 'default', let's use the saved user's tenantId
+  // Another different approach is that loadTenants() only returns tenants pertaining to the registered user unless they are admin user. I don't support this fully.
+  
   const { tenantId } = useParams()
   const { loadTenants, setCurrentTenant, tenants } = useTenantStore()
   const { user } = useAuthStore()
@@ -16,7 +24,7 @@ export function MainLayout() {
   useEffect(() => {
     // Load tenants and set current tenant
     loadTenants().then(() => {
-      const tenant = tenants.find(t => t.id === tenantId)
+      const tenant = tenants.find(t => t.id === tenantId) // const tenant = tenants.find(t => t.id === user.tenantId)
       if (tenant) {
         setCurrentTenant(tenant)
       }

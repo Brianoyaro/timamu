@@ -2,7 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router } from 'react-router-dom'
 import { Toaster } from './components/ui/Toast'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
-import { AppRoutes } from './routes/AppRoutes'
+import { AppRoutes } from './routes/AppRoutes' // This is what's breaking my application
 import { useThemeStore } from './store/themeStore'
 import { useAuthStore } from './store/authStore'
 
@@ -28,6 +28,8 @@ export default function App() {
       <ErrorBoundary>
         <Router>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            {/* remove the debuging line below */}
+            {/* <h1>Hello World</h1> */}
             <AppRoutes />
             <Toaster />
           </div>

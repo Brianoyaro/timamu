@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { PaintBrushIcon, SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline'
+import { Palette, Sun, Moon, Monitor } from 'lucide-react'
 import { useThemeStore } from '../../store/themeStore'
 
 export function AppearanceSettings() {
@@ -12,21 +12,21 @@ export function AppearanceSettings() {
       id: 'light',
       name: 'Light',
       description: 'Clean and bright interface',
-      icon: SunIcon,
+      icon: Sun,
       active: !isDarkMode
     },
     {
       id: 'dark',
       name: 'Dark',
       description: 'Easy on the eyes in low light',
-      icon: MoonIcon,
+      icon: Moon,
       active: isDarkMode
     },
     {
       id: 'system',
       name: 'System',
       description: 'Follow your device settings',
-      icon: ComputerDesktopIcon,
+      icon: Monitor,
       active: false // TODO: Implement system theme detection
     }
   ]
@@ -45,7 +45,7 @@ export function AppearanceSettings() {
       {/* Theme Selection */}
       <div className="card p-6">
         <div className="flex items-center mb-4">
-          <PaintBrushIcon className="h-6 w-6 text-gray-400 mr-3" />
+          <Palette className="h-6 w-6 text-gray-400 mr-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Theme
           </h3>

@@ -1,72 +1,72 @@
 import {
-  HomeIcon,
-  CalendarIcon,
-  ChatBubbleLeftRightIcon,
-  UserIcon,
-  Cog6ToothIcon,
-  UserGroupIcon,
-  BuildingOfficeIcon,
-  DocumentTextIcon,
-  BookOpenIcon
-} from '@heroicons/react/24/outline'
+  Home,
+  Calendar,
+  MessageCircle,
+  User,
+  Settings,
+  Users,
+  Building,
+  FileText,
+  BookOpen
+} from 'lucide-react'
 
 export const navigationItems = [
   {
     name: 'dashboard',
     path: '',
-    icon: HomeIcon,
+    icon: Home,
     roles: []
   },
   {
     name: 'therapists',
     path: '/therapists',
-    icon: UserGroupIcon,
+    icon: Users,
     roles: ['patient']
   },
   {
     name: 'patients',
     path: '/patients',
-    icon: UserGroupIcon,
+    icon: Users,
     roles: ['therapist', 'admin']
   },
   {
     name: 'schedule',
     path: '/schedule',
-    icon: CalendarIcon,
+    icon: Calendar,
     roles: []
   },
   {
     name: 'messages',
     path: '/messages',
-    icon: ChatBubbleLeftRightIcon,
+    icon: MessageCircle,
     roles: []
   },
   {
     name: 'resources',
     path: '/resources',
-    icon: BookOpenIcon,
+    icon: BookOpen,
     roles: []
   },
   {
     name: 'admin',
     path: '/admin',
-    icon: BuildingOfficeIcon,
+    icon: Building,
     roles: ['admin'],
     children: [
       {
         name: 'users',
         path: '/admin/users',
-        icon: UserGroupIcon
+        icon: Users
       },
       {
         name: 'tenants',
         path: '/admin/tenants',
-        icon: BuildingOfficeIcon
+        icon: Building
       },
       {
         name: 'audit',
         path: '/admin/audit',
-        icon: DocumentTextIcon
+        icon: FileText
       }
     ]
   }
@@ -76,31 +76,31 @@ export const mobileNavigationItems = [
   {
     name: 'dashboard',
     path: '',
-    icon: HomeIcon,
+    icon: Home,
     roles: []
   },
   {
     name: 'schedule',
     path: '/schedule',
-    icon: CalendarIcon,
+    icon: Calendar,
     roles: []
   },
   {
     name: 'messages',
     path: '/messages',
-    icon: ChatBubbleLeftRightIcon,
+    icon: MessageCircle,
     roles: []
   },
   {
     name: 'profile',
     path: '/profile',
-    icon: UserIcon,
+    icon: User,
     roles: []
   },
   {
     name: 'settings',
     path: '/settings',
-    icon: Cog6ToothIcon,
+    icon: Settings,
     roles: []
   }
 ]

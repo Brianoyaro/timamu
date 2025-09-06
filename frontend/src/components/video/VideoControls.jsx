@@ -1,13 +1,13 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  MicrophoneIcon,
-  MicrophoneSlashIcon,
-  VideoCameraIcon,
-  VideoCameraSlashIcon,
-  ComputerDesktopIcon,
-  PhoneIcon
-} from '@heroicons/react/24/outline'
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Monitor,
+  PhoneOff
+} from 'lucide-react'
 import clsx from 'clsx'
 
 export function VideoControls({
@@ -24,7 +24,7 @@ export function VideoControls({
   const controls = [
     {
       key: 'audio',
-      icon: isAudioEnabled ? MicrophoneIcon : MicrophoneSlashIcon,
+      icon: isAudioEnabled ? Mic : MicOff,
       label: t('video.toggleMic'),
       onClick: onToggleAudio,
       isActive: isAudioEnabled,
@@ -32,7 +32,7 @@ export function VideoControls({
     },
     {
       key: 'video',
-      icon: isVideoEnabled ? VideoCameraIcon : VideoCameraSlashIcon,
+      icon: isVideoEnabled ? Video : VideoOff,
       label: t('video.toggleCamera'),
       onClick: onToggleVideo,
       isActive: isVideoEnabled,
@@ -40,7 +40,7 @@ export function VideoControls({
     },
     {
       key: 'screen',
-      icon: ComputerDesktopIcon,
+      icon: Monitor,
       label: t('video.shareScreen'),
       onClick: onShareScreen,
       isActive: isScreenSharing,
@@ -73,7 +73,7 @@ export function VideoControls({
           aria-label={t('video.endCall')}
           title={t('video.endCall')}
         >
-          <PhoneIcon className="h-5 w-5 transform rotate-180" />
+          <PhoneOff className="h-5 w-5" />
         </button>
       </div>
     </div>

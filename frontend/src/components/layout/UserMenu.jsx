@@ -3,12 +3,13 @@ import { Menu, Transition } from '@headlessui/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
-  UserCircleIcon,
-  Cog6ToothIcon,
-  ArrowRightOnRectangleIcon
-} from '@heroicons/react/24/outline'
+  UserCircle,
+  Settings,
+  LogOut
+} from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { analyticsService } from '../../services/analyticsService'
+import clsx from 'clsx'
 
 export function UserMenu() {
   const { t } = useTranslation()
@@ -65,7 +66,7 @@ export function UserMenu() {
                       : 'text-gray-700 dark:text-gray-300'
                   )}
                 >
-                  <UserCircleIcon className="mr-3 h-5 w-5" />
+                  <UserCircle className="mr-3 h-5 w-5" />
                   {t('navigation.profile')}
                 </button>
               )}
@@ -82,7 +83,7 @@ export function UserMenu() {
                       : 'text-gray-700 dark:text-gray-300'
                   )}
                 >
-                  <Cog6ToothIcon className="mr-3 h-5 w-5" />
+                  <Settings className="mr-3 h-5 w-5" />
                   {t('navigation.settings')}
                 </button>
               )}
@@ -101,7 +102,7 @@ export function UserMenu() {
                       : 'text-gray-700 dark:text-gray-300'
                   )}
                 >
-                  <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+                  <LogOut className="mr-3 h-5 w-5" />
                   {t('auth.signOut')}
                 </button>
               )}

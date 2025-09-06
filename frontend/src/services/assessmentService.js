@@ -32,6 +32,11 @@ export const assessmentService = {
     return response.data?.checkin
   },
 
+  // async submitMoodCheckin(moodData, notes) {
+  //   const response = await apiService.post('/mood-checkins', { moodData, notes})
+  //   return response.data?.checkin
+  // },
+
   async getAssessmentTemplates() {
     const response = await apiService.get('/assessment-templates')
     return response.data?.templates || []

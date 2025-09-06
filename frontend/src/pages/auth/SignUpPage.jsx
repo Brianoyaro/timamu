@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -139,9 +139,9 @@ export function SignUpPage() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
-                <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                <EyeOff className="h-4 w-4 text-gray-400" />
               ) : (
-                <EyeIcon className="h-4 w-4 text-gray-400" />
+                <Eye className="h-4 w-4 text-gray-400" />
               )}
             </button>
           </div>
@@ -172,9 +172,9 @@ export function SignUpPage() {
               aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
             >
               {showConfirmPassword ? (
-                <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                <EyeOff className="h-4 w-4 text-gray-400" />
               ) : (
-                <EyeIcon className="h-4 w-4 text-gray-400" />
+                <Eye className="h-4 w-4 text-gray-400" />
               )}
             </button>
           </div>

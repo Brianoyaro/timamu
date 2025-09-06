@@ -11,7 +11,7 @@ import {
 export function QuickActionsCard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { tenantId } = useParams()
+  const { tenantId } = useParams() // what if we instead get req.user.tenantId instead so ass to go round the possibility of tenantId being 'default' from AppRoutes.jsx routing?
 
   const quickActions = [
     {
@@ -45,7 +45,7 @@ export function QuickActionsCard() {
       navigate(`/t/${tenantId}${action.path}`)
     } else if (action.action === 'moodCheckin') {
       // Open mood check-in modal
-      console.log('Open mood check-in modal')
+      console.log('Open mood check-in modal') // mood check-in modal is nect component after this component. How may we render it? Or even better, what if we remove this icon to reduce redundancy? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
   }
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
+import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../store/themeStore'
 
 export function ThemeToggle() {
@@ -12,9 +12,9 @@ export function ThemeToggle() {
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDarkMode ? (
-        <SunIcon className="h-5 w-5" />
+        <Sun className="h-5 w-5" />
       ) : (
-        <MoonIcon className="h-5 w-5" />
+        <Moon className="h-5 w-5" />
       )}
     </button>
   )

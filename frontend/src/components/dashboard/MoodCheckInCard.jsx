@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { HeartIcon } from '@heroicons/react/24/outline'
+import { assessmentService } from '../../services/assessmentService' //
 
 const moodOptions = [
   { value: 1, emoji: '😢', label: 'Very sad', color: 'text-red-500' },
@@ -17,11 +18,18 @@ export function MoodCheckInCard() {
   const [notes, setNotes] = useState('')
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
 
+  const { submitMoodCheckin } = assessmentService()
+
   const handleSubmit = async () => {
     if (!selectedMood) return
 
     // Mock API call - replace with real implementation
-    console.log('Submitting mood check-in:', { mood: selectedMood, notes })
+    console.log('Submitting mood check-in:', { mood: selectedMood, notes }) //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    // const response =  await submitMoodCheckin(selectedMood, notes)// I AM HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+    // if ( response.success ) {
+    //   setHasCheckedIn(true)
+    //}
     
     setHasCheckedIn(true)
     
@@ -29,7 +37,7 @@ export function MoodCheckInCard() {
     setTimeout(() => {
       setSelectedMood(null)
       setNotes('')
-      setHasCheckedIn(false)
+      setHasCheckedIn(false) // I smell a potential bug here. How can we prevent the user from uploading their mood several times in a day or is it by design that we allow multiple mood uploading because moods shift several times in a day? Well, if you ask me, I dismiss this bug and say that there is NO logical error here.
     }, 3000)
   }
 
@@ -90,7 +98,7 @@ export function MoodCheckInCard() {
         className="w-full input text-sm"
         rows={3}
       />
-
+
       <button
         onClick={handleSubmit}
         disabled={!selectedMood}
@@ -99,5 +107,4 @@ export function MoodCheckInCard() {
         Submit Check-in
       </button>
     </div>
-  )
-}
+)}

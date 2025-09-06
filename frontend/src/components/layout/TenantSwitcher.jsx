@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { Menu, Transition } from '@headlessui/react'
-import { ChevronDownIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, Building, Check } from 'lucide-react'
 import { useTenantStore } from '../../store/tenantStore'
 import { useAuthStore } from '../../store/authStore'
 import clsx from 'clsx'
@@ -17,11 +17,11 @@ export function TenantSwitcher() {
   return (
     <Menu as="div" className="relative">
       <Menu.Button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
-        <BuildingOfficeIcon className="h-4 w-4" />
+        <Building className="h-4 w-4" />
         <span className="hidden sm:block">
           {currentTenant?.name || 'Select Tenant'}
         </span>
-        <ChevronDownIcon className="h-4 w-4" />
+        <ChevronDown className="h-4 w-4" />
       </Menu.Button>
 
       <Transition
@@ -72,7 +72,7 @@ export function TenantSwitcher() {
                     </div>
                     
                     {currentTenant?.id === tenant.id && (
-                      <span className="text-primary-600 dark:text-primary-400">✓</span>
+                      <Check className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                     )}
                   </button>
                 )}
