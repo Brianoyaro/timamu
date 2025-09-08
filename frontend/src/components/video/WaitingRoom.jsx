@@ -2,9 +2,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  UserIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline'
+  User,
+  Clock
+} from 'lucide-react'
 
 export function WaitingRoom({ session, userRole, onAdmitPatient, onCancel }) {
   const { t } = useTranslation()
@@ -27,7 +27,7 @@ export function WaitingRoom({ session, userRole, onAdmitPatient, onCancel }) {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <UserIcon className="h-12 w-12 text-gray-400" />
+              <User className="h-12 w-12 text-gray-400" />
             )}
           </div>
           
@@ -44,7 +44,7 @@ export function WaitingRoom({ session, userRole, onAdmitPatient, onCancel }) {
         </div>
 
         <div className="flex items-center justify-center space-x-2 text-gray-400 mb-8">
-          <ClockIcon className="h-5 w-5" />
+          <Clock className="h-5 w-5" />
           <span>Session scheduled for {session?.startTime?.toLocaleTimeString()}</span>
         </div>
 

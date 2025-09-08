@@ -1,20 +1,20 @@
 import React from 'react'
 import { Transition } from '@headlessui/react'
 import { 
-  CheckCircleIcon, 
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
+  CheckCircle, 
+  AlertTriangle,
+  Info,
   XCircleIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline'
+  X
+} from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
 import clsx from 'clsx'
 
 const toastIcons = {
-  success: CheckCircleIcon,
+  success: CheckCircle,
   error: XCircleIcon,
-  warning: ExclamationTriangleIcon,
-  info: InformationCircleIcon
+  warning: AlertTriangle,
+  info: Info
 }
 
 const toastStyles = {
@@ -67,7 +67,7 @@ export function Toast({ toast }) {
                 onClick={() => removeToast(toast.id)}
                 aria-label="Close notification"
               >
-                <XMarkIcon className="h-5 w-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>

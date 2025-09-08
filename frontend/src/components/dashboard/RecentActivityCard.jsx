@@ -1,11 +1,11 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  CalendarIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
-  HeartIcon
-} from '@heroicons/react/24/outline'
+  Calendar,
+  MessageCircle,
+  FileText,
+  Heart
+} from 'lucide-react'
 import { format } from 'date-fns'
 
 export function RecentActivityCard() {
@@ -19,7 +19,7 @@ export function RecentActivityCard() {
     {
       id: '1',
       type: 'session',
-      icon: CalendarIcon,
+      icon: Calendar,
       title: 'Session with Dr. Sarah Johnson',
       description: 'Completed therapy session',
       timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -28,7 +28,7 @@ export function RecentActivityCard() {
     {
       id: '2',
       type: 'message',
-      icon: ChatBubbleLeftRightIcon,
+      icon: MessageCircle,
       title: 'New message from Dr. Johnson',
       description: 'Follow-up resources shared',
       timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
@@ -37,7 +37,7 @@ export function RecentActivityCard() {
     {
       id: '3',
       type: 'assessment',
-      icon: DocumentTextIcon,
+      icon: FileText,
       title: 'PHQ-9 Assessment',
       description: 'Score: 8 (Mild depression)',
       timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -46,7 +46,7 @@ export function RecentActivityCard() {
     {
       id: '4',
       type: 'mood',
-      icon: HeartIcon,
+      icon: Heart,
       title: 'Mood Check-in',
       description: 'Feeling good (4/5)',
       timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -61,7 +61,7 @@ export function RecentActivityCard() {
           {t('dashboard.recentActivity')}
         </h2>
         <div className="text-center py-8">
-          <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No recent activity to show
           </p>

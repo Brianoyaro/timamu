@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ShieldExclamationIcon, HomeIcon } from '@heroicons/react/24/outline'
+import { ShieldAlert, Home } from 'lucide-react'
 
 export function ForbiddenPage() {
   return (
@@ -12,7 +12,7 @@ export function ForbiddenPage() {
         className="text-center"
       >
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900">
-          <ShieldExclamationIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <ShieldAlert className="h-8 w-8 text-red-600 dark:text-red-400" />
         </div>
         
         <h1 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
@@ -27,7 +27,7 @@ export function ForbiddenPage() {
           to="/"
           className="mt-6 inline-flex items-center btn btn-primary"
         >
-          <HomeIcon className="h-4 w-4 mr-2" />
+          <Home className="h-4 w-4 mr-2" />
           Go Home
         </Link>
       </motion.div>

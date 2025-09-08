@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { DocumentTextIcon } from '@heroicons/react/24/outline'
+import { FileText } from 'lucide-react'
 
 export function TermsPage() {
   return (
@@ -12,7 +12,7 @@ export function TermsPage() {
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8"
         >
           <div className="flex items-center mb-8">
-            <DocumentTextIcon className="h-8 w-8 text-primary-600 mr-3" />
+            <FileText className="h-8 w-8 text-primary-600 mr-3" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Terms of Service
             </h1>

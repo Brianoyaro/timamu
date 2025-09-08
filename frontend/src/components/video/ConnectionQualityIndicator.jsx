@@ -1,5 +1,5 @@
 import React from 'react'
-import { WifiIcon } from '@heroicons/react/24/outline'
+import { Wifi } from 'lucide-react'
 import clsx from 'clsx'
 
 export function ConnectionQualityIndicator({ quality = 'good' }) {

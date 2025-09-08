@@ -2,11 +2,11 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  BuildingOfficeIcon,
+  Building,
   ArrowRightIcon,
-  UserGroupIcon,
-  CalendarIcon
-} from '@heroicons/react/24/outline'
+  Users,
+  Calendar
+} from 'lucide-react'
 
 export function TenantOverviewCard() {
   const { t } = useTranslation()
@@ -30,7 +30,7 @@ export function TenantOverviewCard() {
     <div className="card p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-          <BuildingOfficeIcon className="h-5 w-5 mr-2" />
+          <Building className="h-5 w-5 mr-2" />
           Tenant Overview
         </h2>
         

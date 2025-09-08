@@ -1,6 +1,6 @@
 import React from 'react'
 import { format } from 'date-fns'
-import { DocumentIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { File, Image } from 'lucide-react'
 import clsx from 'clsx'
 
 export function MessageBubble({ message, isFromCurrentUser }) {
@@ -10,9 +10,9 @@ export function MessageBubble({ message, isFromCurrentUser }) {
         return (
           <div className="flex items-center space-x-2">
             {message.attachment?.type?.startsWith('image/') ? (
-              <PhotoIcon className="h-5 w-5" />
+              <Image className="h-5 w-5" />
             ) : (
-              <DocumentIcon className="h-5 w-5" />
+              <File className="h-5 w-5" />
             )}
             <span className="text-sm">{message.content}</span>
           </div>

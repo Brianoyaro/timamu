@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { X } from 'lucide-react'
 
 const actionTypes = [
   'user', 'session', 'appointment', 'message', 'tenant', 'admin'
@@ -40,7 +40,7 @@ export function AuditFilters({ filters, onFiltersChange, onClear }) {
             onClick={onClear}
             className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 flex items-center"
           >
-            <XMarkIcon className="h-4 w-4 mr-1" />
+            <X className="h-4 w-4 mr-1" />
             Clear all
           </button>
         )}

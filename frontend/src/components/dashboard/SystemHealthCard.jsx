@@ -1,11 +1,11 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  ServerIcon,
-  SignalIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline'
+  Server,
+  Signal,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react'
 
 export function SystemHealthCard() {
   const { t } = useTranslation()
@@ -28,13 +28,13 @@ export function SystemHealthCard() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircleIcon className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'warning':
-        return <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       case 'critical':
-        return <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
       default:
-        return <CheckCircleIcon className="h-4 w-4 text-gray-400" />
+        return <CheckCircle className="h-4 w-4 text-gray-400" />
     }
   }
 
@@ -54,14 +54,14 @@ export function SystemHealthCard() {
   return (
     <div className="card p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-        <ServerIcon className="h-5 w-5 mr-2" />
+        <Server className="h-5 w-5 mr-2" />
         System Health
       </h2>
 
       {/* Overall status */}
       <div className="mb-4 p-3 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700">
         <div className="flex items-center">
-          <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
           <span className="text-sm font-medium text-green-800 dark:text-green-200">
             All systems operational
           </span>

@@ -2,11 +2,11 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  CalendarIcon,
-  ChatBubbleLeftRightIcon,
-  BookOpenIcon,
-  HeartIcon
-} from '@heroicons/react/24/outline'
+  Calendar,
+  MessageCircle,
+  BookOpen,
+  Heart
+} from 'lucide-react'
 
 export function QuickActionsCard() {
   const { t } = useTranslation()
@@ -16,25 +16,25 @@ export function QuickActionsCard() {
   const quickActions = [
     {
       name: 'Schedule',
-      icon: CalendarIcon,
+      icon: Calendar,
       path: '/schedule',
       color: 'primary'
     },
     {
       name: 'Messages',
-      icon: ChatBubbleLeftRightIcon,
+      icon: MessageCircle,
       path: '/messages',
       color: 'therapeutic'
     },
     {
       name: 'Resources',
-      icon: BookOpenIcon,
+      icon: BookOpen,
       path: '/resources',
       color: 'primary'
     },
     {
       name: 'Mood Check',
-      icon: HeartIcon,
+      icon: Heart,
       action: 'moodCheckin',
       color: 'therapeutic'
     }

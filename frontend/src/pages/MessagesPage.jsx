@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChatList } from '../components/messaging/ChatList'
 import { ChatWindow } from '../components/messaging/ChatWindow'
 import { EmptyState } from '../components/common/EmptyState'
-import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'
+import { MessageCircle } from 'lucide-react'
 import { messagingService } from '../services/messagingService'
 import { analyticsService } from '../services/analyticsService'
 
@@ -81,7 +81,7 @@ export function MessagesPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <EmptyState
-              icon={ChatBubbleLeftRightIcon}
+              icon={MessageCircle}
               title="Select a conversation"
               description="Choose a conversation from the list to start messaging"
             />

@@ -2,12 +2,12 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  BellIcon,
-  ShieldCheckIcon,
-  GlobeAltIcon,
-  PaintBrushIcon,
-  DevicePhoneMobileIcon
-} from '@heroicons/react/24/outline'
+  Bell,
+  ShieldCheck,
+  Globe,
+  Palette,
+  Smartphone
+} from 'lucide-react'
 import { NotificationSettings } from '../components/settings/NotificationSettings'
 import { PrivacySettings } from '../components/settings/PrivacySettings'
 import { AppearanceSettings } from '../components/settings/AppearanceSettings'
@@ -17,19 +17,19 @@ const settingsSections = [
   {
     id: 'notifications',
     name: 'Notifications',
-    icon: BellIcon,
+    icon: Bell,
     component: NotificationSettings
   },
   {
     id: 'privacy',
     name: 'Privacy & Security',
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
     component: PrivacySettings
   },
   {
     id: 'appearance',
     name: 'Appearance',
-    icon: PaintBrushIcon,
+    icon: Palette,
     component: AppearanceSettings
   }
 ]

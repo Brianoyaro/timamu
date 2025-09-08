@@ -1,0 +1,36 @@
+{
+  "hotlines": [
+    {
+      "name": "National Suicide Prevention Lifeline",
+      "phone": "988",
+      "description": "24/7 crisis support",
+      "locale": "US"
+    },
+    {
+      "name": "Crisis Text Line",
+      "phone": "741741",
+      "description": "Text HOME to 741741",
+      "locale": "US"
+    },
+    {
+      "name": "SAMHSA National Helpline",
+      "phone": "1-800-662-4357",
+      "description": "Mental health and substance abuse",
+      "locale": "US"
+    },
+    {
+      "name": "National Domestic Violence Hotline",
+      "phone": "1-800-799-7233",
+      "description": "24/7 confidential support",
+      "locale": "US"
+    }
+  ],
+  "emergencyServices": {
+    "US": "911",
+    "UK": "999",
+    "EU": "112"
+  },
+  "disclaimers": {
+    "en": "MindLink is not intended for emergency mental health crises. If you are experiencing thoughts of suicide or self-harm, please contact emergency services immediately."
+  }
+}

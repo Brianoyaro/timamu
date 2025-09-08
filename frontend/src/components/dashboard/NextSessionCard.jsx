@@ -2,10 +2,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  CalendarIcon, 
-  ClockIcon, 
-  ChatBubbleLeftRightIcon
-} from '@heroicons/react/24/outline'
+  Calendar, 
+  Clock, 
+  MessageCircle
+} from 'lucide-react'
 import { Video } from 'lucide-react'
 import { format, isToday, isTomorrow } from 'date-fns'
 
@@ -53,7 +53,7 @@ export function NextSessionCard() {
           {t('dashboard.nextSession')}
         </h2>
         <div className="text-center py-8">
-          <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <Calendar className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No upcoming sessions scheduled
           </p>
@@ -87,12 +87,12 @@ export function NextSessionCard() {
           </h3>
           
           <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <CalendarIcon className="h-4 w-4 mr-1" />
+            <Calendar className="h-4 w-4 mr-1" />
             {formatSessionDate(nextSession.datetime)}
           </div>
           
           <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <ClockIcon className="h-4 w-4 mr-1" />
+            <Clock className="h-4 w-4 mr-1" />
             {nextSession.duration} minutes
           </div>
         </div>
@@ -117,7 +117,7 @@ export function NextSessionCard() {
           onClick={handleSendMessage}
           className="btn btn-secondary flex items-center justify-center"
         >
-          <ChatBubbleLeftRightIcon className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4" />
         </button>
       </div>
     </div>

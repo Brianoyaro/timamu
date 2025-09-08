@@ -340,12 +340,14 @@ router.post('/mood-checkins',
   auditLog('mood_checkin.submitted'),
   async (req, res) => {
     try {
-      const { mood, notes, patientId } = req.body
+      const { mood, notes, patientId } = req.body // INSTEAD OF SUBMITTING patientId, WHAT IF WE USE req.user.id WHICH IN TURN MEANS THAT WE ONLY SEND mood AND notes? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       // Determine patient ID
       const targetPatientId = patientId || req.user.id
 
       // Check authorization
+      // THIS CHECK IS A LOGICAL ERROR BECAUSE IT EXCLUDES PATIENTS FROM SUBMITTNG MOODCHECKINS AND ALLOWS ADMINS WHO ARE THERAPISTS. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      // if (!req.user.roles.includes('patient')) // THIS IS CORRECT ACCORDING TO ME.
       if (targetPatientId !== req.user.id && !req.user.roles.includes('therapist') && !req.user.roles.includes('admin')) {
         return res.status(403).json({
           success: false,
@@ -358,7 +360,7 @@ router.post('/mood-checkins',
           mood,
           notes,
           patientId: targetPatientId,
-          tenantId: req.tenantId
+          tenantId: req.tenantId // IS THIS EVEN VALID? OR, SHOULD WE INSTEAD  USE req.user.tenantId? !!!!!!!!!!!!!!!!!!
         }
       })
 

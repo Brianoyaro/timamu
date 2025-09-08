@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BellIcon } from '@heroicons/react/24/outline'
+import { Bell } from 'lucide-react'
 
 export function NotificationSettings() {
   const { t } = useTranslation()
@@ -68,7 +68,7 @@ export function NotificationSettings() {
   return (
     <div className="card p-6">
       <div className="flex items-center mb-6">
-        <BellIcon className="h-6 w-6 text-gray-400 mr-3" />
+        <Bell className="h-6 w-6 text-gray-400 mr-3" />
         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
           Notification Preferences
         </h2>

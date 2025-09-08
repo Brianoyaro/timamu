@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { format, isToday, isYesterday } from 'date-fns'
 import { LoadingSkeleton } from '../common/LoadingSkeleton'
 import { EmptyState } from '../common/EmptyState'
-import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'
+import { MessageCircle } from 'lucide-react'
 import clsx from 'clsx'
 
 export function ChatList({ threads, selectedThread, onThreadSelect, isLoading }) {
@@ -56,7 +56,7 @@ export function ChatList({ threads, selectedThread, onThreadSelect, isLoading })
         {threads.length === 0 ? (
           <div className="p-4">
             <EmptyState
-              icon={ChatBubbleLeftRightIcon}
+              icon={MessageCircle}
               title="No conversations"
               description="Start messaging with your therapist or patients"
             />

@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  MagnifyingGlassIcon,
-  BookOpenIcon,
-  PlayIcon,
-  HeartIcon,
-  FunnelIcon
-} from '@heroicons/react/24/outline'
+  Search,
+  BookOpen,
+  Play,
+  Heart,
+  Filter
+} from 'lucide-react'
 import { ResourceCard } from '../components/resources/ResourceCard'
 import { ResourceFilters } from '../components/resources/ResourceFilters'
 import { EmptyState } from '../components/common/EmptyState'
@@ -120,14 +120,14 @@ export function ResourcesPage() {
           onClick={() => setShowFilters(!showFilters)}
           className="mt-4 sm:mt-0 btn btn-secondary flex items-center"
         >
-          <FunnelIcon className="h-4 w-4 mr-2" />
+          <Filter className="h-4 w-4 mr-2" />
           Filters
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search resources..."
@@ -159,7 +159,7 @@ export function ResourcesPage() {
       {/* Results */}
       {filteredResources.length === 0 ? (
         <EmptyState
-          icon={BookOpenIcon}
+          icon={BookOpen}
           title="No resources found"
           description="Try adjusting your search criteria or filters"
           action={{

@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon,
-  CalendarIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline'
+  Calendar,
+  Clock
+} from 'lucide-react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, 
          isSameMonth, isToday, addMonths, subMonths } from 'date-fns'
 import { LoadingSkeleton } from '../common/LoadingSkeleton'
@@ -159,7 +159,7 @@ export function CalendarView({
       {appointments.length === 0 && (
         <div className="mt-8">
           <EmptyState
-            icon={CalendarIcon}
+            icon={Calendar}
             title="No appointments scheduled"
             description="Your calendar is empty. Book your first session to get started."
           />

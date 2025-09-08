@@ -2,10 +2,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  UserGroupIcon,
-  ArrowRightIcon,
-  TrendingUpIcon
-} from '@heroicons/react/24/outline'
+  Users,
+  ArrowRight,
+  TrendingUp
+} from 'lucide-react'
 
 export function UserStatsCard() {
   const { t } = useTranslation()
@@ -30,7 +30,7 @@ export function UserStatsCard() {
     <div className="card p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-          <UserGroupIcon className="h-5 w-5 mr-2" />
+          <Users className="h-5 w-5 mr-2" />
           User Statistics
         </h2>
         
@@ -39,7 +39,7 @@ export function UserStatsCard() {
           className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 flex items-center"
         >
           Manage
-          <ArrowRightIcon className="h-4 w-4 ml-1" />
+          <ArrowRight className="h-4 w-4 ml-1" />
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export function UserStatsCard() {
                 {userStats.activeUsers.toLocaleString()}
               </p>
             </div>
-            <TrendingUpIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+            <TrendingUp className="h-6 w-6 text-primary-600 dark:text-primary-400" />
           </div>
         </div>
 

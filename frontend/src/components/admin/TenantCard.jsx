@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  BuildingOfficeIcon,
-  UserGroupIcon,
-  Cog6ToothIcon,
-  EllipsisVerticalIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline'
+  Building,
+  Users,
+  Settings,
+  MoreVertical,
+  Globe
+} from 'lucide-react'
 import { Menu } from '@headlessui/react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
@@ -38,7 +38,7 @@ export function TenantCard({ tenant, onUpdate }) {
             />
           ) : (
             <div className="h-12 w-12 bg-primary-600 rounded-lg flex items-center justify-center">
-              <BuildingOfficeIcon className="h-6 w-6 text-white" />
+              <Building className="h-6 w-6 text-white" />
             </div>
           )}
           
@@ -47,7 +47,7 @@ export function TenantCard({ tenant, onUpdate }) {
               {tenant.name}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-              <GlobeAltIcon className="h-4 w-4 mr-1" />
+              <Globe className="h-4 w-4 mr-1" />
               {tenant.domain}
             </p>
           </div>
@@ -55,7 +55,7 @@ export function TenantCard({ tenant, onUpdate }) {
 
         <Menu as="div" className="relative">
           <Menu.Button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-            <EllipsisVerticalIcon className="h-4 w-4" />
+            <MoreVertical className="h-4 w-4" />
           </Menu.Button>
           
           <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
@@ -69,7 +69,7 @@ export function TenantCard({ tenant, onUpdate }) {
                       active ? 'bg-gray-100 dark:bg-gray-700' : ''
                     )}
                   >
-                    <Cog6ToothIcon className="mr-3 h-4 w-4" />
+                    <Settings className="mr-3 h-4 w-4" />
                     Settings
                   </button>
                 )}

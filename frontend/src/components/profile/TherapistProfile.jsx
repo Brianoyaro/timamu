@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  UserIcon,
-  CameraIcon,
-  AcademicCapIcon,
-  StarIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline'
+  User,
+  Camera,
+  GraduationCap,
+  Star,
+  Globe
+} from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useForm } from 'react-hook-form'
 
@@ -82,7 +82,7 @@ export function TherapistProfile() {
               className="absolute bottom-0 right-0 bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50"
               aria-label="Change avatar"
             >
-              <CameraIcon className="h-4 w-4" />
+              <Camera className="h-4 w-4" />
             </button>
             
             <input
@@ -112,7 +112,7 @@ export function TherapistProfile() {
               
               {user?.rating && (
                 <div className="flex items-center space-x-1">
-                  <StarIcon className="h-4 w-4 text-yellow-400" />
+                  <Star className="h-4 w-4 text-yellow-400" />
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {user.rating} ({user.reviewCount || 0} reviews)
                   </span>
@@ -133,7 +133,7 @@ export function TherapistProfile() {
       {/* Professional information */}
       <div className="card p-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-          <AcademicCapIcon className="h-5 w-5 mr-2" />
+          <GraduationCap className="h-5 w-5 mr-2" />
           Professional Information
         </h3>
 

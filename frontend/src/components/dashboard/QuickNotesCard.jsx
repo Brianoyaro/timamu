@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DocumentTextIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { FileText, Plus } from 'lucide-react'
+import { format } from 'date-fns'
 
 export function QuickNotesCard() {
   const { t } = useTranslation()
@@ -38,7 +39,7 @@ export function QuickNotesCard() {
   return (
     <div className="card p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-        <DocumentTextIcon className="h-5 w-5 mr-2" />
+        <FileText className="h-5 w-5 mr-2" />
         Quick Notes
       </h2>
 
@@ -56,7 +57,7 @@ export function QuickNotesCard() {
           disabled={!notes.trim()}
           className="mt-2 btn btn-primary btn-sm flex items-center disabled:opacity-50"
         >
-          <PlusIcon className="h-4 w-4 mr-1" />
+          <Plus className="h-4 w-4 mr-1" />
           Add Note
         </button>
       </div>

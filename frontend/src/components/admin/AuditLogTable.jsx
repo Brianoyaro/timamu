@@ -2,11 +2,11 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { 
-  ChevronDownIcon,
+  ChevronDown,
   ChevronRightIcon,
-  ComputerDesktopIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline'
+  Monitor,
+  Globe
+} from 'lucide-react'
 import clsx from 'clsx'
 
 export function AuditLogTable({ logs }) {
@@ -60,7 +60,7 @@ export function AuditLogTable({ logs }) {
   if (logs.length === 0) {
     return (
       <div className="card p-6 text-center">
-        <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <FileText className="mx-auto h-12 w-12 text-gray-400" />
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           No audit logs found
         </p>
@@ -124,7 +124,7 @@ export function AuditLogTable({ logs }) {
                       className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
                       {expandedRows.has(log.id) ? (
-                        <ChevronDownIcon className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
                         <ChevronRightIcon className="h-4 w-4" />
                       )}
@@ -170,7 +170,7 @@ export function AuditLogTable({ logs }) {
                     <td colSpan={6} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center space-x-2">
-                          <GlobeAltIcon className="h-4 w-4 text-gray-400" />
+                          <Globe className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-600 dark:text-gray-400">IP Address:</span>
                           <span className="text-gray-900 dark:text-white font-mono">
                             {log.ipAddress}
@@ -178,7 +178,7 @@ export function AuditLogTable({ logs }) {
                         </div>
                         
                         <div className="flex items-start space-x-2">
-                          <ComputerDesktopIcon className="h-4 w-4 text-gray-400 mt-0.5" />
+                          <Monitor className="h-4 w-4 text-gray-400 mt-0.5" />
                           <div>
                             <span className="text-gray-600 dark:text-gray-400">User Agent:</span>
                             <p className="text-gray-900 dark:text-white text-xs mt-1 break-all">

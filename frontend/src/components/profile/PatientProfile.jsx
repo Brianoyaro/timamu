@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  UserIcon,
-  CameraIcon,
-  HeartIcon,
-  DocumentTextIcon
-} from '@heroicons/react/24/outline'
+  User,
+  Camera,
+  Heart,
+  FileText
+} from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useForm } from 'react-hook-form'
 
@@ -71,7 +71,7 @@ export function PatientProfile() {
               className="absolute bottom-0 right-0 bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50"
               aria-label="Change avatar"
             >
-              <CameraIcon className="h-4 w-4" />
+              <Camera className="h-4 w-4" />
             </button>
             
             <input
@@ -115,7 +115,7 @@ export function PatientProfile() {
       {/* Profile form */}
       <div className="card p-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-          <UserIcon className="h-5 w-5 mr-2" />
+          <User className="h-5 w-5 mr-2" />
           Personal Information
         </h3>
 
@@ -227,12 +227,12 @@ export function PatientProfile() {
       {/* Session history */}
       <div className="card p-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-          <DocumentTextIcon className="h-5 w-5 mr-2" />
+          <FileText className="h-5 w-5 mr-2" />
           Session History
         </h3>
         
         <div className="text-center py-8">
-          <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No session history available yet
           </p>

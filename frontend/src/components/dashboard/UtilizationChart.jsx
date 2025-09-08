@@ -11,7 +11,7 @@ import {
   BarChart,
   Bar
 } from 'recharts'
-import { ChartBarIcon } from '@heroicons/react/24/outline'
+import { BarChart as BarChartIcon } from 'lucide-react'
 
 export function UtilizationChart() {
   const { t } = useTranslation()
@@ -34,7 +34,7 @@ export function UtilizationChart() {
     <div className="card p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-          <ChartBarIcon className="h-5 w-5 mr-2" />
+          <BarChartIcon className="h-5 w-5 mr-2" />
           Weekly Utilization
         </h2>
         

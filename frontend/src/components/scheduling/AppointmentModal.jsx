@@ -2,12 +2,12 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  XMarkIcon,
-  CalendarIcon,
-  ClockIcon,
-  UserIcon,
-  VideoCameraIcon
-} from '@heroicons/react/24/outline'
+  X,
+  Calendar,
+  Clock,
+  User,
+  Video
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -79,13 +79,13 @@ export function AppointmentModal({ appointment, onClose, onUpdate }) {
               onClick={onClose}
               className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 
           <div className="sm:flex sm:items-start">
             <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900 sm:mx-0 sm:h-10 sm:w-10">
-              <CalendarIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <Calendar className="h-6 w-6 text-primary-600 dark:text-primary-400" />
             </div>
             
             <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
@@ -98,7 +98,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate }) {
           <div className="mt-6 space-y-4">
             {/* Participant info */}
             <div className="flex items-center space-x-3">
-              <UserIcon className="h-5 w-5 text-gray-400" />
+              <User className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {appointment.therapist?.name || appointment.patient?.name}
@@ -111,7 +111,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate }) {
 
             {/* Date and time */}
             <div className="flex items-center space-x-3">
-              <CalendarIcon className="h-5 w-5 text-gray-400" />
+              <Calendar className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {format(new Date(appointment.datetime), 'EEEE, MMMM d, yyyy')}
@@ -152,7 +152,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate }) {
                 onClick={handleJoinSession}
                 className="flex-1 btn btn-primary flex items-center justify-center"
               >
-                <VideoCameraIcon className="h-4 w-4 mr-2" />
+                <Video className="h-4 w-4 mr-2" />
                 Join Session
               </button>
             )}

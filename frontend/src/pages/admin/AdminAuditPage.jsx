@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ArrowDownTrayIcon
-} from '@heroicons/react/24/outline'
+  FileText,
+  Search,
+  Filter,
+  Download
+} from 'lucide-react'
 import { AuditLogTable } from '../../components/admin/AuditLogTable'
 import { AuditFilters } from '../../components/admin/AuditFilters'
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton'
@@ -160,7 +160,7 @@ export function AdminAuditPage() {
             onClick={() => setShowFilters(!showFilters)}
             className="btn btn-secondary flex items-center"
           >
-            <FunnelIcon className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4 mr-2" />
             Filters
           </button>
           
@@ -168,7 +168,7 @@ export function AdminAuditPage() {
             onClick={handleExportLogs}
             className="btn btn-secondary flex items-center"
           >
-            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 mr-2" />
             Export CSV
           </button>
         </div>
@@ -176,7 +176,7 @@ export function AdminAuditPage() {
 
       {/* Search */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search audit logs..."

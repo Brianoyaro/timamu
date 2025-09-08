@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { HeartIcon } from '@heroicons/react/24/outline'
-import { assessmentService } from '../../services/assessmentService' //
+import { Heart } from 'lucide-react'
+import { assessmentService } from '../../services/assessmentService'
+import { useToastStore } from '../../store/toastStore'
 
 const moodOptions = [
   { value: 1, emoji: '😢', label: 'Very sad', color: 'text-red-500' },
@@ -14,31 +15,41 @@ const moodOptions = [
 
 export function MoodCheckInCard() {
   const { t } = useTranslation()
+  const { addToast } = useToastStore()
   const [selectedMood, setSelectedMood] = useState(null)
   const [notes, setNotes] = useState('')
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
 
-  const { submitMoodCheckin } = assessmentService()
-
   const handleSubmit = async () => {
     if (!selectedMood) return
 
-    // Mock API call - replace with real implementation
-    console.log('Submitting mood check-in:', { mood: selectedMood, notes }) //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-    // const response =  await submitMoodCheckin(selectedMood, notes)// I AM HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-    // if ( response.success ) {
-    //   setHasCheckedIn(true)
-    //}
-    
-    setHasCheckedIn(true)
-    
-    // Reset after success
-    setTimeout(() => {
-      setSelectedMood(null)
-      setNotes('')
-      setHasCheckedIn(false) // I smell a potential bug here. How can we prevent the user from uploading their mood several times in a day or is it by design that we allow multiple mood uploading because moods shift several times in a day? Well, if you ask me, I dismiss this bug and say that there is NO logical error here.
-    }, 3000)
+    try {
+      console.log('Submitting mood check-in:', { mood: selectedMood, notes })
+      
+      // Submit mood check-in using the service
+      await assessmentService.submitMoodCheckin({ 
+        mood: selectedMood, 
+        notes: notes,
+        timestamp: new Date().toISOString()
+      })
+      
+      setHasCheckedIn(true)
+      
+      // Reset after success
+      setTimeout(() => {
+        setSelectedMood(null)
+        setNotes('')
+        setHasCheckedIn(false)
+      }, 3000)
+    } catch (error) {
+      console.error('Failed to submit mood check-in:', error)
+      addToast({
+        type: 'error',
+        title: 'Failed to submit mood check-in',
+        message: 'Please try again or contact support if the problem persists.',
+        duration: 5000
+      })
+    }
   }
 
   if (hasCheckedIn) {
@@ -49,7 +60,7 @@ export function MoodCheckInCard() {
         className="card p-6 bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700"
       >
         <div className="text-center">
-          <HeartIcon className="mx-auto h-8 w-8 text-green-600 dark:text-green-400" />
+          <Heart className="mx-auto h-8 w-8 text-green-600 dark:text-green-400" />
           <h3 className="mt-2 text-lg font-medium text-green-900 dark:text-green-100">
             Thank you!
           </h3>

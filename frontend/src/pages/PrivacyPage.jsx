@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { ShieldCheck } from 'lucide-react'
 
 export function PrivacyPage() {
   return (
@@ -12,7 +12,7 @@ export function PrivacyPage() {
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8"
         >
           <div className="flex items-center mb-8">
-            <ShieldCheckIcon className="h-8 w-8 text-primary-600 mr-3" />
+            <ShieldCheck className="h-8 w-8 text-primary-600 mr-3" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Privacy Policy
             </h1>

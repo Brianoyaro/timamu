@@ -1,23 +1,23 @@
 import React, { useState } from 'react'
 import { 
-  PlayIcon,
-  BookOpenIcon,
-  DocumentTextIcon,
-  SpeakerWaveIcon,
-  HeartIcon,
-  ClockIcon,
-  UserIcon
-} from '@heroicons/react/24/outline'
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
+  Play,
+  BookOpen,
+  FileText,
+  Volume2,
+  Heart,
+  Clock,
+  User
+} from 'lucide-react'
+import { Heart as HeartSolid } from 'lucide-react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
 const typeIcons = {
-  video: PlayIcon,
-  article: DocumentTextIcon,
-  audio: SpeakerWaveIcon,
-  workbook: BookOpenIcon,
-  tool: DocumentTextIcon
+  video: Play,
+  article: FileText,
+  audio: Volume2,
+  workbook: BookOpen,
+  tool: FileText
 }
 
 const difficultyColors = {
@@ -68,9 +68,9 @@ export function ResourceCard({ resource }) {
           aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
           {isFavorited ? (
-            <HeartIconSolid className="h-4 w-4 text-red-500" />
+            <HeartSolid className="h-4 w-4 text-red-500" />
           ) : (
-            <HeartIcon className="h-4 w-4" />
+            <Heart className="h-4 w-4" />
           )}
         </button>
 
@@ -78,7 +78,7 @@ export function ResourceCard({ resource }) {
         {resource.type === 'video' && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-25 group-hover:bg-opacity-40 transition-colors rounded-t-xl">
             <div className="bg-white bg-opacity-90 p-3 rounded-full">
-              <PlayIcon className="h-6 w-6 text-gray-900" />
+              <Play className="h-6 w-6 text-gray-900" />
             </div>
           </div>
         )}
@@ -99,7 +99,7 @@ export function ResourceCard({ resource }) {
         {/* Metadata */}
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
           <div className="flex items-center space-x-2">
-            <ClockIcon className="h-3 w-3" />
+            <Clock className="h-3 w-3" />
             <span>{resource.duration}</span>
           </div>
           
@@ -133,7 +133,7 @@ export function ResourceCard({ resource }) {
         {/* Author and date */}
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center space-x-1">
-            <UserIcon className="h-3 w-3" />
+            <User className="h-3 w-3" />
             <span>{resource.author}</span>
           </div>
           

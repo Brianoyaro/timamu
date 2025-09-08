@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { HomeIcon } from '@heroicons/react/24/outline'
+import { Home } from 'lucide-react'
 
 export function NotFoundPage() {
   return (
@@ -27,7 +27,7 @@ export function NotFoundPage() {
           to="/"
           className="mt-6 inline-flex items-center btn btn-primary"
         >
-          <HomeIcon className="h-4 w-4 mr-2" />
+          <Home className="h-4 w-4 mr-2" />
           Go Home
         </Link>
       </motion.div>

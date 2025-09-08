@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  ChatBubbleLeftRightIcon,
+  MessageCircle,
   ArrowRightIcon
-} from '@heroicons/react/24/outline'
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { messagingService } from '../../services/messagingService'
 import { useAuthStore } from '../../store/authStore'
@@ -97,7 +97,7 @@ export function PendingMessagesCard() {
           Pending Messages
         </h2>
         <div className="text-center py-8">
-          <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <MessageCircle className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No pending messages
           </p>

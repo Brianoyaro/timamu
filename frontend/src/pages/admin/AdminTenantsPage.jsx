@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  BuildingOfficeIcon,
-  PlusIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline'
+  Building,
+  Plus,
+  Search
+} from 'lucide-react'
 import { TenantCard } from '../../components/admin/TenantCard'
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -107,14 +107,14 @@ export function AdminTenantsPage() {
         </h1>
         
         <button className="mt-4 sm:mt-0 btn btn-primary flex items-center">
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Tenant
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search tenants..."
@@ -127,7 +127,7 @@ export function AdminTenantsPage() {
       {/* Tenants grid */}
       {filteredTenants.length === 0 ? (
         <EmptyState
-          icon={BuildingOfficeIcon}
+          icon={Building}
           title="No tenants found"
           description="No tenants match your search criteria"
         />

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
-  CalendarIcon, 
-  ClockIcon, 
-  VideoIcon,
-  UserIcon
-} from '@heroicons/react/24/outline'
+  Calendar, 
+  Clock, 
+  Video,
+  User
+} from 'lucide-react'
 import { format, isWithinInterval, addMinutes } from 'date-fns'
 import { schedulingService } from '../../services/schedulingService'
 import { useAuthStore } from '../../store/authStore'
@@ -106,7 +106,7 @@ export function TodaySessionsCard() {
           Today's Sessions
         </h2>
         <div className="text-center py-8">
-          <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <Calendar className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No sessions scheduled for today
           </p>
@@ -150,7 +150,7 @@ export function TodaySessionsCard() {
               </div>
               
               <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <ClockIcon className="h-4 w-4 mr-1" />
+                <Clock className="h-4 w-4 mr-1" />
                 {format(new Date(session.datetime), 'h:mm a')} - {session.duration} min
               </div>
               
@@ -167,7 +167,7 @@ export function TodaySessionsCard() {
                   onClick={() => handleJoinSession(session.id)}
                   className="btn btn-primary btn-sm flex items-center"
                 >
-                  <VideoIcon className="h-4 w-4 mr-1" />
+                  <Video className="h-4 w-4 mr-1" />
                   Join
                 </button>
               ) : (
@@ -175,7 +175,7 @@ export function TodaySessionsCard() {
                   onClick={() => handleViewPatient(session.patientId)}
                   className="btn btn-secondary btn-sm flex items-center"
                 >
-                  <UserIcon className="h-4 w-4 mr-1" />
+                  <User className="h-4 w-4 mr-1" />
                   View
                 </button>
               )}

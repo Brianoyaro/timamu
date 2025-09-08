@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  UserPlusIcon,
-  EllipsisVerticalIcon
-} from '@heroicons/react/24/outline'
+  Search,
+  Filter,
+  UserPlus,
+  MoreVertical
+} from 'lucide-react'
 import { UserTable } from '../../components/admin/UserTable'
 import { UserFilters } from '../../components/admin/UserFilters'
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton'
@@ -144,12 +144,12 @@ export function AdminUsersPage() {
             onClick={() => setShowFilters(!showFilters)}
             className="btn btn-secondary flex items-center"
           >
-            <FunnelIcon className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4 mr-2" />
             Filters
           </button>
           
           <button className="btn btn-primary flex items-center">
-            <UserPlusIcon className="h-4 w-4 mr-2" />
+            <UserPlus className="h-4 w-4 mr-2" />
             Add User
           </button>
         </div>
@@ -157,7 +157,7 @@ export function AdminUsersPage() {
 
       {/* Search */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search users by name or email..."

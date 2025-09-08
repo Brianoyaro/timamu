@@ -3,15 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  StarIcon,
-  CalendarIcon,
-  ChatBubbleLeftRightIcon,
-  GlobeAltIcon,
-  AcademicCapIcon,
-  ClockIcon,
+  Star,
+  Calendar,
+  MessageCircle,
+  Globe,
+  GraduationCap,
+  Clock,
   ArrowLeftIcon
-} from '@heroicons/react/24/outline'
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+} from 'lucide-react'
+import { Star as StarSolid } from 'lucide-react'
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
 import { userService } from '../services/userService'
 import { analyticsService } from '../services/analyticsService'
@@ -161,9 +161,9 @@ export function TherapistDetailPage() {
                 {[...Array(5)].map((_, i) => (
                   <span key={i}>
                     {i < Math.floor(therapist.rating) ? (
-                      <StarIconSolid className="h-4 w-4 text-yellow-400" />
+                      <StarSolid className="h-4 w-4 text-yellow-400" />
                     ) : (
-                      <StarIcon className="h-4 w-4 text-gray-300" />
+                      <Star className="h-4 w-4 text-gray-300" />
                     )}
                   </span>
                 ))}
@@ -199,7 +199,7 @@ export function TherapistDetailPage() {
               onClick={handleBookSession}
               className="btn btn-primary flex items-center justify-center"
             >
-              <CalendarIcon className="h-4 w-4 mr-2" />
+              <Calendar className="h-4 w-4 mr-2" />
               Book Session
             </button>
             
@@ -207,7 +207,7 @@ export function TherapistDetailPage() {
               onClick={handleSendMessage}
               className="btn btn-secondary flex items-center justify-center"
             >
-              <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+              <MessageCircle className="h-4 w-4 mr-2" />
               Send Message
             </button>
           </div>
@@ -244,7 +244,7 @@ export function TherapistDetailPage() {
       {/* Languages */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <GlobeAltIcon className="h-5 w-5 mr-2" />
+          <Globe className="h-5 w-5 mr-2" />
           Languages
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -262,7 +262,7 @@ export function TherapistDetailPage() {
       {/* Education & Credentials */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <AcademicCapIcon className="h-5 w-5 mr-2" />
+          <GraduationCap className="h-5 w-5 mr-2" />
           Education & Credentials
         </h2>
         
@@ -298,7 +298,7 @@ export function TherapistDetailPage() {
       {/* Availability preview */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <ClockIcon className="h-5 w-5 mr-2" />
+          <Clock className="h-5 w-5 mr-2" />
           Availability
         </h2>
         

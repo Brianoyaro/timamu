@@ -9,5 +9,16 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    include: ['simple-peer']
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+    },
+  },
 })
 

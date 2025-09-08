@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   ChevronLeftIcon,
-  PaperAirplaneIcon,
-  PaperClipIcon,
-  FaceSmileIcon
-} from '@heroicons/react/24/outline'
+  Send,
+  Paperclip,
+  Smile
+} from 'lucide-react'
 import { MessageBubble } from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
 import { LoadingSkeleton } from '../common/LoadingSkeleton'
@@ -180,7 +180,7 @@ export function ChatWindow({ thread, onNewMessage, onBack }) {
                   className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   aria-label="Attach file"
                 >
-                  <PaperClipIcon className="h-4 w-4" />
+                  <Paperclip className="h-4 w-4" />
                 </button>
                 
                 <button
@@ -188,7 +188,7 @@ export function ChatWindow({ thread, onNewMessage, onBack }) {
                   className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   aria-label="Add emoji"
                 >
-                  <FaceSmileIcon className="h-4 w-4" />
+                  <Smile className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function ChatWindow({ thread, onNewMessage, onBack }) {
             className="btn btn-primary p-2 disabled:opacity-50"
             aria-label={t('messaging.sendMessage')}
           >
-            <PaperAirplaneIcon className="h-4 w-4" />
+            <Send className="h-4 w-4" />
           </button>
         </form>
 

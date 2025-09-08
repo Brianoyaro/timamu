@@ -2,12 +2,12 @@ import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
-  StarIcon,
-  CalendarIcon,
-  ChatBubbleLeftRightIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline'
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+  Star,
+  Calendar,
+  MessageCircle,
+  Globe
+} from 'lucide-react'
+import { Star as StarSolid } from 'lucide-react'
 
 export function TherapistCard({ therapist }) {
   const { t } = useTranslation()
@@ -55,9 +55,9 @@ export function TherapistCard({ therapist }) {
           {[...Array(5)].map((_, i) => (
             <span key={i}>
               {i < Math.floor(therapist.rating) ? (
-                <StarIconSolid className="h-4 w-4 text-yellow-400" />
+                <StarSolid className="h-4 w-4 text-yellow-400" />
               ) : (
-                <StarIcon className="h-4 w-4 text-gray-300" />
+                <Star className="h-4 w-4 text-gray-300" />
               )}
             </span>
           ))}
@@ -91,7 +91,7 @@ export function TherapistCard({ therapist }) {
       {/* Languages */}
       {therapist.languages && therapist.languages.length > 0 && (
         <div className="flex items-center justify-center space-x-1 mb-4 text-sm text-gray-600 dark:text-gray-400">
-          <GlobeAltIcon className="h-4 w-4" />
+          <Globe className="h-4 w-4" />
           <span>{therapist.languages.join(', ')}</span>
         </div>
       )}
@@ -112,7 +112,7 @@ export function TherapistCard({ therapist }) {
           onClick={handleBookSession}
           className="flex-1 btn btn-primary flex items-center justify-center"
         >
-          <CalendarIcon className="h-4 w-4 mr-2" />
+          <Calendar className="h-4 w-4 mr-2" />
           Book
         </button>
         
@@ -120,7 +120,7 @@ export function TherapistCard({ therapist }) {
           onClick={handleSendMessage}
           className="btn btn-secondary flex items-center justify-center"
         >
-          <ChatBubbleLeftRightIcon className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4" />
         </button>
       </div>
     </div>

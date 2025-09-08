@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  EllipsisVerticalIcon,
-  PencilIcon,
-  TrashIcon,
-  ShieldCheckIcon
-} from '@heroicons/react/24/outline'
+  MoreVertical,
+  Edit,
+  Trash2,
+  ShieldCheck
+} from 'lucide-react'
 import { Menu } from '@headlessui/react'
 import { format } from 'date-fns'
 import clsx from 'clsx'
@@ -182,7 +182,7 @@ export function UserTable({ users, onUserUpdate }) {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Menu as="div" className="relative inline-block text-left">
                     <Menu.Button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <EllipsisVerticalIcon className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </Menu.Button>
                     
                     <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
@@ -195,7 +195,7 @@ export function UserTable({ users, onUserUpdate }) {
                                 active ? 'bg-gray-100 dark:bg-gray-700' : ''
                               )}
                             >
-                              <PencilIcon className="mr-3 h-4 w-4" />
+                              <Edit className="mr-3 h-4 w-4" />
                               Edit User
                             </button>
                           )}
@@ -209,7 +209,7 @@ export function UserTable({ users, onUserUpdate }) {
                                 active ? 'bg-gray-100 dark:bg-gray-700' : ''
                               )}
                             >
-                              <ShieldCheckIcon className="mr-3 h-4 w-4" />
+                              <ShieldCheck className="mr-3 h-4 w-4" />
                               Manage Roles
                             </button>
                           )}
@@ -223,7 +223,7 @@ export function UserTable({ users, onUserUpdate }) {
                                 active ? 'bg-gray-100 dark:bg-gray-700' : ''
                               )}
                             >
-                              <TrashIcon className="mr-3 h-4 w-4" />
+                              <Trash2 className="mr-3 h-4 w-4" />
                               Delete User
                             </button>
                           )}

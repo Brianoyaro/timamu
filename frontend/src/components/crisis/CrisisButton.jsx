@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  ExclamationTriangleIcon,
-  PhoneIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline'
+  AlertTriangle,
+  Phone,
+  X
+} from 'lucide-react'
 import { analyticsService } from '../../services/analyticsService'
 import crisisConfig from '../../config/crisis.json'
 
@@ -35,7 +35,7 @@ export function CrisisButton() {
         className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
         aria-label={t('crisis.needHelp')}
       >
-        <ExclamationTriangleIcon className="h-6 w-6" />
+        <AlertTriangle className="h-6 w-6" />
       </motion.button>
 
       {/* Crisis resources modal */}
@@ -62,13 +62,13 @@ export function CrisisButton() {
                     onClick={() => setIsModalOpen(false)}
                     className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <XMarkIcon className="h-6 w-6" />
+                    <X className="h-6 w-6" />
                   </button>
                 </div>
 
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
-                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
                   
                   <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
@@ -97,7 +97,7 @@ export function CrisisButton() {
                         className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
                         <div className="flex items-center space-x-3">
-                          <PhoneIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                          <Phone className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                           <div className="text-left">
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
                               {hotline.name}

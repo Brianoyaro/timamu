@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { 
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  MicrophoneIcon,
-  VideoCameraIcon
-} from '@heroicons/react/24/outline'
+  CheckCircle,
+  AlertTriangle,
+  Mic,
+  Video
+} from 'lucide-react'
 
 export function DeviceCheckModal({ onComplete, onCancel }) {
   const { t } = useTranslation()
@@ -131,15 +131,15 @@ export function DeviceCheckModal({ onComplete, onCancel }) {
             </div>
             
             <div className="flex items-center space-x-2">
-              <VideoCameraIcon className="h-5 w-5 text-gray-500" />
+              <Video className="h-5 w-5 text-gray-500" />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {t('video.testCamera')}
               </span>
               {cameraStatus === 'success' && (
-                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-green-500" />
               )}
               {cameraStatus === 'error' && (
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
+                <AlertTriangle className="h-5 w-5 text-red-500" />
               )}
             </div>
             
@@ -154,7 +154,7 @@ export function DeviceCheckModal({ onComplete, onCancel }) {
         {currentStep === 'microphone' && (
           <div className="space-y-4">
             <div className="text-center py-8">
-              <MicrophoneIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <Mic className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 {microphoneStatus === 'testing' 
                   ? 'Say something to test your microphone...'
@@ -164,7 +164,7 @@ export function DeviceCheckModal({ onComplete, onCancel }) {
             </div>
             
             <div className="flex items-center justify-center space-x-2">
-              <MicrophoneIcon className="h-5 w-5 text-gray-500" />
+              <Mic className="h-5 w-5 text-gray-500" />
               {microphoneStatus === 'testing' && (
                 <div className="flex space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -177,10 +177,10 @@ export function DeviceCheckModal({ onComplete, onCancel }) {
                 </div>
               )}
               {microphoneStatus === 'success' && (
-                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-green-500" />
               )}
               {microphoneStatus === 'error' && (
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
+                <AlertTriangle className="h-5 w-5 text-red-500" />
               )}
             </div>
             
@@ -194,7 +194,7 @@ export function DeviceCheckModal({ onComplete, onCancel }) {
 
         {currentStep === 'complete' && (
           <div className="text-center space-y-4">
-            <CheckCircleIcon className="mx-auto h-12 w-12 text-green-500" />
+            <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Device check complete!
             </h3>

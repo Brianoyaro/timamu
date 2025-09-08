@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  ShieldCheckIcon,
-  DocumentArrowDownIcon,
-  TrashIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
+  ShieldCheck,
+  Download,
+  Trash2,
+  AlertTriangle
+} from 'lucide-react'
 import { userService } from '../../services/userService'
 
 export function PrivacySettings() {
@@ -52,7 +52,7 @@ export function PrivacySettings() {
       {/* Data Export */}
       <div className="card p-6">
         <div className="flex items-center mb-4">
-          <DocumentArrowDownIcon className="h-6 w-6 text-gray-400 mr-3" />
+          <Download className="h-6 w-6 text-gray-400 mr-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Data Export
           </h3>
@@ -68,7 +68,7 @@ export function PrivacySettings() {
           disabled={isExporting}
           className="btn btn-secondary flex items-center"
         >
-          <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+          <Download className="h-4 w-4 mr-2" />
           {isExporting ? 'Preparing Export...' : 'Download My Data'}
         </button>
       </div>
@@ -76,7 +76,7 @@ export function PrivacySettings() {
       {/* Privacy Controls */}
       <div className="card p-6">
         <div className="flex items-center mb-4">
-          <ShieldCheckIcon className="h-6 w-6 text-gray-400 mr-3" />
+          <ShieldCheck className="h-6 w-6 text-gray-400 mr-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Privacy Controls
           </h3>
@@ -133,7 +133,7 @@ export function PrivacySettings() {
       {/* Account Deletion */}
       <div className="card p-6 border-red-200 dark:border-red-700">
         <div className="flex items-center mb-4">
-          <TrashIcon className="h-6 w-6 text-red-500 mr-3" />
+          <Trash2 className="h-6 w-6 text-red-500 mr-3" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Delete Account
           </h3>
@@ -141,7 +141,7 @@ export function PrivacySettings() {
 
         <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
             <div>
               <h4 className="text-sm font-medium text-red-800 dark:text-red-200">
                 Warning: This action cannot be undone

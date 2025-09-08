@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Plus, Trash2 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
 const daysOfWeek = [
@@ -88,7 +88,7 @@ export function AvailabilityManager() {
                   onClick={() => addTimeSlot(day)}
                   className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 flex items-center"
                 >
-                  <PlusIcon className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4 mr-1" />
                   Add slot
                 </button>
               </div>
@@ -128,7 +128,7 @@ export function AvailabilityManager() {
                         className="p-2 text-red-600 hover:text-red-700 dark:text-red-400"
                         aria-label="Remove time slot"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   ))}

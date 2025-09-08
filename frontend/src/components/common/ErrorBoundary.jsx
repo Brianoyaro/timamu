@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { AlertTriangle } from 'lucide-react'
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -28,7 +28,7 @@ export class ErrorBoundary extends React.Component {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
           <div className="max-w-md w-full text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
             
             <h1 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
