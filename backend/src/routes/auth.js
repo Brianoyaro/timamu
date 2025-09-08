@@ -154,9 +154,13 @@ router.post('/login',
   auditLog('user.login'),
   async (req, res) => {
     try {
+      console.log('=== LOGIN ATTEMPT ===')
       const { email, password } = req.body
+      console.log('Login attempt for email:', email)
+      console.log('Request body keys:', Object.keys(req.body))
 
       // Find user
+      console.log('Looking up user in database...')
       const user = await prisma.user.findUnique({
         where: { email },
         include: {
@@ -165,16 +169,29 @@ router.post('/login',
       })
 
       if (!user) {
+        console.log('No user found with email:', email)
         return res.status(401).json({
           success: false,
           error: 'Invalid credentials'
         })
       }
 
+      console.log('User found:', {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        status: user.status,
+        roles: user.roles,
+        tenantId: user.tenantId
+      })
+
       // Check password
+      console.log('Checking password for user:', email)
       const isValidPassword = await comparePassword(password, user.password)
+      console.log('Password validation result:', isValidPassword)
       
       if (!isValidPassword) {
+        console.log('Invalid password for user:', email)
         return res.status(401).json({
           success: false,
           error: 'Invalid credentials'
@@ -182,7 +199,9 @@ router.post('/login',
       }
 
       // Check user status
+      console.log('User status check:', user.status)
       if (user.status !== 'active') {
+        console.log('User account not active:', email, 'Status:', user.status)
         return res.status(401).json({
           success: false,
           error: 'Account is not active'
@@ -190,9 +209,12 @@ router.post('/login',
       }
 
       // Generate tokens
+      console.log('Generating tokens for user:', user.id)
       const { accessToken, refreshToken } = generateTokens(user.id)
+      console.log('Tokens generated successfully')
 
       // Update user with refresh token and last login
+      console.log('Updating user with refresh token and last login')
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -200,9 +222,11 @@ router.post('/login',
           lastLoginAt: new Date()
         }
       })
+      console.log('User updated successfully')
 
       // Remove sensitive data
       const { password: _, refreshToken: __, ...userResponse } = user
+      console.log('Preparing response for user:', userResponse.id)
 
       res.json({
         success: true,
@@ -212,7 +236,9 @@ router.post('/login',
           refreshToken
         }
       })
+      console.log('=== LOGIN SUCCESSFUL ===')
     } catch (error) {
+      console.error('=== LOGIN ERROR ===')
       console.error('Sign in error:', error)
       res.status(500).json({
         success: false,
