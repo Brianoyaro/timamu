@@ -11,9 +11,21 @@ export default function App() {
   const { isInitialized } = useAuthStore()
 
   React.useEffect(() => {
+    // Initialize theme first
+    useThemeStore.getState().initializeTheme()
+    
     // Initialize auth on app start
     useAuthStore.getState().initialize()
   }, [])
+
+  // Apply theme class to document root
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDarkMode])
 
   if (!isInitialized) {
     return (
@@ -24,12 +36,12 @@ export default function App() {
   }
 
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
+    <div>
       <ErrorBoundary>
         <Router>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+          <div className="min-h-screen bg-gray-50 dark:bg-grey-900 text-gray-900 dark:text-white transition-colors">
             {/* remove the debuging line below */}
-            {/* <h1>Hello World</h1> */}
+            {/* <h1 className='text-4xl font-bold'>Hello World</h1> */}
             <AppRoutes />
             <Toaster />
           </div>
