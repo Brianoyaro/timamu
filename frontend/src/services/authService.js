@@ -39,17 +39,26 @@ export const authService = {
     return response.data
   },
 
-  async validateToken() {
+  async validateToken(token) {
     try {
-      const response = await apiService.get('/auth/me')
+      // Pass the token explicitly in the headers for validation
+      const response = await apiService.request('/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       return response.data?.user
     } catch (error) {
       throw new Error('Invalid token')
     }
   },
 
-  async refreshToken() {
-    const { refreshToken } = useAuthStore.getState()
+  async refreshToken(refreshToken) {
+    // If no refreshToken provided, get it from store
+    if (!refreshToken) {
+      const { refreshToken: storeRefreshToken } = useAuthStore.getState()
+      refreshToken = storeRefreshToken
+    }
     
     if (!refreshToken) {
       throw new Error('No refresh token available')

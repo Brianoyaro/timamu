@@ -79,6 +79,35 @@ export class ApiService {
       const response = await fetch(url, config)
       
       if (!response.ok) {
+        // If we get 401 and have a refresh token, try to refresh
+        if (response.status === 401 && !endpoint.includes('/auth/')) {
+          const { refreshToken, refreshAccessToken } = await import('../store/authStore').then(m => m.useAuthStore.getState())
+          
+          if (refreshToken && refreshAccessToken) {
+            console.log('🔄 ApiService: Access token expired, attempting refresh...')
+            const refreshSuccess = await refreshAccessToken()
+            
+            if (refreshSuccess) {
+              console.log('✅ ApiService: Token refreshed, retrying request...')
+              // Retry the request with new token
+              const newHeaders = this.getRequiredHeaders(endpoint)
+              const retryConfig = {
+                ...config,
+                headers: {
+                  ...newHeaders,
+                  ...options.headers
+                }
+              }
+              
+              const retryResponse = await fetch(url, retryConfig)
+              if (retryResponse.ok) {
+                const data = await retryResponse.json()
+                return data
+              }
+            }
+          }
+        }
+        
         const errorData = await response.json().catch(() => null)
         throw new ApiError(
           errorData?.message || `HTTP ${response.status}`,

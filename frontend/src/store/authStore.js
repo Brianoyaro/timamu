@@ -4,7 +4,8 @@ import { useToastStore } from './toastStore'
 
 export const useAuthStore = create((set, get) => ({
   user: null,
-  token: null,
+  token: null, // This will be the access token (short-lived, in memory)
+  refreshToken: null, // This will be the refresh token (long-lived, can be persisted)
   isAuthenticated: false,
   isLoading: false,
   isInitialized: false,
@@ -12,27 +13,31 @@ export const useAuthStore = create((set, get) => ({
   initialize: async () => {
     console.log('🚀 AuthStore: Starting initialization...')
     try {
-      const token = localStorage.getItem('mindlink_token')
-      console.log('📝 AuthStore: Token from localStorage:', token ? 'Found' : 'Not found')
+      const refreshToken = localStorage.getItem('mindlink_refresh_token')
+      console.log('📝 AuthStore: Refresh token from localStorage:', refreshToken ? 'Found' : 'Not found')
       
-      if (token) {
-        console.log('🔍 AuthStore: Validating token...')
-        const user = await authService.validateToken(token)
-        console.log('✅ AuthStore: Token validation successful:', user?.name || user?.email)
+      if (refreshToken) {
+        console.log('� AuthStore: Refreshing access token...')
+        const response = await authService.refreshToken(refreshToken)
+        console.log('✅ AuthStore: Token refresh successful:', response.user?.name || response.user?.email)
         
         set({ 
-          user, 
-          token, 
+          user: response.user, 
+          token: response.accessToken, // Store access token in memory
+          refreshToken: response.refreshToken, // Store refresh token in state
           isAuthenticated: true, 
           isInitialized: true 
         })
+        
+        // Update localStorage with new refresh token
+        localStorage.setItem('mindlink_refresh_token', response.refreshToken)
       } else {
-        console.log('✅ AuthStore: No token found, setting initialized to true')
+        console.log('✅ AuthStore: No refresh token found, setting initialized to true')
         set({ isInitialized: true })
       }
     } catch (error) {
       console.error('❌ AuthStore: Initialization error:', error.message)
-      localStorage.removeItem('mindlink_token')
+      localStorage.removeItem('mindlink_refresh_token')
       set({ isInitialized: true })
     }
     console.log('🏁 AuthStore: Initialization complete')
@@ -42,23 +47,20 @@ export const useAuthStore = create((set, get) => ({
     console.log('🔐 AuthStore: Starting sign in for:', email)
     set({ isLoading: true })
     try {
-      const { user, token } = await authService.signIn(email, password)
+      const { user, accessToken, refreshToken } = await authService.signIn(email, password)
       console.log('✅ AuthStore: Sign in successful for:', user?.name || user?.email)
       
-      // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // The backend returns {user, accessToken, refreshToken}
-      // This is a potential bug. We should instead store the refresh token because it expires after 7 days unlike access token which expires after 15 minutes.
-
       if (rememberMe) {
-        console.log('💾 AuthStore: Storing token in localStorage (remember me)')
-        localStorage.setItem('mindlink_token', token)
+        console.log('💾 AuthStore: Storing refresh token in localStorage (remember me)')
+        localStorage.setItem('mindlink_refresh_token', refreshToken)
       } else {
-        console.log('🚫 AuthStore: Not storing token (remember me = false)')
+        console.log('🚫 AuthStore: Not storing refresh token (remember me = false)')
       }
       
       set({ 
         user, 
-        token, 
+        token: accessToken, // Store access token in memory
+        refreshToken, // Store refresh token in state
         isAuthenticated: true, 
         isLoading: false 
       })
@@ -84,20 +86,16 @@ export const useAuthStore = create((set, get) => ({
     console.log('📝 AuthStore: Starting sign up for:', userData.email)
     set({ isLoading: true })
     try {
-      // Backend expects userData = { email, password, name, role, tenantId[optional] } = req.body
-      // Frontend sends userData = { email, password, name, role }. I don't see any bug here so far.
-
-      const { user, token } = await authService.signUp(userData)
+      const { user, accessToken, refreshToken } = await authService.signUp(userData)
       console.log('✅ AuthStore: Sign up successful for:', user?.name || user?.email)
       
-      // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // The backend returns {user, accessToken, refreshToken}
-      // This is a potential bug. We should instead store the refresh token because it expires after 7 days unlike access token which expires after 15 minutes.
-      // Also, we are not setting any token in localStorage here. I think it is the best practice because we should only add it to localStorage when the user selects 'remember me'.
+      // Don't store refresh token in localStorage for sign up - user didn't choose "remember me"
+      // They can sign in again with "remember me" if they want persistence
       
       set({ 
         user, 
-        token, 
+        token: accessToken, // Store access token in memory
+        refreshToken, // Store refresh token in state  
         isAuthenticated: true, 
         isLoading: false 
       })
@@ -128,10 +126,11 @@ export const useAuthStore = create((set, get) => ({
       console.error('❌ AuthStore: Sign out API error:', error)
     } finally {
       console.log('🧹 AuthStore: Cleaning up local storage and state')
-      localStorage.removeItem('mindlink_token')
+      localStorage.removeItem('mindlink_refresh_token') // Remove refresh token
       set({ 
         user: null, 
         token: null, 
+        refreshToken: null,
         isAuthenticated: false 
       })
     }
@@ -185,5 +184,60 @@ export const useAuthStore = create((set, get) => ({
   hasAnyRole: (roles) => {
     const { user } = get()
     return roles.some(role => user?.roles?.includes(role)) || false
+  },
+
+  // Automatically refresh access token when it's about to expire
+  refreshAccessToken: async () => {
+    const { refreshToken } = get()
+    
+    if (!refreshToken) {
+      console.log('❌ AuthStore: No refresh token available for refresh')
+      return false
+    }
+
+    try {
+      console.log('🔄 AuthStore: Refreshing access token...')
+      const { user, accessToken, refreshToken: newRefreshToken } = await authService.refreshToken(refreshToken)
+      
+      set({ 
+        user, 
+        token: accessToken,
+        refreshToken: newRefreshToken
+      })
+      
+      console.log('✅ AuthStore: Access token refreshed successfully')
+      return true
+    } catch (error) {
+      console.error('❌ AuthStore: Token refresh failed:', error.message)
+      // Clear invalid tokens and redirect to login
+      localStorage.removeItem('mindlink_refresh_token')
+      set({ 
+        user: null, 
+        token: null, 
+        refreshToken: null,
+        isAuthenticated: false 
+      })
+      return false
+    }
   }
 }))
+
+// Auto-refresh token setup - refresh every 10 minutes (access token expires in 15 minutes)
+let refreshInterval = null;
+
+// Set up auto-refresh when store is created
+// Subscribe to the store directly, not as a hook
+const authStore = useAuthStore;
+
+authStore.subscribe((state) => {
+  if (state.isAuthenticated && state.refreshToken && !refreshInterval) {
+    console.log('🔄 Setting up automatic token refresh every 10 minutes')
+    refreshInterval = setInterval(() => {
+      authStore.getState().refreshAccessToken()
+    }, 10 * 60 * 1000) // 10 minutes
+  } else if (!state.isAuthenticated && refreshInterval) {
+    console.log('🛑 Clearing automatic token refresh')
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+})
