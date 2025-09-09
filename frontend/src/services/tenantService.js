@@ -3,7 +3,7 @@ import { apiService } from './apiService'
 export const tenantService = {
   async getTenants() {
     const response = await apiService.get('/tenants')
-    return response.data || { tenants: [], pagination: {} }
+    return response.data?.tenants || []
   },
 
   async getTenant(tenantId) {

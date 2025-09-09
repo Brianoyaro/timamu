@@ -10,26 +10,37 @@ import { useAuthStore } from '../store/authStore'
 export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // TODO
-  // It is 'default' i.e /t/default after login. I smell a potential bug because it is a string and the database returns id.!!!!!!!!!!!!
-  // unless it also checks therapist.domain. [default therapist for new users = domain: 'default.mindlink.com']
-
-  // Possible solution: if it is tenantId = 'default', let's use the saved user's tenantId
-  // Another different approach is that loadTenants() only returns tenants pertaining to the registered user unless they are admin user. I don't support this fully.
-  
   const { tenantId } = useParams()
   const { loadTenants, setCurrentTenant, tenants } = useTenantStore()
   const { user } = useAuthStore()
 
   useEffect(() => {
     // Load tenants and set current tenant
-    loadTenants().then(() => {
-      const tenant = tenants.find(t => t.id === tenantId) // const tenant = tenants.find(t => t.id === user.tenantId)
-      if (tenant) {
-        setCurrentTenant(tenant)
+    const loadAndSetTenant = async () => {
+      try {
+        await loadTenants()
+        // Get fresh tenants from the store after loading
+        const currentTenants = useTenantStore.getState().tenants
+        
+        // Handle 'default' tenant case or find tenant by ID
+        let targetTenant
+        if (tenantId === 'default') {
+          // If tenantId is 'default', use user's tenantId or first available tenant
+          targetTenant = currentTenants.find(t => t.id === user?.tenantId) || currentTenants[0]
+        } else {
+          targetTenant = currentTenants.find(t => t.id === tenantId)
+        }
+        
+        if (targetTenant) {
+          setCurrentTenant(targetTenant)
+        }
+      } catch (error) {
+        console.error('Failed to load and set tenant:', error)
       }
-    })
-  }, [tenantId, loadTenants, tenants, setCurrentTenant])
+    }
+
+    loadAndSetTenant()
+  }, [tenantId, user?.tenantId])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

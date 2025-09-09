@@ -1,7 +1,0 @@
-node_modules/
-
-# Dependencies
-package-lock.json
-
-# Environment variables
-.env

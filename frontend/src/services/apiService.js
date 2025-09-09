@@ -13,17 +13,64 @@ class ApiError extends Error {
 }
 
 export class ApiService {
+  // Determine which headers are needed based on the endpoint
+  getRequiredHeaders(endpoint) {
+    const { token, isAuthenticated } = useAuthStore.getState()
+    const tenantHeaders = useTenantStore.getState().getTenantHeaders()
+    
+    const headers = {
+      'Content-Type': 'application/json'
+    }
+    
+    // Endpoints that don't require authentication
+    const noAuthEndpoints = [
+      '/auth/login',
+      '/auth/register', 
+      '/auth/forgot-password',
+      '/auth/reset-password',
+      '/auth/refresh'
+    ]
+    
+    // Endpoints that require both auth and tenant headers
+    const tenantRequiredEndpoints = [
+      '/users',
+      '/sessions', 
+      '/appointments',
+      '/threads', // messaging
+      '/assessments',
+      '/mood-checkins'
+    ]
+    
+    const needsAuth = !noAuthEndpoints.some(path => endpoint.startsWith(path))
+    const needsTenant = tenantRequiredEndpoints.some(path => endpoint.startsWith(path))
+    
+    // Check if required auth is available
+    if (needsAuth) {
+      if (!token || !isAuthenticated) {
+        throw new ApiError('Authentication required but no valid token available', 401)
+      }
+      headers.Authorization = `Bearer ${token}`
+    }
+    
+    // Check if required tenant header is available
+    if (needsTenant) {
+      if (!tenantHeaders['x-tenant-id']) {
+        throw new ApiError('Tenant context required but no tenant selected', 400)
+      }
+      Object.assign(headers, tenantHeaders)
+    }
+    
+    return headers
+  }
+
   async request(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`
-    const { token } = useAuthStore.getState()
-    const tenantHeaders = useTenantStore.getState().getTenantHeaders()
+    const requiredHeaders = this.getRequiredHeaders(endpoint)
     
     const config = {
       headers: {
-        'Content-Type': 'application/json',
-        ...tenantHeaders,
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers
+        ...requiredHeaders,
+        ...options.headers // Allow override of headers
       },
       ...options
     }
@@ -93,8 +140,7 @@ export class ApiService {
 
   // File upload with progress support
   async uploadFile(endpoint, file, onProgress = null) {
-    const { token } = useAuthStore.getState()
-    const tenantHeaders = useTenantStore.getState().getTenantHeaders()
+    const requiredHeaders = this.getRequiredHeaders(endpoint)
     
     const formData = new FormData()
     formData.append('file', file)
@@ -128,12 +174,11 @@ export class ApiService {
 
       xhr.open('POST', `${BASE_URL}${endpoint}`)
       
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      }
-      
-      Object.entries(tenantHeaders).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value)
+      // Set headers (excluding Content-Type for FormData)
+      Object.entries(requiredHeaders).forEach(([key, value]) => {
+        if (key !== 'Content-Type') { // FormData sets its own Content-Type
+          xhr.setRequestHeader(key, value)
+        }
       })
 
       xhr.send(formData)
