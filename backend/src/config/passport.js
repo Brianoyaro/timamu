@@ -64,6 +64,7 @@ passport.use(new GoogleStrategy({
           name,
           googleId,
           avatar,
+          password: null, // OAuth users don't have passwords
           roles: ['patient'], // Default role for OAuth users
           tenantId: tenant.id,
           status: 'active',
