@@ -167,7 +167,7 @@ export class ApiService {
     return this.request(endpoint, { method: 'DELETE' })
   }
 
-  // File upload with progress support
+  // File upload with progress support. WE MAY WANT TO DISPLAY IMAGE UPLOAD PROGRES TO OUR USERS.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   async uploadFile(endpoint, file, onProgress = null) {
     const requiredHeaders = this.getRequiredHeaders(endpoint)
     

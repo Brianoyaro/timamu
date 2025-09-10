@@ -10,6 +10,7 @@ import { SignInPage } from '../pages/auth/SignInPage'
 import { SignUpPage } from '../pages/auth/SignUpPage'
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage'
+import { OAuthSuccessPage } from '../pages/auth/OAuthSuccessPage'
 
 // Main pages
 import { DashboardPage } from '../pages/DashboardPage'
@@ -42,6 +43,9 @@ export function AppRoutes() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
       </Route>
+
+      {/* OAuth success route (outside AuthLayout to avoid conflicts) */}
+      <Route path="/auth/oauth-success" element={<OAuthSuccessPage />} />
 
       {/* Tenant-aware protected routes */}
       <Route path="/t/:tenantId" element={

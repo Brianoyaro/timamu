@@ -3,11 +3,15 @@ import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
+import session from 'express-session'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 // Load environment variables
 dotenv.config()
+
+// Import passport configuration
+import passport from './config/passport.js'
 
 // Import routes
 import authRoutes from './routes/auth.js'
@@ -18,6 +22,8 @@ import appointmentRoutes from './routes/appointments.js'
 import messagingRoutes from './routes/messaging.js'
 import assessmentRoutes from './routes/assessments.js'
 import adminRoutes from './routes/admin.js'
+import emailRoutes from './routes/email.js'
+import webhookRoutes from './routes/webhooks.js'
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js'
@@ -65,6 +71,21 @@ const limiter = rateLimit({
 
 app.use(limiter)
 
+// Session configuration for OAuth
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}))
+
+// Passport middleware
+app.use(passport.initialize())
+app.use(passport.session())
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
@@ -98,6 +119,8 @@ app.use('/api/v1/threads', messagingRoutes)
 app.use('/api/v1/assessments', assessmentRoutes)
 app.use('/api/v1/mood-checkins', assessmentRoutes)
 app.use('/api/v1/admin', adminRoutes)
+app.use('/api/v1/email', emailRoutes)
+app.use('/api/v1/webhooks', webhookRoutes)
 
 // Error handling middleware
 app.use(notFound)

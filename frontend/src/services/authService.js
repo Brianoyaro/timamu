@@ -57,7 +57,7 @@ export const authService = {
     // If no refreshToken provided, get it from store
     if (!refreshToken) {
       const { refreshToken: storeRefreshToken } = useAuthStore.getState()
-      refreshToken = storeRefreshToken
+      refreshToken = storeRefreshToken // I DON'T GET THIS. WHAT IS storeRefreshToken???????
     }
     
     if (!refreshToken) {

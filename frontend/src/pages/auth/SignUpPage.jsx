@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { analyticsService } from '../../services/analyticsService'
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton'
 
 const schema = yup.object({
   name: yup.string().required('Name is required'),
@@ -219,6 +220,25 @@ export function SignUpPage() {
           {isLoading ? 'Creating account...' : t('auth.signUp')}
         </button>
       </form>
+
+      {/* Divider */}
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              Or continue with
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Google Sign In */}
+      <div className="mt-6">
+        <GoogleSignInButton disabled={isLoading} />
+      </div>
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">

@@ -8,6 +8,7 @@ import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/email.js'
 import { validateRequest, sanitizeInput } from '../middleware/validation.js'
 import { authenticate } from '../middleware/auth.js'
 import { auditLog } from '../middleware/auditLog.js'
+import passport from '../config/passport.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -456,6 +457,40 @@ router.post('/reset-password',
         success: false,
         error: 'Password reset failed'
       })
+    }
+  }
+)
+
+// Google OAuth routes
+router.get('/google', 
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
+  })
+)
+
+router.get('/google/callback', 
+  passport.authenticate('google', { session: false }),
+  async (req, res) => {
+    try {
+      const user = req.user
+      
+      if (!user) {
+        return res.redirect(`${process.env.FRONTEND_URL}/auth/sign-in?error=oauth_failed`)
+      }
+
+      // Create a temporary token to pass user data to frontend
+      const tempToken = Buffer.from(JSON.stringify({
+        user: user,
+        accessToken: user.accessToken,
+        refreshToken: user.refreshToken,
+        timestamp: Date.now()
+      })).toString('base64')
+
+      // Redirect to frontend with success data
+      res.redirect(`${process.env.FRONTEND_URL}/auth/oauth-success?token=${tempToken}`)
+    } catch (error) {
+      console.error('Google OAuth callback error:', error)
+      res.redirect(`${process.env.FRONTEND_URL}/auth/sign-in?error=oauth_failed`)
     }
   }
 )
