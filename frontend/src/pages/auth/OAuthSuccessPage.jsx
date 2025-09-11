@@ -6,42 +6,55 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner'
 export function OAuthSuccessPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { initialize } = useAuthStore()
+  const { setOAuthUser } = useAuthStore()
   const [status, setStatus] = useState('processing')
 
   useEffect(() => {
     const handleOAuthSuccess = async () => {
       try {
         const token = searchParams.get('token')
+        console.log('OAuth token received:', token ? 'Present' : 'Missing')
         
         if (!token) {
+          console.error('No token parameter found in URL')
           setStatus('error')
           return
         }
 
         // Decode the temporary token
+        console.log('Attempting to decode token...')
         const decoded = JSON.parse(atob(token))
+        console.log('Token decoded successfully:', {
+          hasUser: !!decoded.user,
+          hasAccessToken: !!decoded.accessToken,
+          hasRefreshToken: !!decoded.refreshToken,
+          timestamp: decoded.timestamp
+        })
+        
         const { user, accessToken, refreshToken, timestamp } = decoded
 
         // Check if token is not too old (5 minutes max)
-        if (Date.now() - timestamp > 5 * 60 * 1000) {
+        const tokenAge = Date.now() - timestamp
+        console.log('Token age in minutes:', tokenAge / (60 * 1000))
+        
+        if (tokenAge > 5 * 60 * 1000) {
+          console.error('Token expired, age:', tokenAge)
           setStatus('expired')
           return
         }
 
-        // Store tokens and user data
-        const authStore = useAuthStore.getState()
-        
-        // Store refresh token in localStorage for persistence
-        localStorage.setItem('mindlink_refresh_token', refreshToken)
-        
-        // Update auth store
-        authStore.user = user
-        authStore.token = accessToken
-        authStore.refreshToken = refreshToken
-        authStore.isAuthenticated = true
-        authStore.isInitialized = true
+        // Validate required data
+        if (!user || !accessToken || !refreshToken) {
+          console.error('Missing required data in token:', { user: !!user, accessToken: !!accessToken, refreshToken: !!refreshToken })
+          setStatus('error')
+          return
+        }
 
+        console.log('Setting OAuth user in store...')
+        // Store tokens and user data using proper store method
+        setOAuthUser(user, accessToken, refreshToken)
+
+        console.log('OAuth success handling completed')
         setStatus('success')
         
         // Redirect to dashboard after a brief delay
@@ -51,12 +64,17 @@ export function OAuthSuccessPage() {
 
       } catch (error) {
         console.error('OAuth success handling error:', error)
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          searchParams: searchParams.toString()
+        })
         setStatus('error')
       }
     }
 
     handleOAuthSuccess()
-  }, [searchParams, navigate])
+  }, [searchParams, navigate, setOAuthUser])
 
   const getMessage = () => {
     switch (status) {

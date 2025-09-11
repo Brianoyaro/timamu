@@ -176,6 +176,26 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  setOAuthUser: (user, accessToken, refreshToken) => {
+    console.log('🔐 AuthStore: Setting OAuth user:', user?.name || user?.email)
+    
+    // Store refresh token in localStorage for persistence
+    localStorage.setItem('mindlink_refresh_token', refreshToken)
+    
+    set({ 
+      user, 
+      token: accessToken,
+      refreshToken,
+      isAuthenticated: true,
+      isInitialized: true
+    })
+    
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: `Welcome back, ${user.name}!`
+    })
+  },
+
   hasRole: (role) => {
     const { user } = get()
     return user?.roles?.includes(role) || false
