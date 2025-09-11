@@ -288,7 +288,7 @@ const templates = {
 const createTransporter = () => {
   // Primary SMTP configuration (fallback)
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
@@ -304,7 +304,7 @@ const createTransporter = () => {
 
   // Gmail fallback
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
@@ -316,7 +316,7 @@ const createTransporter = () => {
   // Development fallback (Ethereal)
   if (process.env.NODE_ENV !== 'production') {
     console.warn('⚠️  No email configuration found, using test account')
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       auth: {
