@@ -8,17 +8,24 @@ import { PatientStatsCard } from './PatientStatsCard'
 import { RecentActivityCard } from './RecentActivityCard'
 import { WelcomeCard } from './WelcomeCard'
 import { useAuthStore } from '../../store/authStore'
+import { useTenantStore } from '../../store/tenantStore'
 import { schedulingService } from '../../services/schedulingService'
 import { assessmentService } from '../../services/assessmentService'
 
 export function PatientDashboard() {
   const { t } = useTranslation()
   const { user } = useAuthStore()
+  const { currentTenant } = useTenantStore()
   const [isNewUser, setIsNewUser] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const checkUserActivity = async () => {
+      // Wait for tenant to be loaded before making API calls
+      if (!currentTenant) {
+        return
+      }
+
       try {
         // Check if user has any appointments or assessments
         const [appointmentsResponse, moodCheckins] = await Promise.all([
@@ -41,7 +48,7 @@ export function PatientDashboard() {
     }
 
     checkUserActivity()
-  }, [])
+  }, [currentTenant]) // Add currentTenant as dependency
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -58,7 +65,7 @@ export function PatientDashboard() {
     visible: { y: 0, opacity: 1 }
   }
 
-  if (loading) {
+  if (loading || !currentTenant) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>

@@ -39,6 +39,7 @@ export class ApiService {
       '/threads', // messaging
       '/assessments',
       '/mood-checkins'
+      // Note: /tenants endpoint should NOT require tenant headers since it's used to load tenants
     ]
     
     const needsAuth = !noAuthEndpoints.some(path => endpoint.startsWith(path))

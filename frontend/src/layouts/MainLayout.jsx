@@ -15,6 +15,11 @@ export function MainLayout() {
   const { user } = useAuthStore()
 
   useEffect(() => {
+    // Simple approach: if user has tenantId, set it directly
+    if (user?.tenantId && !useTenantStore.getState().currentTenant) {
+      setCurrentTenant({ id: user.tenantId, name: 'Current Tenant' })
+    }
+    
     // Load tenants and set current tenant
     const loadAndSetTenant = async () => {
       try {
@@ -24,11 +29,16 @@ export function MainLayout() {
         
         // Handle 'default' tenant case or find tenant by ID
         let targetTenant
-        if (tenantId === 'default') {
-          // If tenantId is 'default', use user's tenantId or first available tenant
+        if (tenantId === 'default' || !tenantId) {
+          // If tenantId is 'default' or missing, use user's tenantId or first available tenant
           targetTenant = currentTenants.find(t => t.id === user?.tenantId) || currentTenants[0]
         } else {
           targetTenant = currentTenants.find(t => t.id === tenantId)
+        }
+        
+        // Fallback: if no tenant found by ID, use user's tenant or first available
+        if (!targetTenant && currentTenants.length > 0) {
+          targetTenant = currentTenants.find(t => t.id === user?.tenantId) || currentTenants[0]
         }
         
         if (targetTenant) {
@@ -36,11 +46,18 @@ export function MainLayout() {
         }
       } catch (error) {
         console.error('Failed to load and set tenant:', error)
+        // If tenant loading fails, try to set from user's tenantId
+        if (user?.tenantId) {
+          setCurrentTenant({ id: user.tenantId, name: 'Default' })
+        }
       }
     }
 
-    loadAndSetTenant()
-  }, [tenantId, user?.tenantId])
+    // Only load tenants if user is authenticated
+    if (user) {
+      loadAndSetTenant()
+    }
+  }, [tenantId, user?.tenantId, user, loadTenants, setCurrentTenant])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

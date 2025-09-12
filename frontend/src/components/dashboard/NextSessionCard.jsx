@@ -11,17 +11,24 @@ import {
 import { format, isToday, isTomorrow } from 'date-fns'
 import { schedulingService } from '../../services/schedulingService'
 import { useToastStore } from '../../store/toastStore'
+import { useTenantStore } from '../../store/tenantStore'
 
 export function NextSessionCard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { tenantId } = useParams()
   const { addToast } = useToastStore()
+  const { currentTenant } = useTenantStore()
   const [nextSession, setNextSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchNextSession = async () => {
+      // Wait for tenant to be loaded before making API calls
+      if (!currentTenant) {
+        return
+      }
+
       try {
         setLoading(true)
         // Get upcoming appointments for the current user
@@ -52,7 +59,7 @@ export function NextSessionCard() {
     }
 
     fetchNextSession()
-  }, [addToast])
+  }, [addToast, currentTenant]) // Add currentTenant as dependency
 
   const formatSessionDate = (date) => {
     const sessionDate = new Date(date)

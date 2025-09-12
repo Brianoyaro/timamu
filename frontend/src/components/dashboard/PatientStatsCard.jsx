@@ -11,10 +11,12 @@ import { motion } from 'framer-motion'
 import { schedulingService } from '../../services/schedulingService'
 import { assessmentService } from '../../services/assessmentService'
 import { useToastStore } from '../../store/toastStore'
+import { useTenantStore } from '../../store/tenantStore'
 
 export function PatientStatsCard() {
   const { t } = useTranslation()
   const { addToast } = useToastStore()
+  const { currentTenant } = useTenantStore()
   const [stats, setStats] = useState({
     totalSessions: 0,
     weeklyMoodAverage: 0,
@@ -25,6 +27,11 @@ export function PatientStatsCard() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      // Wait for tenant to be loaded before making API calls
+      if (!currentTenant) {
+        return
+      }
+
       try {
         setLoading(true)
         
@@ -74,7 +81,7 @@ export function PatientStatsCard() {
     }
 
     fetchStats()
-  }, [addToast])
+  }, [addToast, currentTenant]) // Add currentTenant as dependency
 
   if (loading) {
     return (

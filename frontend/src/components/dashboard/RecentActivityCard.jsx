@@ -10,15 +10,22 @@ import {
 import { format } from 'date-fns'
 import { activityService } from '../../services/activityService'
 import { useToastStore } from '../../store/toastStore'
+import { useTenantStore } from '../../store/tenantStore'
 
 export function RecentActivityCard() {
   const { t } = useTranslation()
   const { addToast } = useToastStore()
+  const { currentTenant } = useTenantStore()
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchRecentActivity = async () => {
+      // Wait for tenant to be loaded before making API calls
+      if (!currentTenant) {
+        return
+      }
+
       try {
         setLoading(true)
         const activities = await activityService.getRecentActivity(6)
@@ -35,7 +42,7 @@ export function RecentActivityCard() {
     }
 
     fetchRecentActivity()
-  }, [addToast])
+  }, [addToast, currentTenant]) // Add currentTenant as dependency
 
   const getIcon = (iconType) => {
     switch (iconType) {
