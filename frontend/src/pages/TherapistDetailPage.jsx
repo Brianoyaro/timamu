@@ -20,13 +20,13 @@ import { TherapistAvailabilityCalendar } from '../components/therapists/Therapis
 import { userService } from '../services/userService'
 import { schedulingService } from '../services/schedulingService'
 import { analyticsService } from '../services/analyticsService'
-import { useToast } from '../store/toastStore'
+import { useToastStore } from '../store/toastStore'
 
 export function TherapistDetailPage() {
   const { therapistId, tenantId } = useParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { showToast } = useToast()
+  const { addToast } = useToastStore()
   const [therapist, setTherapist] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
@@ -45,7 +45,11 @@ export function TherapistDetailPage() {
       setTherapist(therapistData)
     } catch (error) {
       console.error('Failed to load therapist:', error)
-      showToast('Failed to load therapist details', 'error')
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load therapist details'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -66,12 +70,20 @@ export function TherapistDetailPage() {
         notes: ''
       })
       
-      showToast('Session booked successfully!', 'success')
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Session booked successfully!'
+      })
       analyticsService.track('appointment_booked', { therapistId, datetime: selectedSlot })
       navigate(`/t/${tenantId}/schedule`)
     } catch (error) {
       console.error('Failed to book session:', error)
-      showToast('Failed to book session. Please try again.', 'error')
+      addToast({
+        type: 'error',
+        title: 'Booking Failed',
+        message: 'Failed to book session. Please try again.'
+      })
     } finally {
       setIsBooking(false)
     }
