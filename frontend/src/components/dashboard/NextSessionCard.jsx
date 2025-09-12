@@ -1,40 +1,67 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
   Calendar, 
   Clock, 
-  MessageCircle
+  MessageCircle,
+  Video,
+  Loader2
 } from 'lucide-react'
-import { Video } from 'lucide-react'
 import { format, isToday, isTomorrow } from 'date-fns'
+import { schedulingService } from '../../services/schedulingService'
+import { useToastStore } from '../../store/toastStore'
 
 export function NextSessionCard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { tenantId } = useParams()
+  const { addToast } = useToastStore()
+  const [nextSession, setNextSession] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // MAKE A REAL API CALL HERE. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // Mock next session data - replace with real API call
-  const nextSession = {
-    id: '1',
-    therapist: {
-      name: 'Dr. Sarah Johnson',
-      avatar: 'https://images.pexels.com/photos/5327580/pexels-photo-5327580.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    datetime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-    duration: 60,
-    type: 'therapy',
-    status: 'confirmed'
-  }
+  useEffect(() => {
+    const fetchNextSession = async () => {
+      try {
+        setLoading(true)
+        // Get upcoming appointments for the current user
+        const today = new Date()
+        const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+        
+        const response = await schedulingService.getAppointments({
+          startDate: today.toISOString(),
+          endDate: nextMonth.toISOString(),
+          status: 'scheduled,confirmed',
+          limit: 1
+        })
+        
+        const upcomingAppointments = response.appointments || []
+        
+        if (upcomingAppointments.length > 0) {
+          setNextSession(upcomingAppointments[0])
+        }
+      } catch (error) {
+        console.error('Failed to fetch next session:', error)
+        addToast({
+          type: 'error',
+          message: 'Failed to load upcoming session'
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNextSession()
+  }, [addToast])
 
   const formatSessionDate = (date) => {
-    if (isToday(date)) {
-      return `Today at ${format(date, 'h:mm a')}`
-    } else if (isTomorrow(date)) {
-      return `Tomorrow at ${format(date, 'h:mm a')}`
+    const sessionDate = new Date(date)
+    if (isToday(sessionDate)) {
+      return `Today at ${format(sessionDate, 'h:mm a')}`
+    } else if (isTomorrow(sessionDate)) {
+      return `Tomorrow at ${format(sessionDate, 'h:mm a')}`
     } else {
-      return format(date, 'EEEE, MMM d at h:mm a')
+      return format(sessionDate, 'EEEE, MMM d at h:mm a')
     }
   }
 
@@ -43,7 +70,20 @@ export function NextSessionCard() {
   }
 
   const handleSendMessage = () => {
-    navigate(`/t/${tenantId}/messages/${nextSession.therapist.id}`)
+    navigate(`/t/${tenantId}/messages`)
+  }
+
+  if (loading) {
+    return (
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          {t('dashboard.nextSession')}
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </div>
+    )
   }
 
   if (!nextSession) {
@@ -76,14 +116,14 @@ export function NextSessionCard() {
 
       <div className="flex items-start space-x-4">
         <img
-          src={nextSession.therapist.avatar}
-          alt={nextSession.therapist.name}
+          src={nextSession.therapist?.avatar || '/default-avatar.png'}
+          alt={nextSession.therapist?.name || 'Therapist'}
           className="h-12 w-12 rounded-full object-cover"
         />
         
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-            {nextSession.therapist.name}
+            {nextSession.therapist?.name || 'Therapist'}
           </h3>
           
           <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -98,7 +138,11 @@ export function NextSessionCard() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            nextSession.status === 'confirmed' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+          }`}>
             {nextSession.status}
           </span>
         </div>

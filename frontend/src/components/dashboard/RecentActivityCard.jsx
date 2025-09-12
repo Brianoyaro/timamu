@@ -1,58 +1,69 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   Calendar,
   MessageCircle,
   FileText,
-  Heart
+  Heart,
+  Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { activityService } from '../../services/activityService'
+import { useToastStore } from '../../store/toastStore'
 
 export function RecentActivityCard() {
   const { t } = useTranslation()
+  const { addToast } = useToastStore()
+  const [recentActivity, setRecentActivity] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // MAKE A REAL API CALL HERE AND REPLACE THE NEXT COMMENT BELOW. Also, shelve out the view all messages. While at it, how can we get recent activity from the database seeing that we have no table for RecentActivities?  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  
-  // Mock recent activity data - replace with real API call
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'session',
-      icon: Calendar,
-      title: 'Session with Dr. Sarah Johnson',
-      description: 'Completed therapy session',
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      color: 'text-primary-600'
-    },
-    {
-      id: '2',
-      type: 'message',
-      icon: MessageCircle,
-      title: 'New message from Dr. Johnson',
-      description: 'Follow-up resources shared',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      color: 'text-therapeutic-600'
-    },
-    {
-      id: '3',
-      type: 'assessment',
-      icon: FileText,
-      title: 'PHQ-9 Assessment',
-      description: 'Score: 8 (Mild depression)',
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      color: 'text-yellow-600'
-    },
-    {
-      id: '4',
-      type: 'mood',
-      icon: Heart,
-      title: 'Mood Check-in',
-      description: 'Feeling good (4/5)',
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      color: 'text-green-600'
+  useEffect(() => {
+    const fetchRecentActivity = async () => {
+      try {
+        setLoading(true)
+        const activities = await activityService.getRecentActivity(6)
+        setRecentActivity(activities)
+      } catch (error) {
+        console.error('Failed to fetch recent activity:', error)
+        addToast({
+          type: 'error',
+          message: 'Failed to load recent activity'
+        })
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchRecentActivity()
+  }, [addToast])
+
+  const getIcon = (iconType) => {
+    switch (iconType) {
+      case 'calendar':
+        return Calendar
+      case 'message':
+        return MessageCircle
+      case 'fileText':
+        return FileText
+      case 'heart':
+        return Heart
+      default:
+        return FileText
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          {t('dashboard.recentActivity')}
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </div>
+    )
+  }
 
   if (recentActivity.length === 0) {
     return (
@@ -77,28 +88,31 @@ export function RecentActivityCard() {
       </h2>
 
       <div className="space-y-3">
-        {recentActivity.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <div className={`flex-shrink-0 ${activity.color}`}>
-              <activity.icon className="h-5 w-5" />
+        {recentActivity.map((activity) => {
+          const IconComponent = getIcon(activity.icon)
+          return (
+            <div
+              key={activity.id}
+              className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <div className={`flex-shrink-0 ${activity.color}`}>
+                <IconComponent className="h-5 w-5" />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {activity.title}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {activity.description}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  {format(activity.timestamp, 'MMM d, yyyy')}
+                </p>
+              </div>
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {activity.title}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {activity.description}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                {format(activity.timestamp, 'MMM d, yyyy')}
-              </p>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="mt-4 text-center">

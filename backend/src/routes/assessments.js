@@ -333,25 +333,19 @@ router.post('/mood-checkins',
   sanitizeInput,
   [
     body('mood').isInt({ min: 1, max: 5 }),
-    body('notes').optional().trim(),
-    body('patientId').optional().isUUID()
+    body('notes').optional().trim()
   ],
   validateRequest,
   auditLog('mood_checkin.submitted'),
   async (req, res) => {
     try {
-      const { mood, notes, patientId } = req.body // INSTEAD OF SUBMITTING patientId, WHAT IF WE USE req.user.id WHICH IN TURN MEANS THAT WE ONLY SEND mood AND notes? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      const { mood, notes } = req.body
 
-      // Determine patient ID
-      const targetPatientId = patientId || req.user.id
-
-      // Check authorization
-      // THIS CHECK IS A LOGICAL ERROR BECAUSE IT EXCLUDES PATIENTS FROM SUBMITTNG MOODCHECKINS AND ALLOWS ADMINS WHO ARE THERAPISTS. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // if (!req.user.roles.includes('patient')) // THIS IS CORRECT ACCORDING TO ME.
-      if (targetPatientId !== req.user.id && !req.user.roles.includes('therapist') && !req.user.roles.includes('admin')) {
+      // Only allow patients to submit their own mood check-ins
+      if (!req.user.roles.includes('patient')) {
         return res.status(403).json({
           success: false,
-          error: 'Not authorized to submit mood check-in for this patient'
+          error: 'Only patients can submit mood check-ins'
         })
       }
 
@@ -359,8 +353,8 @@ router.post('/mood-checkins',
         data: {
           mood,
           notes,
-          patientId: targetPatientId,
-          tenantId: req.tenantId // IS THIS EVEN VALID? OR, SHOULD WE INSTEAD  USE req.user.tenantId? !!!!!!!!!!!!!!!!!!
+          patientId: req.user.id,
+          tenantId: req.user.tenantId
         }
       })
 

@@ -20,22 +20,21 @@ export const assessmentService = {
   },
 
   async getMoodCheckins(startDate, endDate) {
-    const response = await apiService.get('/mood-checkins', {
-      startDate: startDate,
-      endDate: endDate
-    })
+    const params = {}
+    if (startDate) params.startDate = startDate
+    if (endDate) params.endDate = endDate
+    
+    const response = await apiService.get('/assessments/mood-checkins', params)
     return response.data?.checkins || []
   },
 
   async submitMoodCheckin(moodData) {
-    const response = await apiService.post('/mood-checkins', moodData)
+    const response = await apiService.post('/assessments/mood-checkins', {
+      mood: moodData.mood,
+      notes: moodData.notes || ''
+    })
     return response.data?.checkin
   },
-
-  // async submitMoodCheckin(moodData, notes) {
-  //   const response = await apiService.post('/mood-checkins', { moodData, notes})
-  //   return response.data?.checkin
-  // },
 
   async getAssessmentTemplates() {
     const response = await apiService.get('/assessment-templates')
