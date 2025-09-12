@@ -12,11 +12,27 @@ export const userService = {
   },
 
   async getTherapists(filters = {}) {
-    const response = await apiService.get('/users', { 
-      role: 'therapist',
-      ...filters 
-    })
-    return response.data || { users: [], pagination: {} }
+    const params = { role: 'therapist', status: 'active' }
+    
+    // Add filters to the request
+    if (filters.specializations && filters.specializations.length > 0) {
+      params.specializations = filters.specializations.join(',')
+    }
+    
+    if (filters.languages && filters.languages.length > 0) {
+      params.languages = filters.languages.join(',')
+    }
+    
+    if (filters.rating && filters.rating > 0) {
+      params.minRating = filters.rating
+    }
+    
+    if (filters.search) {
+      params.search = filters.search
+    }
+
+    const response = await apiService.get('/users', params)
+    return response.data?.users || []
   },
 
   async getTherapist(therapistId) {

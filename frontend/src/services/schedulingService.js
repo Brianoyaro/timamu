@@ -66,5 +66,40 @@ export const schedulingService = {
       datetime: newDateTime
     })
     return response.data?.appointment
+  },
+
+  async getTherapistAvailability(therapistId, startDate, endDate) {
+    const params = {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    }
+    
+    const response = await apiService.get(`/appointments/therapists/${therapistId}/availability`, params)
+    return response.data?.availability || []
+  },
+
+  async checkSlotAvailability(therapistId, datetime) {
+    const response = await apiService.get(`/appointments/therapists/${therapistId}/availability/check`, {
+      datetime: datetime.toISOString()
+    })
+    return response.data?.isAvailable || false
+  },
+
+  async bookAppointment(appointmentData) {
+    const response = await apiService.post('/appointments', {
+      ...appointmentData,
+      datetime: appointmentData.datetime.toISOString()
+    })
+    return response.data?.appointment
+  },
+
+  async getTherapistSchedule(therapistId, date = null) {
+    const params = {}
+    if (date) {
+      params.date = date instanceof Date ? date.toISOString().split('T')[0] : date
+    }
+    
+    const response = await apiService.get(`/appointments/therapists/${therapistId}/schedule`, params)
+    return response.data?.schedule || []
   }
 }

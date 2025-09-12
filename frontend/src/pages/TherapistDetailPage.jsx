@@ -9,19 +9,29 @@ import {
   Globe,
   GraduationCap,
   Clock,
-  ArrowLeftIcon
+  ArrowLeft,
+  Video,
+  MapPin,
+  Shield,
+  Award
 } from 'lucide-react'
-import { Star as StarSolid } from 'lucide-react'
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
+import { TherapistAvailabilityCalendar } from '../components/therapists/TherapistAvailabilityCalendar'
 import { userService } from '../services/userService'
+import { schedulingService } from '../services/schedulingService'
 import { analyticsService } from '../services/analyticsService'
+import { useToast } from '../store/toastStore'
 
 export function TherapistDetailPage() {
   const { therapistId, tenantId } = useParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [therapist, setTherapist] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedSlot, setSelectedSlot] = useState(null)
+  const [showBookingForm, setShowBookingForm] = useState(false)
+  const [isBooking, setIsBooking] = useState(false)
 
   useEffect(() => {
     loadTherapist()
@@ -30,65 +40,93 @@ export function TherapistDetailPage() {
 
   const loadTherapist = async () => {
     try {
-      // Mock therapist data - replace with real API call
-      const mockTherapist = {
-        id: therapistId,
-        name: 'Dr. Sarah Johnson',
-        title: 'Licensed Clinical Social Worker',
-        avatar: 'https://images.pexels.com/photos/5327580/pexels-photo-5327580.jpeg?auto=compress&cs=tinysrgb&w=300',
-        rating: 4.8,
-        reviewCount: 127,
-        specializations: ['Anxiety', 'Depression', 'PTSD', 'Cognitive Behavioral Therapy'],
-        languages: ['English', 'Spanish'],
-        bio: 'Dr. Johnson is a licensed clinical social worker with over 10 years of experience in mental health treatment. She specializes in evidence-based therapies for anxiety, depression, and trauma. Her approach combines cognitive-behavioral techniques with mindfulness practices to help clients develop effective coping strategies.',
-        education: [
-          'Ph.D. in Clinical Psychology, University of California',
-          'M.S.W. in Clinical Social Work, Columbia University',
-          'B.A. in Psychology, Stanford University'
-        ],
-        licenses: [
-          'Licensed Clinical Social Worker (LCSW) - California',
-          'Licensed Professional Counselor (LPC) - New York'
-        ],
-        experience: '10+ years',
-        sessionRate: '$120/session',
-        nextAvailable: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        isAvailable: true,
-        responseTime: '< 2 hours',
-        sessionCount: 1250
-      }
-      
-      setTherapist(mockTherapist)
+      setIsLoading(true)
+      const therapistData = await userService.getTherapist(therapistId)
+      setTherapist(therapistData)
     } catch (error) {
       console.error('Failed to load therapist:', error)
+      showToast('Failed to load therapist details', 'error')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleBookSession = () => {
-    navigate(`/t/${tenantId}/schedule?therapist=${therapistId}`)
-    analyticsService.trackAppointmentBooked(null, therapistId)
+  const handleBookSession = async () => {
+    if (!selectedSlot) {
+      setShowBookingForm(true)
+      return
+    }
+
+    try {
+      setIsBooking(true)
+      await schedulingService.bookAppointment({
+        therapistId,
+        datetime: selectedSlot,
+        type: 'therapy',
+        notes: ''
+      })
+      
+      showToast('Session booked successfully!', 'success')
+      analyticsService.track('appointment_booked', { therapistId, datetime: selectedSlot })
+      navigate(`/t/${tenantId}/schedule`)
+    } catch (error) {
+      console.error('Failed to book session:', error)
+      showToast('Failed to book session. Please try again.', 'error')
+    } finally {
+      setIsBooking(false)
+    }
   }
 
   const handleSendMessage = () => {
-    navigate(`/t/${tenantId}/messages/${therapistId}`)
+    navigate(`/t/${tenantId}/messages?recipient=${therapistId}`)
+    analyticsService.track('therapist_message_initiated', { therapistId })
+  }
+
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={`h-4 w-4 ${
+          i < Math.floor(rating) 
+            ? 'text-yellow-400 fill-current' 
+            : 'text-gray-300'
+        }`}
+      />
+    ))
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <LoadingSkeleton className="h-8 w-48" />
+      <div className="container mx-auto px-4 py-8">
+        <LoadingSkeleton className="h-8 w-48 mb-6" />
         
-        <div className="card p-6">
-          <div className="flex flex-col md:flex-row md:space-x-6">
-            <LoadingSkeleton className="h-32 w-32 rounded-full mx-auto md:mx-0" />
-            <div className="flex-1 mt-4 md:mt-0 space-y-3">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+            <LoadingSkeleton className="h-32 w-32 rounded-full mx-auto lg:mx-0" />
+            <div className="flex-1 space-y-3">
+              <LoadingSkeleton className="h-8 w-64" />
               <LoadingSkeleton className="h-6 w-48" />
               <LoadingSkeleton className="h-4 w-32" />
-              <LoadingSkeleton className="h-4 w-64" />
-              <LoadingSkeleton className="h-10 w-32" />
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                {[...Array(4)].map((_, i) => (
+                  <LoadingSkeleton key={i} className="h-12" />
+                ))}
+              </div>
             </div>
+            <div className="space-y-3">
+              <LoadingSkeleton className="h-12 w-32" />
+              <LoadingSkeleton className="h-12 w-32" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <LoadingSkeleton className="h-40" />
+            <LoadingSkeleton className="h-32" />
+          </div>
+          <div className="space-y-6">
+            <LoadingSkeleton className="h-96" />
           </div>
         </div>
       </div>
@@ -97,230 +135,285 @@ export function TherapistDetailPage() {
 
   if (!therapist) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Therapist not found
-        </h1>
-        <button
-          onClick={() => navigate(`/t/${tenantId}/therapists`)}
-          className="mt-4 btn btn-primary"
-        >
-          Back to Therapists
-        </button>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            {t('pages.therapistDetail.notFound', 'Therapist not found')}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {t('pages.therapistDetail.notFoundDescription', 'The therapist you are looking for could not be found.')}
+          </p>
+          <button
+            onClick={() => navigate(`/t/${tenantId}/therapists`)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {t('common.backToTherapists', 'Back to Therapists')}
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
+    <div className="container mx-auto px-4 py-8">
       {/* Back button */}
-      <button
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
         onClick={() => navigate(`/t/${tenantId}/therapists`)}
-        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        className="flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-6"
       >
-        <ArrowLeftIcon className="h-4 w-4 mr-2" />
-        Back to Therapists
-      </button>
+        <ArrowLeft className="h-5 w-5 mr-2" />
+        {t('common.backToTherapists', 'Back to Therapists')}
+      </motion.button>
 
-      {/* Therapist header */}
-      <div className="card p-6">
-        <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
-          <div className="flex-shrink-0 text-center md:text-left">
-            <img
-              src={therapist.avatar}
-              alt={therapist.name}
-              className="h-32 w-32 rounded-full object-cover mx-auto md:mx-0"
-            />
-            
-            <div className="mt-4 flex items-center justify-center md:justify-start space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                therapist.isAvailable ? 'bg-green-500' : 'bg-gray-400'
+      {/* Therapist Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg border border-gray-200 p-6 mb-6"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+          {/* Avatar and Status */}
+          <div className="flex-shrink-0 text-center lg:text-left">
+            <div className="relative">
+              <img
+                src={therapist.avatar || '/api/placeholder/128/128'}
+                alt={therapist.name}
+                className="h-32 w-32 rounded-full object-cover mx-auto lg:mx-0 border-4 border-white shadow-lg"
+              />
+              <div className={`absolute bottom-2 right-2 w-6 h-6 rounded-full border-2 border-white ${
+                therapist.isOnline ? 'bg-green-500' : 'bg-gray-400'
               }`} />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {therapist.isAvailable ? 'Available' : 'Busy'}
-              </span>
             </div>
-          </div>
-
-          <div className="flex-1 mt-6 md:mt-0">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center md:text-left">
-              {therapist.name}
-            </h1>
             
-            <p className="text-lg text-gray-600 dark:text-gray-400 text-center md:text-left">
-              {therapist.title}
-            </p>
-
-            {/* Rating */}
-            <div className="flex items-center justify-center md:justify-start space-x-2 mt-2">
-              <div className="flex items-center space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i}>
-                    {i < Math.floor(therapist.rating) ? (
-                      <StarSolid className="h-4 w-4 text-yellow-400" />
-                    ) : (
-                      <Star className="h-4 w-4 text-gray-300" />
-                    )}
-                  </span>
-                ))}
-              </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {therapist.rating} ({therapist.reviewCount} reviews)
+            <div className="mt-4 flex items-center justify-center lg:justify-start gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                therapist.isOnline ? 'bg-green-500' : 'bg-gray-400'
+              }`} />
+              <span className="text-sm text-gray-600">
+                {therapist.isOnline ? t('common.online', 'Online') : t('common.offline', 'Offline')}
               </span>
             </div>
+          </div>
 
-            {/* Quick stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-              <div className="text-center md:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Experience</p>
-                <p className="font-medium text-gray-900 dark:text-white">{therapist.experience}</p>
+          {/* Main Info */}
+          <div className="flex-1">
+            <div className="text-center lg:text-left">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {therapist.name}
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-3">
+                {therapist.title || therapist.specializations?.[0]}
+              </p>
+
+              {/* Rating */}
+              <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
+                <div className="flex items-center">
+                  {renderStars(therapist.rating || 0)}
+                </div>
+                <span className="text-sm text-gray-600">
+                  {therapist.rating?.toFixed(1) || '0.0'} ({therapist.reviewCount || 0} reviews)
+                </span>
               </div>
-              <div className="text-center md:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Sessions</p>
-                <p className="font-medium text-gray-900 dark:text-white">{therapist.sessionCount}+</p>
-              </div>
-              <div className="text-center md:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Response Time</p>
-                <p className="font-medium text-gray-900 dark:text-white">{therapist.responseTime}</p>
-              </div>
-              <div className="text-center md:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Rate</p>
-                <p className="font-medium text-gray-900 dark:text-white">{therapist.sessionRate}</p>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-1">
+                    <Award className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm text-gray-500">{t('therapist.experience', 'Experience')}</span>
+                  </div>
+                  <p className="font-semibold text-gray-900">{therapist.yearsExperience || 0}+ years</p>
+                </div>
+                
+                <div className="text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-1">
+                    <Shield className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-gray-500">{t('therapist.sessions', 'Sessions')}</span>
+                  </div>
+                  <p className="font-semibold text-gray-900">{therapist.totalSessions || 0}+</p>
+                </div>
+                
+                <div className="text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm text-gray-500">{t('therapist.responseTime', 'Response')}</span>
+                  </div>
+                  <p className="font-semibold text-gray-900">{therapist.avgResponseTime || '< 1 hour'}</p>
+                </div>
+                
+                <div className="text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-1">
+                    <Video className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm text-gray-500">{t('therapist.rate', 'Rate')}</span>
+                  </div>
+                  <p className="font-semibold text-gray-900">${therapist.sessionRate || 120}/session</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 md:mt-0 md:ml-6 flex flex-col space-y-3">
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3 lg:w-48">
             <button
               onClick={handleBookSession}
-              className="btn btn-primary flex items-center justify-center"
+              disabled={isBooking}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              Book Session
+              <Calendar className="h-5 w-5" />
+              {isBooking ? t('common.booking', 'Booking...') : t('common.bookSession', 'Book Session')}
             </button>
             
             <button
               onClick={handleSendMessage}
-              className="btn btn-secondary flex items-center justify-center"
+              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
             >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Send Message
+              <MessageCircle className="h-5 w-5" />
+              {t('common.sendMessage', 'Send Message')}
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* About */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          About Dr. Johnson
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          {therapist.bio}
-        </p>
-      </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Details */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* About */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-lg border border-gray-200 p-6"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {t('therapist.about', 'About')} {therapist.name.split(' ')[0]}
+            </h2>
+            <p className="text-gray-600 leading-relaxed">
+              {therapist.bio || t('therapist.noBio', 'No biography available yet.')}
+            </p>
+          </motion.div>
 
-      {/* Specializations */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Specializations
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {therapist.specializations.map((spec) => (
-            <span
-              key={spec}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200"
+          {/* Specializations */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-lg border border-gray-200 p-6"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {t('therapist.specializations', 'Specializations')}
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {therapist.specializations?.map((spec, index) => (
+                <span
+                  key={index}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {spec}
+                </span>
+              )) || (
+                <p className="text-gray-500">{t('therapist.noSpecializations', 'No specializations listed.')}</p>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Languages & Approach */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white rounded-lg border border-gray-200 p-6"
             >
-              {spec}
-            </span>
-          ))}
-        </div>
-      </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-blue-600" />
+                {t('therapist.languages', 'Languages')}
+              </h3>
+              <div className="space-y-2">
+                {therapist.languages?.map((lang, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm mr-2"
+                  >
+                    {lang}
+                  </span>
+                )) || (
+                  <p className="text-gray-500">{t('therapist.noLanguages', 'English')}</p>
+                )}
+              </div>
+            </motion.div>
 
-      {/* Languages */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Globe className="h-5 w-5 mr-2" />
-          Languages
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {therapist.languages.map((lang) => (
-            <span
-              key={lang}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-therapeutic-100 text-therapeutic-800 dark:bg-therapeutic-900 dark:text-therapeutic-200"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-white rounded-lg border border-gray-200 p-6"
             >
-              {lang}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Education & Credentials */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <GraduationCap className="h-5 w-5 mr-2" />
-          Education & Credentials
-        </h2>
-        
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Education
-            </h3>
-            <ul className="space-y-1">
-              {therapist.education.map((edu, index) => (
-                <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                  • {edu}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Licenses
-            </h3>
-            <ul className="space-y-1">
-              {therapist.licenses.map((license, index) => (
-                <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                  • {license}
-                </li>
-              ))}
-            </ul>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-purple-600" />
+                {t('therapist.credentials', 'Credentials')}
+              </h3>
+              <div className="space-y-2">
+                {therapist.credentials?.map((cred, index) => (
+                  <div key={index} className="text-sm text-gray-600">
+                    • {cred}
+                  </div>
+                )) || (
+                  <p className="text-gray-500 text-sm">
+                    {t('therapist.noCredentials', 'Licensed Professional Counselor')}
+                  </p>
+                )}
+              </div>
+            </motion.div>
           </div>
         </div>
-      </div>
 
-      {/* Availability preview */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Clock className="h-5 w-5 mr-2" />
-          Availability
-        </h2>
-        
-        <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4">
-          <p className="text-green-800 dark:text-green-200">
-            <strong>Next available:</strong> {therapist.nextAvailable.toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit'
-            })}
-          </p>
+        {/* Right Column - Booking */}
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <TherapistAvailabilityCalendar
+              therapistId={therapistId}
+              onSlotSelect={setSelectedSlot}
+              selectedSlot={selectedSlot}
+            />
+          </motion.div>
+
+          {selectedSlot && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+            >
+              <h4 className="font-semibold text-blue-900 mb-2">
+                {t('booking.selectedTime', 'Selected Time')}
+              </h4>
+              <p className="text-blue-800 mb-4">
+                {selectedSlot.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
+              </p>
+              <button
+                onClick={handleBookSession}
+                disabled={isBooking}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isBooking ? t('common.booking', 'Booking...') : t('common.confirmBooking', 'Confirm Booking')}
+              </button>
+            </motion.div>
+          )}
         </div>
-
-        <button
-          onClick={handleBookSession}
-          className="w-full mt-4 btn btn-primary"
-        >
-          View Available Times
-        </button>
       </div>
-    </motion.div>
+    </div>
   )
 }

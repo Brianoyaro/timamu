@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Search, Filter } from 'lucide-react'
+import { Search, Users, Sparkles } from 'lucide-react'
 import { TherapistCard } from '../components/therapists/TherapistCard'
-import { TherapistFilters } from '../components/therapists/TherapistFilters'
+import { AdvancedTherapistSearch } from '../components/therapists/AdvancedTherapistSearch'
 import { EmptyState } from '../components/common/EmptyState'
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
 import { userService } from '../services/userService'
@@ -15,12 +15,13 @@ export function TherapistsPage() {
   const [filteredTherapists, setFilteredTherapists] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     specializations: [],
     languages: [],
     availability: 'any',
-    rating: 0
+    rating: 0,
+    priceRange: 'any',
+    sessionType: 'any'
   })
 
   useEffect(() => {
@@ -34,13 +35,19 @@ export function TherapistsPage() {
 
   const loadTherapists = async () => {
     try {
-      const data = await userService.getTherapists()
-      setTherapists(data)
+      setIsLoading(true)
+      const therapists = await userService.getTherapists()
+      setTherapists(therapists)
     } catch (error) {
       console.error('Failed to load therapists:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    analyticsService.track('therapist_search', { query })
   }
 
   const applyFilters = () => {
@@ -52,7 +59,8 @@ export function TherapistsPage() {
         therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         therapist.specializations?.some(spec => 
           spec.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        ) ||
+        therapist.bio?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
@@ -81,117 +89,133 @@ export function TherapistsPage() {
       )
     }
 
+    // Price range filter
+    if (filters.priceRange !== 'any') {
+      filtered = filtered.filter(therapist => {
+        if (!therapist.sessionRate) return false
+        
+        const rate = parseInt(therapist.sessionRate.replace(/[^0-9]/g, ''))
+        switch (filters.priceRange) {
+          case 'budget':
+            return rate < 100
+          case 'mid':
+            return rate >= 100 && rate <= 150
+          case 'premium':
+            return rate > 150
+          default:
+            return true
+        }
+      })
+    }
+
     setFilteredTherapists(filtered)
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <LoadingSkeleton className="h-8 w-48" />
-          <LoadingSkeleton className="h-10 w-32 mt-4 sm:mt-0" />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-6">
-              <LoadingSkeleton className="h-16 w-16 rounded-full mx-auto" />
-              <LoadingSkeleton className="h-4 w-32 mx-auto mt-4" />
-              <LoadingSkeleton className="h-3 w-24 mx-auto mt-2" />
-              <LoadingSkeleton className="h-10 w-full mt-4" />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t('navigation.therapists')}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-8"
+      >
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="relative">
+            <Users className="h-12 w-12 text-blue-600" />
+            <Sparkles className="h-5 w-5 text-yellow-500 absolute -top-1 -right-1" />
+          </div>
+        </div>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          {t('pages.therapists.title', 'Find Your Perfect Therapist')}
         </h1>
-        
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="mt-4 sm:mt-0 btn btn-secondary flex items-center"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
-        </button>
-      </div>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          {t('pages.therapists.subtitle', 'Connect with licensed professionals who understand your unique needs and can guide you on your mental health journey.')}
+        </p>
+      </motion.div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search therapists by name or specialization..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input pl-10"
+      {/* Search Component */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
+        <AdvancedTherapistSearch
+          onSearch={handleSearch}
+          onFilterChange={setFilters}
+          totalTherapists={therapists.length}
+          filteredCount={filteredTherapists.length}
         />
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-        >
-          <TherapistFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            onClear={() => setFilters({
-              specializations: [],
-              languages: [],
-              availability: 'any',
-              rating: 0
-            })}
-          />
-        </motion.div>
-      )}
+      </motion.div>
 
       {/* Results */}
-      {filteredTherapists.length === 0 ? (
-        <EmptyState
-          icon={Search}
-          title="No therapists found"
-          description="Try adjusting your search criteria or filters"
-          action={{
-            label: 'Clear filters',
-            onClick: () => {
-              setSearchQuery('')
-              setFilters({
-                specializations: [],
-                languages: [],
-                availability: 'any',
-                rating: 0
-              })
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, index) => (
+              <LoadingSkeleton key={index} className="h-80" />
+            ))}
+          </div>
+        ) : filteredTherapists.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title={searchQuery || Object.values(filters).some(f => f !== 'any' && f !== 0 && (!Array.isArray(f) || f.length > 0))
+              ? t('pages.therapists.noResults', 'No therapists found')
+              : t('pages.therapists.noTherapists', 'No therapists available')
             }
-          }}
-        />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredTherapists.map((therapist, index) => (
-            <motion.div
-              key={therapist.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <TherapistCard therapist={therapist} />
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+            description={searchQuery || Object.values(filters).some(f => f !== 'any' && f !== 0 && (!Array.isArray(f) || f.length > 0))
+              ? t('pages.therapists.noResultsDescription', 'Try adjusting your search criteria or filters')
+              : t('pages.therapists.noTherapistsDescription', 'Check back later for new therapists')
+            }
+            action={
+              (searchQuery || Object.values(filters).some(f => f !== 'any' && f !== 0 && (!Array.isArray(f) || f.length > 0))) && {
+                label: t('common.clearFilters', 'Clear filters'),
+                onClick: () => {
+                  setSearchQuery('')
+                  setFilters({
+                    specializations: [],
+                    languages: [],
+                    availability: 'any',
+                    rating: 0,
+                    priceRange: 'any',
+                    sessionType: 'any'
+                  })
+                }
+              }
+            }
+          />
+        ) : (
+          <>
+            {/* Results Summary */}
+            <div className="mb-6">
+              <p className="text-gray-600">
+                {t('pages.therapists.resultsCount', 
+                  `Showing ${filteredTherapists.length} of ${therapists.length} therapists`,
+                  { filtered: filteredTherapists.length, total: therapists.length }
+                )}
+              </p>
+            </div>
+
+            {/* Therapist Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTherapists.map((therapist, index) => (
+                <motion.div
+                  key={therapist.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <TherapistCard therapist={therapist} />
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
+      </motion.div>
     </div>
   )
 }

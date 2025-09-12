@@ -1,31 +1,75 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
   Star,
   Calendar,
   MessageCircle,
-  Globe
+  Globe,
+  Clock,
+  DollarSign
 } from 'lucide-react'
 import { Star as StarSolid } from 'lucide-react'
+import { schedulingService } from '../../services/schedulingService'
 
 export function TherapistCard({ therapist }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { tenantId } = useParams()
+  const [availabilityStatus, setAvailabilityStatus] = useState('checking')
+
+  useEffect(() => {
+    checkAvailability()
+  }, [therapist.id])
+
+  const checkAvailability = async () => {
+    try {
+      const today = new Date()
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      
+      const availability = await schedulingService.getAvailability(
+        therapist.id,
+        today.toISOString(),
+        nextWeek.toISOString()
+      )
+      
+      // Check if therapist has any availability in the next week
+      const hasAvailability = availability.availability && availability.availability.length > 0
+      setAvailabilityStatus(hasAvailability ? 'available' : 'busy')
+    } catch (error) {
+      console.error('Failed to check availability:', error)
+      setAvailabilityStatus('unknown')
+    }
+  }
 
   const handleViewProfile = () => {
     navigate(`/t/${tenantId}/therapists/${therapist.id}`)
   }
 
-  const handleBookSession = () => {
+  const handleBookSession = (e) => {
+    e.stopPropagation()
     navigate(`/t/${tenantId}/schedule?therapist=${therapist.id}`)
   }
 
   const handleSendMessage = (e) => {
     e.stopPropagation()
-    navigate(`/t/${tenantId}/messages/${therapist.id}`)
+    navigate(`/t/${tenantId}/messages`)
   }
+
+  const getAvailabilityDisplay = () => {
+    switch (availabilityStatus) {
+      case 'available':
+        return { text: 'Available this week', color: 'bg-green-500' }
+      case 'busy':
+        return { text: 'Next available: Ask therapist', color: 'bg-yellow-500' }
+      case 'checking':
+        return { text: 'Checking availability...', color: 'bg-gray-400' }
+      default:
+        return { text: 'Contact for availability', color: 'bg-gray-400' }
+    }
+  }
+
+  const availabilityInfo = getAvailabilityDisplay()
 
   return (
     <div 
@@ -96,13 +140,27 @@ export function TherapistCard({ therapist }) {
         </div>
       )}
 
+      {/* Session Rate */}
+      {therapist.sessionRate && (
+        <div className="flex items-center justify-center space-x-1 mb-3 text-sm text-gray-600 dark:text-gray-400">
+          <DollarSign className="h-4 w-4" />
+          <span>{therapist.sessionRate}</span>
+        </div>
+      )}
+
+      {/* Experience */}
+      {therapist.experience && (
+        <div className="flex items-center justify-center space-x-1 mb-3 text-sm text-gray-600 dark:text-gray-400">
+          <Clock className="h-4 w-4" />
+          <span>{therapist.experience}+ years experience</span>
+        </div>
+      )}
+
       {/* Availability indicator */}
       <div className="flex items-center justify-center space-x-2 mb-4">
-        <div className={`w-2 h-2 rounded-full ${
-          therapist.isAvailable ? 'bg-green-500' : 'bg-gray-400'
-        }`} />
+        <div className={`w-2 h-2 rounded-full ${availabilityInfo.color}`} />
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {therapist.isAvailable ? 'Available today' : 'Next available tomorrow'}
+          {availabilityInfo.text}
         </span>
       </div>
 
