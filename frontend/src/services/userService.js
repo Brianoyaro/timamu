@@ -31,6 +31,14 @@ export const userService = {
       params.search = filters.search
     }
 
+    if (filters.limit) {
+      params.limit = filters.limit
+    }
+
+    if (filters.available === true) {
+      params.available = 'true'
+    }
+
     const response = await apiService.get('/users', params)
     return response.data?.users || []
   },

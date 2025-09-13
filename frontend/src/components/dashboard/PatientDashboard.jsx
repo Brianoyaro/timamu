@@ -93,8 +93,8 @@ export function PatientDashboard() {
           <NextSessionCard />
         </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div variants={itemVariants}>
+        {/* Quick Actions - Takes right column */}
+        <motion.div variants={itemVariants} className="space-y-6">
           <QuickActionsCard />
         </motion.div>
 
