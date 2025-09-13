@@ -66,3 +66,6 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/
+
+
+error.txt

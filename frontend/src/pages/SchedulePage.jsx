@@ -6,6 +6,7 @@ import { CalendarView } from '../components/scheduling/CalendarView'
 import { AppointmentModal } from '../components/scheduling/AppointmentModal'
 import { AvailabilityManager } from '../components/scheduling/AvailabilityManager'
 import { useAuthStore } from '../store/authStore'
+import { useTenantStore } from '../store/tenantStore'
 import { schedulingService } from '../services/schedulingService'
 import { analyticsService } from '../services/analyticsService'
 
@@ -13,6 +14,7 @@ export function SchedulePage() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const { hasRole } = useAuthStore()
+  const { currentTenant } = useTenantStore()
   const [appointments, setAppointments] = useState([])
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -21,16 +23,24 @@ export function SchedulePage() {
   const selectedTherapistId = searchParams.get('therapist')
 
   useEffect(() => {
-    loadAppointments()
-    analyticsService.page('Schedule')
-  }, [])
+    if (currentTenant) {
+      loadAppointments()
+      analyticsService.page('Schedule')
+    }
+  }, [currentTenant])
 
   const loadAppointments = async () => {
+    if (!currentTenant) return
+    
     try {
-      const data = await schedulingService.getAppointments()
-      setAppointments(data)
+      setIsLoading(true)
+      const response = await schedulingService.getAppointments()
+      // Handle both direct array and wrapped response formats
+      const appointmentsData = Array.isArray(response) ? response : (response?.appointments || [])
+      setAppointments(appointmentsData)
     } catch (error) {
       console.error('Failed to load appointments:', error)
+      setAppointments([]) // Ensure appointments is always an array
     } finally {
       setIsLoading(false)
     }

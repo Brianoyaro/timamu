@@ -1,18 +1,32 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
-  ChevronLeftIcon, 
-  ChevronRightIcon,
+  ChevronLeft, 
+  ChevronRight,
   Calendar,
-  Clock
+  Clock,
+  Plus
 } from 'lucide-react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, 
-         isSameMonth, isToday, addMonths, subMonths } from 'date-fns'
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek,
+  eachDayOfInterval, 
+  isSameMonth, 
+  isToday, 
+  addMonths, 
+  subMonths,
+  isSameDay,
+  parseISO,
+  isValid
+} from 'date-fns'
 import { LoadingSkeleton } from '../common/LoadingSkeleton'
 import { EmptyState } from '../common/EmptyState'
 
 export function CalendarView({ 
-  appointments, 
+  appointments = [], 
   isLoading, 
   onAppointmentSelect,
   selectedTherapistId 
@@ -21,31 +35,65 @@ export function CalendarView({
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewType, setViewType] = useState('month') // month, week, day
 
+  // Generate calendar grid with proper week layout
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd })
+  const calendarStart = startOfWeek(monthStart) // Start from Sunday of the first week
+  const calendarEnd = endOfWeek(monthEnd) // End on Saturday of the last week
+  
+  // Get all days to display (including days from previous/next month to fill the grid)
+  const calendarDays = eachDayOfInterval({ 
+    start: calendarStart, 
+    end: calendarEnd 
+  })
 
   const getAppointmentsForDay = (day) => {
-    return appointments.filter(apt => 
-      format(new Date(apt.datetime), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
-    )
+    if (!Array.isArray(appointments)) {
+      console.warn('Appointments is not an array:', appointments)
+      return []
+    }
+    
+    return appointments.filter(apt => {
+      if (!apt?.datetime) return false
+      
+      try {
+        // Handle both string and Date objects
+        const aptDate = typeof apt.datetime === 'string' ? parseISO(apt.datetime) : apt.datetime
+        if (!isValid(aptDate)) return false
+        
+        return isSameDay(aptDate, day)
+      } catch (error) {
+        console.warn('Invalid appointment date:', apt.datetime)
+        return false
+      }
+    })
   }
 
   const navigateMonth = (direction) => {
     setCurrentDate(prev => direction === 'next' ? addMonths(prev, 1) : subMonths(prev, 1))
   }
 
+  const goToToday = () => {
+    setCurrentDate(new Date())
+  }
+
   if (isLoading) {
     return (
-      <div className="card p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <LoadingSkeleton className="h-8 w-32" />
+          <LoadingSkeleton className="h-8 w-40" />
           <LoadingSkeleton className="h-10 w-24" />
         </div>
         
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+            <LoadingSkeleton key={i} className="h-8" />
+          ))}
+        </div>
+        
         <div className="grid grid-cols-7 gap-2">
-          {[...Array(35)].map((_, i) => (
-            <LoadingSkeleton key={i} className="h-20" />
+          {[...Array(42)].map((_, i) => (
+            <LoadingSkeleton key={i} className="h-24" />
           ))}
         </div>
       </div>
@@ -53,101 +101,124 @@ export function CalendarView({
   }
 
   return (
-    <div className="card p-6">
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
       {/* Calendar header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             {format(currentDate, 'MMMM yyyy')}
           </h2>
           
           <div className="flex items-center space-x-1">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Previous month"
             >
-              <ChevronLeftIcon className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Next month"
             >
-              <ChevronRightIcon className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5 text-gray-600" />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <button
-            onClick={() => setCurrentDate(new Date())}
-            className="btn btn-secondary text-sm"
+            onClick={goToToday}
+            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Today
+          </button>
+          
+          <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Appointment
           </button>
         </div>
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+      {/* Day names header */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
           <div
             key={day}
-            className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+            className="p-3 text-center text-sm font-semibold text-gray-500 uppercase tracking-wide"
           >
-            {day}
+            {day.slice(0, 3)}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {monthDays.map((day) => {
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-2">
+        {calendarDays.map((day) => {
           const dayAppointments = getAppointmentsForDay(day)
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isDayToday = isToday(day)
+          const isPastDay = day < new Date().setHours(0, 0, 0, 0)
 
           return (
             <div
               key={day.toISOString()}
-              className={`min-h-[80px] p-1 border border-gray-200 dark:border-gray-600 rounded-lg ${
+              className={`min-h-[120px] p-2 border border-gray-200 rounded-lg transition-all hover:shadow-sm ${
                 isCurrentMonth 
-                  ? 'bg-white dark:bg-gray-800' 
-                  : 'bg-gray-50 dark:bg-gray-700'
+                  ? 'bg-white' 
+                  : 'bg-gray-50'
               } ${
-                isDayToday ? 'ring-2 ring-primary-500' : ''
+                isDayToday ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+              } ${
+                isPastDay && !isDayToday ? 'opacity-60' : ''
               }`}
             >
-              <div className={`text-sm font-medium text-center mb-1 ${
+              {/* Day number */}
+              <div className={`text-sm font-medium mb-2 ${
                 isDayToday 
-                  ? 'text-primary-600 dark:text-primary-400' 
+                  ? 'text-blue-600 bg-blue-100 w-6 h-6 rounded-full flex items-center justify-center mx-auto' 
                   : isCurrentMonth 
-                    ? 'text-gray-900 dark:text-white' 
-                    : 'text-gray-400 dark:text-gray-500'
+                    ? 'text-gray-900' 
+                    : 'text-gray-400'
               }`}>
                 {format(day, 'd')}
               </div>
               
+              {/* Appointments */}
               <div className="space-y-1">
-                {dayAppointments.slice(0, 2).map((apt) => (
-                  <button
-                    key={apt.id}
-                    onClick={() => onAppointmentSelect(apt)}
-                    className="w-full text-left p-1 rounded text-xs bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
-                  >
-                    <div className="truncate">
-                      {format(new Date(apt.datetime), 'HH:mm')}
-                    </div>
-                    <div className="truncate">
-                      {apt.therapist?.name || apt.patient?.name}
-                    </div>
-                  </button>
-                ))}
+                {dayAppointments.slice(0, 3).map((apt, index) => {
+                  const aptTime = typeof apt.datetime === 'string' ? parseISO(apt.datetime) : apt.datetime
+                  const timeStr = isValid(aptTime) ? format(aptTime, 'HH:mm') : 'Invalid time'
+                  
+                  return (
+                    <button
+                      key={apt.id || index}
+                      onClick={() => onAppointmentSelect(apt)}
+                      className="w-full text-left p-1.5 rounded-md text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors border border-blue-200"
+                    >
+                      <div className="font-medium truncate">
+                        {timeStr}
+                      </div>
+                      <div className="truncate text-blue-600">
+                        {apt.therapist?.name || apt.patient?.name || 'Appointment'}
+                      </div>
+                    </button>
+                  )
+                })}
                 
-                {dayAppointments.length > 2 && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    +{dayAppointments.length - 2} more
+                {dayAppointments.length > 3 && (
+                  <div className="text-xs text-gray-500 text-center py-1">
+                    +{dayAppointments.length - 3} more
                   </div>
+                )}
+                
+                {/* Add appointment button for current/future days */}
+                {!isPastDay && isCurrentMonth && (
+                  <button className="w-full text-center p-1 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                    <Plus className="h-3 w-3 mx-auto" />
+                  </button>
                 )}
               </div>
             </div>
@@ -155,13 +226,33 @@ export function CalendarView({
         })}
       </div>
 
+      {/* Legend */}
+      <div className="flex items-center justify-center space-x-6 mt-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
+          <span className="text-sm text-gray-600">Scheduled</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <span className="text-sm text-gray-600">Today</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
+          <span className="text-sm text-gray-600">Available</span>
+        </div>
+      </div>
+
       {/* Empty state for no appointments */}
       {appointments.length === 0 && (
-        <div className="mt-8">
+        <div className="mt-8 py-12">
           <EmptyState
             icon={Calendar}
             title="No appointments scheduled"
             description="Your calendar is empty. Book your first session to get started."
+            action={{
+              label: "Schedule Appointment",
+              onClick: () => console.log("Schedule new appointment")
+            }}
           />
         </div>
       )}
