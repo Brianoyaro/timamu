@@ -6,8 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ErrorBoundary } from 'react-error-boundary'
 
 // Layouts
-import { AppLayout } from '@/layouts/AppLayout'
-import { AuthLayout } from '@/layouts/AuthLayout'
+// import { AppLayout } from '@/layouts/AppLayout' // INVALID!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+import { AppLayout } from './components/AppLayout'
+// import { AuthLayout } from '@/layouts/AuthLayout' // INVALID!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+import { AuthLayout } from './components/AuthLayout'
 
 // Pages
 import { DashboardPage } from '@/pages/DashboardPage'
