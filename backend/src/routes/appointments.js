@@ -194,13 +194,14 @@ router.post('/',
     body('datetime').isISO8601(),
     body('duration').optional().isInt({ min: 15, max: 180 }),
     body('type').optional().isIn(['therapy', 'consultation', 'assessment']),
+    body('sessionType').optional().isIn(['video', 'phone', 'inPerson', 'chat']),
     body('notes').optional().trim()
   ],
   validateRequest,
   auditLog('appointment.created'),
   async (req, res) => {
     try {
-      const { patientId, therapistId, datetime, duration = 60, type = 'therapy', notes } = req.body
+      const { patientId, therapistId, datetime, duration = 60, type = 'therapy', sessionType = 'video', notes } = req.body
 
       // Verify participants belong to tenant
       const [patient, therapist] = await Promise.all([
@@ -285,6 +286,7 @@ router.post('/',
           datetime: appointmentStart,
           duration,
           type,
+          sessionType,
           notes,
           tenantId: req.tenantId,
           status: 'scheduled'
@@ -711,8 +713,41 @@ router.post('/:id/notifications',
         })
       }
 
-      // Generate video session link (mock for now)
-      const videoLink = `${process.env.FRONTEND_URL}/t/${req.tenantId}/sessions/${appointment.id}/video`
+      // Create session if this is a video/phone appointment and no session exists
+      let sessionId = null
+      if (['video', 'phone'].includes(appointment.sessionType)) {
+        try {
+          // Check if session already exists
+          const existingSession = await prisma.session.findFirst({
+            where: { appointmentId: appointment.id }
+          })
+
+          if (!existingSession) {
+            // Create new session
+            const session = await prisma.session.create({
+              data: {
+                patientId: appointment.patientId,
+                therapistId: appointment.therapistId,
+                startTime: appointment.datetime,
+                duration: appointment.duration,
+                type: 'therapy',
+                tenantId: req.tenantId,
+                appointmentId: appointment.id
+              }
+            })
+            sessionId = session.id
+          } else {
+            sessionId = existingSession.id
+          }
+        } catch (sessionError) {
+          console.warn('Failed to create session:', sessionError)
+        }
+      }
+
+      // Generate video session link with actual session ID
+      const videoLink = sessionId 
+        ? `${process.env.FRONTEND_URL}/t/${req.tenantId}/sessions/${sessionId}/video`
+        : `${process.env.FRONTEND_URL}/t/${req.tenantId}/appointments/${appointment.id}/join`
       
       const appointmentDate = new Date(appointment.datetime)
       const formattedDate = appointmentDate.toLocaleDateString('en-US', {

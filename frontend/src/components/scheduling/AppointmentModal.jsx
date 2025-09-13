@@ -23,6 +23,7 @@ import { useToastStore } from '../../store/toastStore'
 import { schedulingService } from '../../services/schedulingService'
 import { userService } from '../../services/userService'
 import { TimeSlotPicker } from './TimeSlotPicker'
+import { TherapistSelector } from './TherapistSelector'
 
 const SESSION_TYPES = {
   video: { label: 'Video Call', icon: Video, color: 'blue' },
@@ -99,7 +100,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
       const defaultDate = selectedDate || appointment?.date || new Date()
       setFormData({
         date: format(defaultDate, 'yyyy-MM-dd'),
-        time: '09:00',
+        time: '',
         duration: 60,
         sessionType: 'video',
         therapistId: hasRole('therapist') ? user.id : '',
@@ -160,6 +161,26 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
       if (isNewAppointment) {
         result = await schedulingService.createAppointment(appointmentData)
         
+        // Create session for video/audio appointments
+        if (['video', 'phone'].includes(formData.sessionType)) {
+          try {
+            const sessionData = {
+              patientId: formData.patientId,
+              therapistId: formData.therapistId,
+              startTime: appointmentData.datetime,
+              duration: formData.duration,
+              type: 'therapy',
+              appointmentId: result.id
+            }
+            
+            const session = await sessionService.createSession(sessionData)
+            console.log('Session created for appointment:', session)
+          } catch (sessionError) {
+            console.warn('Failed to create session:', sessionError)
+            // Don't fail the appointment creation if session creation fails
+          }
+        }
+        
         // Send email notifications for video sessions
         if (formData.sessionType === 'video') {
           try {
@@ -172,7 +193,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
         
         addToast({ 
           type: 'success', 
-          message: 'Appointment scheduled successfully' + (formData.sessionType === 'video' ? '. Video session details sent via email.' : '') 
+          message: 'Appointment scheduled successfully' + (formData.sessionType === 'video' ? '. Video session and meeting links created.' : '') 
         })
       } else {
         result = await schedulingService.updateAppointment(appointment.id, appointmentData)
@@ -449,24 +470,13 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Therapist *
                 </label>
-                <select
+                <TherapistSelector
                   value={formData.therapistId}
-                  onChange={(e) => handleInputChange('therapistId', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.therapistId ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  onChange={(therapistId) => handleInputChange('therapistId', therapistId)}
                   disabled={isLoading}
-                >
-                  <option value="">Select therapist</option>
-                  {therapists.map(therapist => (
-                    <option key={therapist.id} value={therapist.id}>
-                      {therapist.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.therapistId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.therapistId}</p>
-                )}
+                  placeholder="Search and select a therapist..."
+                  error={errors.therapistId}
+                />
               </div>
             )}
 
@@ -507,7 +517,7 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 placeholder="Additional notes or preparation instructions..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 bg-white"
               />
             </div>
             </div>
