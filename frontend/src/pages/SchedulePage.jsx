@@ -17,6 +17,7 @@ export function SchedulePage() {
   const { currentTenant } = useTenantStore()
   const [appointments, setAppointments] = useState([])
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [showModal, setShowModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [view, setView] = useState('calendar') // calendar, availability
 
@@ -48,9 +49,23 @@ export function SchedulePage() {
 
   const handleAppointmentSelect = (appointment) => {
     setSelectedAppointment(appointment)
+    setShowModal(true)
   }
 
-  const handleAppointmentClose = () => {
+  const handleModalClose = () => {
+    setShowModal(false)
+    setSelectedAppointment(null)
+  }
+
+  const handleAppointmentSave = (appointment) => {
+    loadAppointments() // Refresh the appointments list
+    setShowModal(false)
+    setSelectedAppointment(null)
+  }
+
+  const handleAppointmentDelete = (appointmentId) => {
+    setAppointments(prev => prev.filter(apt => apt.id !== appointmentId))
+    setShowModal(false)
     setSelectedAppointment(null)
   }
 
@@ -60,6 +75,7 @@ export function SchedulePage() {
         apt.id === updatedAppointment.id ? updatedAppointment : apt
       )
     )
+    setShowModal(false)
     setSelectedAppointment(null)
   }
 
@@ -109,11 +125,14 @@ export function SchedulePage() {
       </motion.div>
 
       {/* Appointment modal */}
-      {selectedAppointment && (
+      {showModal && (
         <AppointmentModal
           appointment={selectedAppointment}
-          onClose={handleAppointmentClose}
+          onClose={handleModalClose}
+          onSave={handleAppointmentSave}
           onUpdate={handleAppointmentUpdate}
+          onDelete={handleAppointmentDelete}
+          selectedDate={selectedAppointment?.date}
         />
       )}
     </div>
