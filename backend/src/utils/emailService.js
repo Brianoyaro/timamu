@@ -202,6 +202,188 @@ const templates = {
     `
   },
 
+  appointmentConfirmation: {
+    subject: 'Appointment Confirmed - MindLink',
+    getHtml: (name, data = {}) => `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Appointment Confirmed - MindLink</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9fafb; }
+          .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+          .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; }
+          .appointment-card { background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 20px; margin: 20px 0; }
+          .appointment-details { display: flex; justify-content: space-between; margin: 10px 0; }
+          .detail-label { font-weight: 600; color: #047857; }
+          .detail-value { color: #065f46; }
+          .cta { text-align: center; margin: 30px 0; }
+          .cta-button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 0 10px; }
+          .video-info { background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✅ Appointment Confirmed</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">Your session is scheduled</p>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #1f2937;">Hello ${data.patientName || name},</h2>
+            
+            <p>Great news! Your therapy session has been confirmed.</p>
+
+            <div class="appointment-card">
+              <h3 style="margin: 0 0 15px 0; color: #047857;">📋 Session Details</h3>
+              <div class="appointment-details">
+                <span class="detail-label">Date & Time:</span>
+                <span class="detail-value">${data.appointmentDate} at ${data.appointmentTime}</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Duration:</span>
+                <span class="detail-value">${data.duration} minutes</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Therapist:</span>
+                <span class="detail-value">${data.therapistName}</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Session Type:</span>
+                <span class="detail-value">${data.sessionType}</span>
+              </div>
+              ${data.tenantName ? `<div class="appointment-details">
+                <span class="detail-label">Organization:</span>
+                <span class="detail-value">${data.tenantName}</span>
+              </div>` : ''}
+            </div>
+
+            ${data.videoLink ? `
+            <div class="video-info">
+              <h4 style="margin: 0 0 10px 0; color: #1d4ed8;">🎥 Video Session Information:</h4>
+              <p style="margin: 0; color: #1e40af;">You can join your session using the link below. We recommend joining 5 minutes early to test your audio and video.</p>
+            </div>
+
+            <div class="cta">
+              <a href="${data.videoLink}" class="cta-button">Join Video Session</a>
+            </div>
+            ` : ''}
+
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #92400e;">📝 What to Expect:</h4>
+              <ul style="margin: 0; padding-left: 20px; color: #92400e;">
+                <li>Find a quiet, private space for your session</li>
+                <li>Ensure stable internet connection</li>
+                <li>Test your camera and microphone beforehand</li>
+                <li>Have any relevant documents or notes ready</li>
+                <li>Contact support if you encounter technical issues</li>
+              </ul>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              Need to reschedule? Please do so at least 24 hours in advance. 
+              If you have any questions, feel free to contact our support team.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+
+  therapistAppointmentNotification: {
+    subject: 'New Appointment Scheduled - MindLink',
+    getHtml: (name, data = {}) => `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Appointment - MindLink</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9fafb; }
+          .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+          .header { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; }
+          .appointment-card { background: #faf5ff; border: 2px solid #8b5cf6; border-radius: 12px; padding: 20px; margin: 20px 0; }
+          .appointment-details { display: flex; justify-content: space-between; margin: 10px 0; }
+          .detail-label { font-weight: 600; color: #6b21a8; }
+          .detail-value { color: #581c87; }
+          .cta { text-align: center; margin: 30px 0; }
+          .cta-button { display: inline-block; background: #8b5cf6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 0 10px; }
+          .notes-section { background: #f3f4f6; border-radius: 8px; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📅 New Appointment</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">A new session has been scheduled</p>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #1f2937;">Hello Dr. ${data.therapistName || name},</h2>
+            
+            <p>You have a new appointment scheduled with a patient.</p>
+
+            <div class="appointment-card">
+              <h3 style="margin: 0 0 15px 0; color: #6b21a8;">👤 Patient Details</h3>
+              <div class="appointment-details">
+                <span class="detail-label">Patient:</span>
+                <span class="detail-value">${data.patientName}</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Date & Time:</span>
+                <span class="detail-value">${data.appointmentDate} at ${data.appointmentTime}</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Duration:</span>
+                <span class="detail-value">${data.duration} minutes</span>
+              </div>
+              <div class="appointment-details">
+                <span class="detail-label">Session Type:</span>
+                <span class="detail-value">${data.sessionType}</span>
+              </div>
+            </div>
+
+            ${data.notes ? `
+            <div class="notes-section">
+              <h4 style="margin: 0 0 10px 0; color: #374151;">📝 Session Notes:</h4>
+              <p style="margin: 0; color: #4b5563; font-style: italic;">"${data.notes}"</p>
+            </div>
+            ` : ''}
+
+            ${data.videoLink ? `
+            <div class="cta">
+              <a href="${data.videoLink}" class="cta-button">Access Session Room</a>
+            </div>
+            ` : ''}
+
+            <div style="background: #ede9fe; border: 1px solid #8b5cf6; border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #6b21a8;">⏰ Session Preparation:</h4>
+              <ul style="margin: 0; padding-left: 20px; color: #6b21a8;">
+                <li>Review patient history and previous session notes</li>
+                <li>Prepare session materials and assessments</li>
+                <li>Test video and audio equipment 10 minutes before</li>
+                <li>Ensure private, professional environment</li>
+                <li>Have emergency contact information accessible</li>
+              </ul>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              You can manage this appointment through your dashboard. 
+              If you need to reschedule, please contact the patient or support team.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+
   appointmentReminder: {
     subject: 'Upcoming Therapy Session Reminder - MindLink',
     getHtml: (name, data = {}) => `

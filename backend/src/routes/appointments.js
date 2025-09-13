@@ -5,7 +5,7 @@ import { authenticate, authorize } from '../middleware/auth.js'
 import { requireTenant, validateTenantAccess } from '../middleware/tenant.js'
 import { validateRequest, sanitizeInput } from '../middleware/validation.js'
 import { auditLog } from '../middleware/auditLog.js'
-import { emailService } from '../utils/emailService.js'
+import { sendEmail } from '../utils/emailService.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -699,10 +699,10 @@ router.post('/:id/notifications',
 
       // Send email to patient
       if (appointment.patient?.email) {
-        await emailService.sendTemplate({
+        await sendEmail({
           to: appointment.patient.email,
-          template: 'appointment-confirmation',
-          data: {
+          template: 'appointmentConfirmation',
+          templateData: {
             patientName: appointment.patient.name,
             therapistName: appointment.therapist.name,
             appointmentDate: formattedDate,
@@ -717,10 +717,10 @@ router.post('/:id/notifications',
 
       // Send email to therapist
       if (appointment.therapist?.email) {
-        await emailService.sendTemplate({
+        await sendEmail({
           to: appointment.therapist.email,
-          template: 'therapist-appointment-notification',
-          data: {
+          template: 'therapistAppointmentNotification',
+          templateData: {
             therapistName: appointment.therapist.name,
             patientName: appointment.patient.name,
             appointmentDate: formattedDate,
