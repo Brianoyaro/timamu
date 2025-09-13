@@ -51,12 +51,14 @@ export function TherapistCard({ therapist }) {
 
   const handleBookSession = (e) => {
     e.stopPropagation()
-    navigate(`/t/${tenantId}/schedule?therapist=${therapist.id}`)
+    // Navigate to therapist detail page where the improved booking flow is available
+    navigate(`/t/${tenantId}/therapists/${therapist.id}`)
   }
 
   const handleSendMessage = (e) => {
     e.stopPropagation()
-    navigate(`/t/${tenantId}/messages`)
+    // Navigate to therapist detail page where messaging is properly handled
+    navigate(`/t/${tenantId}/therapists/${therapist.id}`)
   }
 
   const getAvailabilityDisplay = () => {
@@ -174,12 +176,13 @@ export function TherapistCard({ therapist }) {
           className="flex-1 btn btn-primary flex items-center justify-center"
         >
           <Calendar className="h-4 w-4 mr-2" />
-          Book
+          View Profile
         </button>
         
         <button
           onClick={handleSendMessage}
           className="btn btn-secondary flex items-center justify-center"
+          title="View Profile & Message"
         >
           <MessageCircle className="h-4 w-4" />
         </button>

@@ -136,6 +136,13 @@ export function TherapistAvailabilityCalendar({ therapistId, onSlotSelect, selec
         </div>
       </div>
 
+      {/* Instructions */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Click on an available time slot</strong> to select it, then confirm your booking using the button above.
+        </p>
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           <LoadingSkeleton className="h-8 w-full" />
@@ -144,6 +151,14 @@ export function TherapistAvailabilityCalendar({ therapistId, onSlotSelect, selec
               <LoadingSkeleton key={i} className="h-32" />
             ))}
           </div>
+        </div>
+      ) : availableSlots.length === 0 ? (
+        <div className="text-center py-8">
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h4 className="text-lg font-medium text-gray-900 mb-2">No Available Times</h4>
+          <p className="text-gray-600 mb-4">
+            No available appointments for this week. Try selecting a different week.
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto">

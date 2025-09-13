@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChatList } from '../components/messaging/ChatList'
 import { ChatWindow } from '../components/messaging/ChatWindow'
@@ -11,6 +11,7 @@ import { analyticsService } from '../services/analyticsService'
 export function MessagesPage() {
   const { t } = useTranslation()
   const { peerId } = useParams()
+  const location = useLocation()
   const [threads, setThreads] = useState([])
   const [selectedThread, setSelectedThread] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -21,15 +22,28 @@ export function MessagesPage() {
   }, [])
 
   useEffect(() => {
-    if (peerId && threads.length > 0) {
-      const thread = threads.find(t => 
-        t.participants.some(p => p.id === peerId)
-      )
-      if (thread) {
-        setSelectedThread(thread)
+    if (threads.length > 0) {
+      // Handle navigation from therapist detail page
+      const threadIdFromState = location.state?.threadId
+      if (threadIdFromState) {
+        const thread = threads.find(t => t.id === threadIdFromState)
+        if (thread) {
+          setSelectedThread(thread)
+          return
+        }
+      }
+      
+      // Handle URL parameter for backward compatibility
+      if (peerId) {
+        const thread = threads.find(t => 
+          t.participants.some(p => p.id === peerId)
+        )
+        if (thread) {
+          setSelectedThread(thread)
+        }
       }
     }
-  }, [peerId, threads])
+  }, [peerId, threads, location.state])
 
   const loadThreads = async () => {
     try {

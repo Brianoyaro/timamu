@@ -86,18 +86,10 @@ router.get('/',
         prisma.user.count({ where })
       ])
 
-      // Ensure arrays are never null
-      const sanitizedUsers = users.map(user => ({
-        ...user,
-        specializations: user.specializations || [],
-        languages: user.languages || [],
-        roles: user.roles || []
-      }))
-
       res.json({
         success: true,
         data: {
-          users: sanitizedUsers,
+          users,
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
@@ -164,17 +156,9 @@ router.get('/:id',
         })
       }
 
-      // Ensure arrays are never null
-      const sanitizedUser = {
-        ...user,
-        specializations: user.specializations || [],
-        languages: user.languages || [],
-        roles: user.roles || []
-      }
-
       res.json({
         success: true,
-        data: { user: sanitizedUser }
+        data: { user }
       })
     } catch (error) {
       console.error('Get user error:', error)

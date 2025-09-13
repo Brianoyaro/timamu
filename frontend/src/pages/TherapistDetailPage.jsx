@@ -19,6 +19,7 @@ import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
 import { TherapistAvailabilityCalendar } from '../components/therapists/TherapistAvailabilityCalendar'
 import { userService } from '../services/userService'
 import { schedulingService } from '../services/schedulingService'
+import { messagingService } from '../services/messagingService'
 import { analyticsService } from '../services/analyticsService'
 import { useToastStore } from '../store/toastStore'
 
@@ -30,7 +31,6 @@ export function TherapistDetailPage() {
   const [therapist, setTherapist] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
-  const [showBookingForm, setShowBookingForm] = useState(false)
   const [isBooking, setIsBooking] = useState(false)
 
   useEffect(() => {
@@ -55,9 +55,13 @@ export function TherapistDetailPage() {
     }
   }
 
-  const handleBookSession = async () => {
+  const handleBookSession = async (bookingNotes = '') => {
     if (!selectedSlot) {
-      setShowBookingForm(true)
+      addToast({
+        type: 'warning',
+        title: 'Select Time Slot',
+        message: 'Please select an available time slot to book your session.'
+      })
       return
     }
 
@@ -67,31 +71,76 @@ export function TherapistDetailPage() {
         therapistId,
         datetime: selectedSlot,
         type: 'therapy',
-        notes: ''
+        notes: bookingNotes
       })
       
       addToast({
         type: 'success',
-        title: 'Success',
-        message: 'Session booked successfully!'
+        title: 'Session Booked Successfully!',
+        message: `Your session with ${therapist.name} has been scheduled for ${selectedSlot.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        })}`
       })
-      analyticsService.track('appointment_booked', { therapistId, datetime: selectedSlot })
-      navigate(`/t/${tenantId}/schedule`)
+      analyticsService.track('appointment_booked', { 
+        therapistId, 
+        datetime: selectedSlot,
+        source: 'therapist_detail' 
+      })
+      
+      // Reset selection after successful booking
+      setSelectedSlot(null)
+      
+      // Optional: Navigate to schedule page to show the booked appointment
+      // navigate(`/t/${tenantId}/schedule`)
     } catch (error) {
       console.error('Failed to book session:', error)
       addToast({
         type: 'error',
         title: 'Booking Failed',
-        message: 'Failed to book session. Please try again.'
+        message: error.response?.data?.message || 'Failed to book session. Please try again.'
       })
     } finally {
       setIsBooking(false)
     }
   }
 
-  const handleSendMessage = () => {
-    navigate(`/t/${tenantId}/messages?recipient=${therapistId}`)
-    analyticsService.track('therapist_message_initiated', { therapistId })
+  const handleSendMessage = async () => {
+    try {
+      // Check if a thread already exists with this therapist
+      const threads = await messagingService.getThreads()
+      const existingThread = threads.find(thread => 
+        thread.participants.some(p => p.id === therapistId)
+      )
+      
+      if (existingThread) {
+        // Navigate to existing thread
+        navigate(`/t/${tenantId}/messages`, { 
+          state: { threadId: existingThread.id } 
+        })
+      } else {
+        // Create new thread and navigate
+        const newThread = await messagingService.createThread([therapistId])
+        navigate(`/t/${tenantId}/messages`, { 
+          state: { threadId: newThread.id } 
+        })
+      }
+      
+      analyticsService.track('therapist_message_initiated', { 
+        therapistId,
+        hasExistingThread: !!existingThread 
+      })
+    } catch (error) {
+      console.error('Failed to initialize messaging:', error)
+      addToast({
+        type: 'error',
+        title: 'Message Failed',
+        message: 'Failed to start messaging. Please try again.'
+      })
+    }
   }
 
   const renderStars = (rating) => {
@@ -270,17 +319,26 @@ export function TherapistDetailPage() {
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 lg:w-48">
             <button
-              onClick={handleBookSession}
-              disabled={isBooking}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              onClick={() => handleBookSession()}
+              disabled={isBooking || !selectedSlot}
+              className={`px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium ${
+                selectedSlot
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400'
+                  : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              }`}
             >
               <Calendar className="h-5 w-5" />
-              {isBooking ? t('common.booking', 'Booking...') : t('common.bookSession', 'Book Session')}
+              {isBooking 
+                ? 'Booking...' 
+                : selectedSlot 
+                  ? 'Confirm Booking' 
+                  : 'Select Time Slot'
+              }
             </button>
             
             <button
               onClick={handleSendMessage}
-              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 font-medium"
             >
               <MessageCircle className="h-5 w-5" />
               {t('common.sendMessage', 'Send Message')}
@@ -401,27 +459,61 @@ export function TherapistDetailPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6"
             >
-              <h4 className="font-semibold text-blue-900 mb-2">
-                {t('booking.selectedTime', 'Selected Time')}
-              </h4>
-              <p className="text-blue-800 mb-4">
-                {selectedSlot.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
-              </p>
-              <button
-                onClick={handleBookSession}
-                disabled={isBooking}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                {isBooking ? t('common.booking', 'Booking...') : t('common.confirmBooking', 'Confirm Booking')}
-              </button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <h4 className="font-semibold text-gray-900">
+                  {t('booking.selectedTime', 'Selected Time Slot')}
+                </h4>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">
+                    {selectedSlot.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">
+                    {selectedSlot.toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Session with {therapist.name}</span>
+                    <span className="font-semibold text-gray-900">${therapist.sessionRate || 120}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => handleBookSession()}
+                  disabled={isBooking}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+                >
+                  {isBooking ? 'Booking...' : 'Confirm Booking'}
+                </button>
+                
+                <button
+                  onClick={() => setSelectedSlot(null)}
+                  className="px-4 py-3 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             </motion.div>
           )}
         </div>
