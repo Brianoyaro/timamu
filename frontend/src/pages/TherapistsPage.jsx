@@ -6,6 +6,7 @@ import { TherapistCard } from '../components/therapists/TherapistCard'
 import { AdvancedTherapistSearch } from '../components/therapists/AdvancedTherapistSearch'
 import { EmptyState } from '../components/common/EmptyState'
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
+import { ErrorBoundary } from '../components/common/ErrorBoundary'
 import { userService } from '../services/userService'
 import { analyticsService } from '../services/analyticsService'
 
@@ -51,14 +52,15 @@ export function TherapistsPage() {
   }
 
   const applyFilters = () => {
-    let filtered = therapists
+    // Start with a properly filtered array - remove any null/undefined therapists
+    let filtered = therapists.filter(therapist => therapist && therapist.id && therapist.name)
 
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(therapist =>
-        therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        therapist.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         therapist.specializations?.some(spec => 
-          spec.toLowerCase().includes(searchQuery.toLowerCase())
+          spec?.toLowerCase().includes(searchQuery.toLowerCase())
         ) ||
         therapist.bio?.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -67,7 +69,8 @@ export function TherapistsPage() {
     // Specialization filter
     if (filters.specializations.length > 0) {
       filtered = filtered.filter(therapist =>
-        therapist.specializations?.some(spec =>
+        therapist.specializations && Array.isArray(therapist.specializations) &&
+        therapist.specializations.some(spec =>
           filters.specializations.includes(spec)
         )
       )
@@ -76,7 +79,8 @@ export function TherapistsPage() {
     // Language filter
     if (filters.languages.length > 0) {
       filtered = filtered.filter(therapist =>
-        therapist.languages?.some(lang =>
+        therapist.languages && Array.isArray(therapist.languages) &&
+        therapist.languages.some(lang =>
           filters.languages.includes(lang)
         )
       )
@@ -202,7 +206,7 @@ export function TherapistsPage() {
 
             {/* Therapist Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTherapists.map((therapist, index) => (
+              {filteredTherapists.filter(therapist => therapist && therapist.id).map((therapist, index) => (
                 <motion.div
                   key={therapist.id}
                   initial={{ opacity: 0, y: 20 }}

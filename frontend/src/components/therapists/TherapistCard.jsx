@@ -13,6 +13,9 @@ import { Star as StarSolid } from 'lucide-react'
 import { schedulingService } from '../../services/schedulingService'
 
 export function TherapistCard({ therapist }) {
+  if (!therapist) return null;
+  const specializations = Array.isArray(therapist.specializations) ? therapist.specializations : [];
+
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { tenantId } = useParams()
@@ -112,10 +115,10 @@ export function TherapistCard({ therapist }) {
       )}
 
       {/* Specializations */}
-      {therapist.specializations && therapist.specializations.length > 0 && (
+      {specializations.length > 0 && (
         <div className="mb-4">
           <div className="flex flex-wrap gap-1 justify-center">
-            {therapist.specializations.slice(0, 3).map((spec) => (
+            {specializations.slice(0, 3).map((spec) => (
               <span
                 key={spec}
                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200"
@@ -123,9 +126,9 @@ export function TherapistCard({ therapist }) {
                 {spec}
               </span>
             ))}
-            {therapist.specializations.length > 3 && (
+            {specializations.length > 3 && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                +{therapist.specializations.length - 3} more
+                +{specializations.length - 3} more
               </span>
             )}
           </div>

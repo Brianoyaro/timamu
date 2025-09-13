@@ -53,14 +53,16 @@ export function QuickActionsCard() {
     try {
       setIsLoadingTherapists(true)
       const therapists = await userService.getTherapists({ limit: 6 })
-      // Sort by rating and take top 3
-      const featured = therapists
+      // Filter out any undefined/null therapists and sort by rating
+      const validTherapists = therapists.filter(t => t && t.id && t.name)
+      const featured = validTherapists
         .filter(t => t.rating >= 4.0)
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 3)
       setFeaturedTherapists(featured)
     } catch (error) {
       console.error('Failed to load featured therapists:', error)
+      setFeaturedTherapists([]) // Set empty array on error
     } finally {
       setIsLoadingTherapists(false)
     }
@@ -209,7 +211,7 @@ export function QuickActionsCard() {
                 </div>
               ) : featuredTherapists.length > 0 ? (
                 <div className="space-y-2">
-                  {featuredTherapists.map((therapist) => (
+                  {featuredTherapists.filter(therapist => therapist && therapist.id).map((therapist) => (
                     <button
                       key={therapist.id}
                       onClick={() => handleTherapistClick(therapist.id)}
@@ -217,13 +219,13 @@ export function QuickActionsCard() {
                     >
                       <div className="flex items-center gap-3">
                         <img
-                          src={therapist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name)}&background=6366f1&color=fff`}
-                          alt={therapist.name}
+                          src={therapist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name || 'Unknown')}&background=6366f1&color=fff`}
+                          alt={therapist.name || 'Therapist'}
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {therapist.name}
+                            {therapist.name || 'Unknown Therapist'}
                           </p>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
@@ -232,7 +234,7 @@ export function QuickActionsCard() {
                                 {therapist.rating || 5.0}
                               </span>
                             </div>
-                            {therapist.specializations && therapist.specializations.length > 0 && (
+                            {therapist.specializations && Array.isArray(therapist.specializations) && therapist.specializations.length > 0 && (
                               <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {therapist.specializations[0]}
                               </span>
