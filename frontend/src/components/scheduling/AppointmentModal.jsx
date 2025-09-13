@@ -232,30 +232,41 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
   const handleReschedule = async () => {
     setIsRescheduling(true)
     try {
-      // Mock reschedule - replace with real API call
-      const updatedAppointment = {
-        ...appointment,
-        status: 'rescheduled'
-      }
-      onUpdate(updatedAppointment)
+      // Trigger reschedule mode by switching to edit
+      setIsEditing(true)
+      addToast({ 
+        type: 'info', 
+        message: 'Select a new date and time to reschedule your appointment' 
+      })
     } catch (error) {
       console.error('Reschedule failed:', error)
+      addToast({ 
+        type: 'error', 
+        message: 'Failed to initiate reschedule' 
+      })
     } finally {
       setIsRescheduling(false)
     }
   }
 
   const handleCancel = async () => {
+    if (!window.confirm('Are you sure you want to cancel this appointment?')) return
+    
     setIsCancelling(true)
     try {
-      // Mock cancel - replace with real API call
-      const updatedAppointment = {
-        ...appointment,
-        status: 'cancelled'
-      }
-      onUpdate(updatedAppointment)
+      await schedulingService.cancelAppointment(appointment.id, 'Cancelled by user')
+      addToast({ 
+        type: 'success', 
+        message: 'Appointment cancelled successfully' 
+      })
+      onUpdate?.({...appointment, status: 'cancelled'})
+      onClose()
     } catch (error) {
       console.error('Cancel failed:', error)
+      addToast({ 
+        type: 'error', 
+        message: 'Failed to cancel appointment' 
+      })
     } finally {
       setIsCancelling(false)
     }

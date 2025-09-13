@@ -309,9 +309,39 @@ router.post('/',
         }
       })
 
+      // Create a session for this appointment
+      let session = null
+      try {
+        session = await prisma.session.create({
+          data: {
+            patientId,
+            therapistId,
+            startTime: appointmentStart,
+            duration,
+            type: type === 'therapy' ? 'therapy' : 'consultation',
+            tenantId: req.tenantId,
+            status: 'pending'
+          }
+        })
+
+        // Link the session to the appointment
+        await prisma.appointment.update({
+          where: { id: appointment.id },
+          data: { sessionId: session.id }
+        })
+      } catch (sessionError) {
+        console.warn('Failed to create session for appointment:', sessionError)
+        // Don't fail the appointment creation if session creation fails
+      }
+
       res.status(201).json({
         success: true,
-        data: { appointment }
+        data: { 
+          appointment: {
+            ...appointment,
+            sessionId: session?.id || null
+          }
+        }
       })
     } catch (error) {
       console.error('Create appointment error:', error)

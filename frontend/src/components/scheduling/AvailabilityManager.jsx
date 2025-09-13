@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Save } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import { useToastStore } from '../../store/toastStore'
+import { schedulingService } from '../../services/schedulingService'
+import { LoadingSkeleton } from '../common/LoadingSkeleton'
 
 const daysOfWeek = [
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
@@ -15,17 +18,57 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 export function AvailabilityManager() {
   const { t } = useTranslation()
   const { user } = useAuthStore()
+  const { addToast } = useToastStore()
   
-  // Mock availability data - replace with real API call
   const [availability, setAvailability] = useState({
-    monday: [{ start: '09:00', end: '17:00' }],
-    tuesday: [{ start: '09:00', end: '17:00' }],
-    wednesday: [{ start: '09:00', end: '17:00' }],
-    thursday: [{ start: '09:00', end: '17:00' }],
-    friday: [{ start: '09:00', end: '17:00' }],
+    monday: [],
+    tuesday: [],
+    wednesday: [],
+    thursday: [],
+    friday: [],
     saturday: [],
     sunday: []
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (user?.id && user.roles?.includes('therapist')) {
+      loadAvailability()
+    }
+  }, [user])
+
+  const loadAvailability = async () => {
+    try {
+      setIsLoading(true)
+      const availabilityData = await schedulingService.getAvailability(user.id)
+      
+      // Convert API data to component format
+      const formattedAvailability = { ...availability }
+      
+      if (availabilityData.availability) {
+        availabilityData.availability.forEach(slot => {
+          const dayName = daysOfWeek[slot.dayOfWeek]
+          if (dayName) {
+            formattedAvailability[dayName].push({
+              start: slot.startTime,
+              end: slot.endTime
+            })
+          }
+        })
+      }
+      
+      setAvailability(formattedAvailability)
+    } catch (error) {
+      console.error('Failed to load availability:', error)
+      addToast({
+        type: 'error',
+        message: 'Failed to load availability settings'
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const addTimeSlot = (day) => {
     setAvailability(prev => ({
@@ -52,12 +95,52 @@ export function AvailabilityManager() {
 
   const handleSave = async () => {
     try {
-      // Mock API call - replace with real implementation
-      console.log('Saving availability:', availability)
-      // await schedulingService.setAvailability(user.id, availability)
+      setIsSaving(true)
+      
+      // Convert component format to API format
+      const availabilityData = []
+      
+      daysOfWeek.forEach((day, dayIndex) => {
+        availability[day].forEach(slot => {
+          availabilityData.push({
+            dayOfWeek: dayIndex,
+            startTime: slot.start,
+            endTime: slot.end
+          })
+        })
+      })
+      
+      await schedulingService.setAvailability(user.id, availabilityData)
+      
+      addToast({
+        type: 'success',
+        message: 'Availability settings saved successfully'
+      })
     } catch (error) {
       console.error('Failed to save availability:', error)
+      addToast({
+        type: 'error',
+        message: 'Failed to save availability settings'
+      })
+    } finally {
+      setIsSaving(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="card p-6">
+          <LoadingSkeleton className="h-8 w-64 mb-6" />
+          {daysOfWeek.map((day) => (
+            <div key={day} className="mb-4">
+              <LoadingSkeleton className="h-6 w-32 mb-2" />
+              <LoadingSkeleton className="h-10 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -70,9 +153,11 @@ export function AvailabilityManager() {
           
           <button
             onClick={handleSave}
-            className="btn btn-primary"
+            disabled={isSaving}
+            className="btn btn-primary flex items-center gap-2"
           >
-            Save Changes
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
