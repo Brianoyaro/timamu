@@ -101,5 +101,15 @@ export const schedulingService = {
     
     const response = await apiService.get(`/appointments/therapists/${therapistId}/schedule`, params)
     return response.data?.schedule || []
+  },
+
+  async sendSessionNotifications(appointmentId) {
+    const response = await apiService.post(`/appointments/${appointmentId}/notifications`)
+    return response.data
+  },
+
+  async deleteAppointment(appointmentId) {
+    const response = await apiService.delete(`/appointments/${appointmentId}`)
+    return response.data
   }
 }

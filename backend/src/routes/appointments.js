@@ -5,6 +5,7 @@ import { authenticate, authorize } from '../middleware/auth.js'
 import { requireTenant, validateTenantAccess } from '../middleware/tenant.js'
 import { validateRequest, sanitizeInput } from '../middleware/validation.js'
 import { auditLog } from '../middleware/auditLog.js'
+import { emailService } from '../utils/emailService.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -230,7 +231,7 @@ router.post('/',
         })
       }
 
-      // Check for scheduling conflicts
+      // Check for scheduling conflicts - more precise conflict detection
       const appointmentStart = new Date(datetime)
       const appointmentEnd = new Date(appointmentStart.getTime() + duration * 60 * 1000)
 
@@ -239,22 +240,41 @@ router.post('/',
           tenantId: req.tenantId,
           therapistId,
           status: { in: ['scheduled', 'confirmed'] },
-          datetime: {
-            lt: appointmentEnd
-          },
-          // Check if appointment end time is after the start of new appointment
-          AND: {
-            datetime: {
-              gte: new Date(appointmentStart.getTime() - 60 * 60 * 1000) // 1 hour buffer
+          OR: [
+            // New appointment starts during existing appointment
+            {
+              datetime: { lte: appointmentStart },
+              AND: {
+                // Calculate end time of existing appointment
+                datetime: { 
+                  gte: new Date(appointmentStart.getTime() - 180 * 60 * 1000) // Check 3 hours back
+                }
+              }
+            },
+            // New appointment ends during existing appointment
+            {
+              datetime: { gte: appointmentStart, lt: appointmentEnd }
             }
-          }
+          ]
+        },
+        select: {
+          datetime: true,
+          duration: true
         }
       })
 
-      if (conflicts.length > 0) {
+      // Check if any conflicts actually overlap
+      const hasConflict = conflicts.some(existingApt => {
+        const existingStart = new Date(existingApt.datetime)
+        const existingEnd = new Date(existingStart.getTime() + existingApt.duration * 60 * 1000)
+        
+        return (appointmentStart < existingEnd && appointmentEnd > existingStart)
+      })
+
+      if (hasConflict) {
         return res.status(409).json({
           success: false,
-          error: 'Therapist is not available at this time'
+          error: 'This time slot is already booked. Please choose a different time.'
         })
       }
 
@@ -606,6 +626,129 @@ router.post('/therapists/:therapistId/availability',
       res.status(500).json({
         success: false,
         error: 'Failed to update availability'
+      })
+    }
+  }
+)
+
+// Send appointment notifications
+router.post('/:id/notifications',
+  authenticate,
+  requireTenant,
+  validateTenantAccess,
+  async (req, res) => {
+    try {
+      const { id } = req.params
+
+      const appointment = await prisma.appointment.findFirst({
+        where: {
+          id,
+          tenantId: req.tenantId,
+          OR: [
+            { patientId: req.user.id },
+            { therapistId: req.user.id },
+            { tenant: { users: { some: { id: req.user.id, roles: { has: 'admin' } } } } }
+          ]
+        },
+        include: {
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          therapist: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          tenant: {
+            select: {
+              name: true,
+              domain: true
+            }
+          }
+        }
+      })
+
+      if (!appointment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Appointment not found'
+        })
+      }
+
+      // Generate video session link (mock for now)
+      const videoLink = `${process.env.FRONTEND_URL}/t/${req.tenantId}/sessions/${appointment.id}/video`
+      
+      const appointmentDate = new Date(appointment.datetime)
+      const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+      const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+
+      // Send email to patient
+      if (appointment.patient?.email) {
+        await emailService.sendTemplate({
+          to: appointment.patient.email,
+          template: 'appointment-confirmation',
+          data: {
+            patientName: appointment.patient.name,
+            therapistName: appointment.therapist.name,
+            appointmentDate: formattedDate,
+            appointmentTime: formattedTime,
+            duration: appointment.duration,
+            sessionType: appointment.sessionType || 'video',
+            videoLink: appointment.sessionType === 'video' ? videoLink : null,
+            tenantName: appointment.tenant.name
+          }
+        })
+      }
+
+      // Send email to therapist
+      if (appointment.therapist?.email) {
+        await emailService.sendTemplate({
+          to: appointment.therapist.email,
+          template: 'therapist-appointment-notification',
+          data: {
+            therapistName: appointment.therapist.name,
+            patientName: appointment.patient.name,
+            appointmentDate: formattedDate,
+            appointmentTime: formattedTime,
+            duration: appointment.duration,
+            sessionType: appointment.sessionType || 'video',
+            videoLink: appointment.sessionType === 'video' ? videoLink : null,
+            notes: appointment.notes,
+            tenantName: appointment.tenant.name
+          }
+        })
+      }
+
+      res.json({
+        success: true,
+        data: { 
+          message: 'Notifications sent successfully',
+          emailsSent: {
+            patient: !!appointment.patient?.email,
+            therapist: !!appointment.therapist?.email
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Send notifications error:', error)
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send notifications'
       })
     }
   }

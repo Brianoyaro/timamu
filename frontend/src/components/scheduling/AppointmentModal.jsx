@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useToastStore } from '../../store/toastStore'
 import { schedulingService } from '../../services/schedulingService'
 import { userService } from '../../services/userService'
+import { TimeSlotPicker } from './TimeSlotPicker'
 
 const SESSION_TYPES = {
   video: { label: 'Video Call', icon: Video, color: 'blue' },
@@ -158,9 +159,20 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
       let result
       if (isNewAppointment) {
         result = await schedulingService.createAppointment(appointmentData)
+        
+        // Send email notifications for video sessions
+        if (formData.sessionType === 'video') {
+          try {
+            await schedulingService.sendSessionNotifications(result.id)
+          } catch (emailError) {
+            console.warn('Failed to send email notifications:', emailError)
+            // Don't fail the appointment creation if email fails
+          }
+        }
+        
         addToast({ 
           type: 'success', 
-          message: 'Appointment scheduled successfully' 
+          message: 'Appointment scheduled successfully' + (formData.sessionType === 'video' ? '. Video session details sent via email.' : '') 
         })
       } else {
         result = await schedulingService.updateAppointment(appointment.id, appointmentData)
@@ -255,12 +267,12 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
   // Render form for new/edit appointments
   if (isNewAppointment || isEditing) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="bg-white rounded-lg shadow-xl w-full max-w-md my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -286,28 +298,30 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSaveAppointment} className="p-6 space-y-6">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="e.g., Therapy Session, Check-up"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.title ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.title}
-                </p>
-              )}
-            </div>
+          <form onSubmit={handleSaveAppointment} className="flex flex-col h-full">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="e.g., Therapy Session, Check-up"
+                  className={`w-full px-3 py-2 text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.title ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  autoFocus
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.title}
+                  </p>
+                )}
+              </div>
 
             {/* Date and Time */}
             <div className="grid grid-cols-2 gap-4">
@@ -333,18 +347,30 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Time *
                 </label>
-                <select
-                  value={formData.time}
-                  onChange={(e) => handleInputChange('time', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.time ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Select time</option>
-                  {TIME_SLOTS.map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
+                {formData.therapistId && formData.date ? (
+                  <TimeSlotPicker
+                    therapistId={formData.therapistId}
+                    selectedDate={formData.date}
+                    selectedTime={formData.time}
+                    onTimeSelect={(time) => handleInputChange('time', time)}
+                    duration={formData.duration}
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <select
+                    value={formData.time}
+                    onChange={(e) => handleInputChange('time', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.time ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    disabled={!formData.therapistId || !formData.date}
+                  >
+                    <option value="">Select time</option>
+                    {TIME_SLOTS.map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                )}
                 {errors.time && (
                   <p className="mt-1 text-sm text-red-600">{errors.time}</p>
                 )}
@@ -473,9 +499,10 @@ export function AppointmentModal({ appointment, onClose, onUpdate, onSave, onDel
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+            </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200 px-4 sm:px-6 pb-4 sm:pb-6">
               <div>
                 {!isNewAppointment && (
                   <button
