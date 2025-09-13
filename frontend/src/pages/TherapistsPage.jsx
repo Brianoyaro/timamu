@@ -6,7 +6,6 @@ import { TherapistCard } from '../components/therapists/TherapistCard'
 import { AdvancedTherapistSearch } from '../components/therapists/AdvancedTherapistSearch'
 import { EmptyState } from '../components/common/EmptyState'
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton'
-import { ErrorBoundary } from '../components/common/ErrorBoundary'
 import { userService } from '../services/userService'
 import { analyticsService } from '../services/analyticsService'
 
@@ -52,15 +51,14 @@ export function TherapistsPage() {
   }
 
   const applyFilters = () => {
-    // Start with a properly filtered array - remove any null/undefined therapists
-    let filtered = therapists.filter(therapist => therapist && therapist.id && therapist.name)
+    let filtered = therapists
 
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(therapist =>
-        therapist.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         therapist.specializations?.some(spec => 
-          spec?.toLowerCase().includes(searchQuery.toLowerCase())
+          spec.toLowerCase().includes(searchQuery.toLowerCase())
         ) ||
         therapist.bio?.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -206,7 +204,7 @@ export function TherapistsPage() {
 
             {/* Therapist Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTherapists.filter(therapist => therapist && therapist.id).map((therapist, index) => (
+              {filteredTherapists.map((therapist, index) => (
                 <motion.div
                   key={therapist.id}
                   initial={{ opacity: 0, y: 20 }}
