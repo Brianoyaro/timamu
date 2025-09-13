@@ -144,7 +144,8 @@ export function TherapistsPage() {
       >
         <AdvancedTherapistSearch
           onSearch={handleSearch}
-          onFilterChange={setFilters}
+          filters={filters}
+          onFiltersChange={setFilters}
           totalTherapists={therapists.length}
           filteredCount={filteredTherapists.length}
         />

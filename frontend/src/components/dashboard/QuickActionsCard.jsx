@@ -53,11 +53,20 @@ export function QuickActionsCard() {
     try {
       setIsLoadingTherapists(true)
       const therapists = await userService.getTherapists({ limit: 6 })
+      console.log('Loaded therapists:', therapists)
+      
       // Sort by rating and take top 3
       const featured = therapists
-        .filter(t => t.rating >= 4.0)
+        .filter(t => {
+          const hasValidId = t && t.id
+          const hasValidRating = (t.rating || 0) >= 4.0
+          console.log(`Therapist ${t?.name}: ID=${t?.id}, Rating=${t?.rating}, Valid=${hasValidId && hasValidRating}`)
+          return hasValidId && hasValidRating
+        })
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 3)
+        
+      console.log('Featured therapists:', featured)
       setFeaturedTherapists(featured)
     } catch (error) {
       console.error('Failed to load featured therapists:', error)
@@ -104,11 +113,40 @@ export function QuickActionsCard() {
   }
 
   const handleTherapistClick = (therapistId) => {
+    console.log('Clicking therapist with ID:', therapistId)
+    console.log('tenantId:', tenantId)
+    console.log('Full URL:', `/t/${tenantId}/therapists/${therapistId}`)
+    
+    if (!therapistId) {
+      console.error('No therapistId provided to handleTherapistClick')
+      return
+    }
+    
+    if (!tenantId) {
+      console.error('No tenantId available for navigation')
+      return
+    }
+    
     navigate(`/t/${tenantId}/therapists/${therapistId}`)
   }
 
   const handleFindTherapists = () => {
-    navigate(`/t/${tenantId}/therapists`)
+    console.log('Browse button clicked')
+    console.log('tenantId:', tenantId)
+    
+    if (!tenantId) {
+      console.error('No tenantId available for navigation')
+      return
+    }
+    
+    const targetPath = `/t/${tenantId}/therapists`
+    console.log('Navigating to:', targetPath)
+    
+    try {
+      navigate(targetPath)
+    } catch (error) {
+      console.error('Navigation error:', error)
+    }
   }
 
   return (

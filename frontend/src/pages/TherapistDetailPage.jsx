@@ -32,24 +32,55 @@ export function TherapistDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [isBooking, setIsBooking] = useState(false)
+  const [error, setError] = useState(null)
+
+  console.log('TherapistDetailPage rendered with params:', { therapistId, tenantId })
 
   useEffect(() => {
-    loadTherapist()
-    analyticsService.page('Therapist Detail', { therapistId })
-  }, [therapistId])
+    if (therapistId && tenantId) {
+      loadTherapist()
+      analyticsService.page('Therapist Detail', { therapistId })
+    } else {
+      console.error('Missing required parameters:', { therapistId, tenantId })
+      setIsLoading(false)
+    }
+  }, [therapistId, tenantId])
 
   const loadTherapist = async () => {
+    if (!therapistId) {
+      console.error('No therapistId provided')
+      setIsLoading(false)
+      return
+    }
+
     try {
       setIsLoading(true)
+      console.log('Loading therapist with ID:', therapistId)
       const therapistData = await userService.getTherapist(therapistId)
+      console.log('Loaded therapist data:', therapistData)
       setTherapist(therapistData)
     } catch (error) {
       console.error('Failed to load therapist:', error)
-      addToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load therapist details'
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response?.data
       })
+      
+      // Check if it's a 404 error (therapist not found)
+      if (error.status === 404 || error.response?.status === 404) {
+        console.log('Therapist not found (404), showing not found page')
+        setTherapist(null) // This will trigger the "not found" UI
+        setError('not_found')
+      } else {
+        // For other errors, show the toast and set error state
+        setError('load_failed')
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: error.response?.data?.message || 'Failed to load therapist details'
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -194,7 +225,7 @@ export function TherapistDetailPage() {
     )
   }
 
-  if (!therapist) {
+  if (!isLoading && !therapist) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
