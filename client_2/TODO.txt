@@ -1,0 +1,4 @@
+1.) Go through the backend code
+2.) Let us start react development in client_2 folder. You may take inspiration from frontend folder. Let us start with authentication. Signup, signin, forgot-password, reset-pasword, State management, successfull login takes us to dashboard which render patient dahboard, therapist dashboard or admin dashboard based on the patients's role. [the respective pages won't have functionality for now, just saying 'patient' for patient dashboard for instance], Add google oauth support. Follow DRY principle, make it professional, simple to understand code, secure code, well documented, security should be emphasized. Mobile first approach.
+
+3.)

@@ -1,0 +1,82 @@
+You are helping me build a **production-grade full-stack telepsychology platform** with three user roles: **patients, therapists, and admins**.  
+
+The project should include:  
+- **Frontend**: React (JavaScript, Vite), Zustand for state management, TailwindCSS + shadcn/ui for styling.  
+- **Backend**: Node.js + Express (or Flask alternative), RESTful API, JWT authentication, and secure database (PostgreSQL or MongoDB).  
+- **Architecture**: Modular, scalable, clean, professional code with comments.  
+
+---
+
+## 🔑 Features Breakdown
+
+### 1. Authentication & Authorization
+- JWT-based login/register system.  
+- Role-based routing (patients → patient dashboard, therapists → therapist dashboard, admins → admin dashboard).  
+- Password hashing (bcrypt).  
+- Refresh tokens for session persistence.  
+
+---
+
+### 2. Patient Dashboard
+- Profile management (update info, password).  
+- Book sessions with therapist (calendar integration).  
+- View upcoming & past sessions.  
+- Secure video conferencing (WebRTC).  
+- End-to-end encrypted chat with assigned therapist.  
+- Upload/download encrypted files (medical notes, prescriptions).  
+
+---
+
+### 3. Therapist Dashboard
+- Profile & specialization tags.  
+- Manage availability calendar.  
+- Accept/reject patient requests.  
+- Video session with chat + file exchange.  
+- Maintain patient session notes/history.  
+- Earnings & billing view.  
+
+---
+
+### 4. Admin Dashboard
+- Manage users (approve therapists, deactivate accounts).  
+- Audit logs: login events, session activity.  
+- System analytics (active users, sessions, load).  
+- Content moderation (chats/files).  
+- Subscription & plan management.  
+
+---
+
+### 5. Video Conferencing
+- WebRTC for peer-to-peer calls.  
+- Features: mute/unmute, video toggle, screen share.  
+- Chat during call.  
+- Option to record sessions (save securely).  
+
+---
+
+### 6. Professional Extras
+- Dark/light mode toggle.  
+- Notifications (new session, reminders).  
+- Multi-language (English + Swahili placeholder).  
+- Accessibility (ARIA roles, keyboard navigation).  
+- Responsive UI for mobile + desktop.  
+
+---
+
+## ⚙️ Backend Technical Requirements
+- Node.js + Express REST API (or Flask if Python is preferred).  
+- Database: PostgreSQL (with Prisma ORM) or MongoDB (with Mongoose).  
+- Endpoints:
+  - `/auth/register`, `/auth/login`, `/auth/refresh`  
+  - `/patients/:id` (CRUD, booking sessions)  
+  - `/therapists/:id` (availability, notes, billing)  
+  - `/admins` (user management, audit logs)  
+  - `/sessions` (create, approve, join, history)  
+- Secure password hashing (bcrypt).  
+- Input validation (Joi/Zod).  
+- Audit logging (store important user/system events).  
+- `.env` for secrets (JWT keys, DB credentials).  
+
+---
+ Backend/ to house backend code
+ frontend/ to house frontend code

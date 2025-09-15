@@ -57,9 +57,10 @@ export function OAuthSuccessPage() {
         console.log('OAuth success handling completed')
         setStatus('success')
         
-        // Redirect to dashboard after a brief delay
+        // Redirect to dashboard with proper tenant routing
         setTimeout(() => {
-          navigate('/t/default', { replace: true })
+          const tenantId = user?.tenant?.domain || 'default'
+          navigate(`/t/${tenantId}`, { replace: true })
         }, 1500)
 
       } catch (error) {
