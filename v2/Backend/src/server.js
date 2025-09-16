@@ -31,6 +31,13 @@ const adminRoutes = require('./routes/admin');
 // Import socket handlers
 const socketHandler = require('./sockets/socketHandler');
 
+// Initialize Socket.IO
+// Use production origins if we're on Render or NODE_ENV is production
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
+const socketOrigins = isProduction
+  ? ['https://timamu-v2-frontend.onrender.com'] 
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'https://timamu-v2-frontend.onrender.com'];
+
 console.log('🚀 Server: Starting TelePsy backend server...');
 console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
 console.log('🏭 Is Production:', isProduction);
@@ -39,13 +46,6 @@ console.log('🔗 Socket.IO CORS Origins:', socketOrigins);
 
 const app = express();
 const server = createServer(app);
-
-// Initialize Socket.IO
-// Use production origins if we're on Render or NODE_ENV is production
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
-const socketOrigins = isProduction
-  ? ['https://timamu-v2-frontend.onrender.com'] 
-  : ['https://timamu-v2-frontend.onrender.com', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173'];
 
 // Add custom SOCKET_ORIGINS if provided
 if (process.env.SOCKET_ORIGINS) {
