@@ -118,6 +118,18 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Debug endpoint for CORS configuration
+app.get('/debug/cors', (req, res) => {
+  res.status(200).json({
+    isProduction: isProduction,
+    nodeEnv: process.env.NODE_ENV,
+    renderEnv: !!process.env.RENDER,
+    socketOrigins: socketOrigins,
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
