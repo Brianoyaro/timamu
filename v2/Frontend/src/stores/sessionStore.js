@@ -14,7 +14,7 @@ const useSessionStore = create((set, get) => ({
   fetchSessions: async (token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch('/api/sessions', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -36,7 +36,7 @@ const useSessionStore = create((set, get) => ({
   createSession: async (sessionData, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch('/api/sessions', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ const useSessionStore = create((set, get) => ({
   updateSession: async (sessionId, updates, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`/api/sessions/${sessionId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions/${sessionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ const useSessionStore = create((set, get) => ({
   cancelSession: async (sessionId, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`/api/sessions/${sessionId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -129,7 +129,7 @@ const useSessionStore = create((set, get) => ({
 
   joinSession: async (sessionId, token) => {
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/join`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions/${sessionId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -150,7 +150,7 @@ const useSessionStore = create((set, get) => ({
 
   addSessionNotes: async (sessionId, notes, token) => {
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/notes`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sessions/${sessionId}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ const useSessionStore = create((set, get) => ({
 
   fetchAvailability: async (token) => {
     try {
-      const response = await fetch('/api/users/availability', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/availability`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -205,7 +205,7 @@ const useSessionStore = create((set, get) => ({
 
   updateAvailability: async (availabilityData, token) => {
     try {
-      const response = await fetch('/api/users/availability', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/availability`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

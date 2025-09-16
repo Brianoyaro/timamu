@@ -22,7 +22,7 @@ const useAuthStore = create(
       login: async (credentials) => {
         set({ isLoading: true });
         try {
-          const response = await fetch('/api/auth/login', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ const useAuthStore = create(
       register: async (userData) => {
         set({ isLoading: true });
         try {
-          const response = await fetch('/api/auth/register', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ const useAuthStore = create(
         }
 
         try {
-          const response = await fetch('/api/auth/refresh', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -131,7 +131,7 @@ const useAuthStore = create(
         set({ isLoading: true });
         
         try {
-          const response = await fetch('/api/users/profile', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/profile`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ export default function DashboardPage() {
         // Fetch additional role-specific data
         if (user?.role === 'ADMIN') {
           // Fetch admin analytics
-          const response = await fetch('/api/admin/analytics', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/analytics`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },

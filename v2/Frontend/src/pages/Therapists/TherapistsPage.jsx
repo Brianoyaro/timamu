@@ -20,7 +20,7 @@ export default function TherapistsPage() {
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
-        const response = await fetch('/api/users/therapists', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/therapists`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
