@@ -4,6 +4,7 @@ import useSessionStore from '../../stores/sessionStore';
 import PatientDashboard from '../../components/Dashboard/PatientDashboard';
 import TherapistDashboard from '../../components/Dashboard/TherapistDashboard';
 import AdminDashboard from '../../components/Dashboard/AdminDashboard';
+import { getApiUrl } from '../../utils/api';
 
 export default function DashboardPage() {
   const { user, token } = useAuthStore();
@@ -18,7 +19,7 @@ export default function DashboardPage() {
         // Fetch additional role-specific data
         if (user?.role === 'ADMIN') {
           // Fetch admin analytics
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/analytics`, {
+          const response = await fetch(`${getApiUrl()}/api/admin/analytics`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },

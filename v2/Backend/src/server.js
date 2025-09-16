@@ -39,11 +39,21 @@ const app = express();
 const server = createServer(app);
 
 // Initialize Socket.IO
+const socketOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://timamu-v2-frontend.onrender.com'] 
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173'];
+
+// Add custom SOCKET_ORIGINS if provided
+if (process.env.SOCKET_ORIGINS) {
+  socketOrigins.push(...process.env.SOCKET_ORIGINS.split(','));
+}
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.SOCKET_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: socketOrigins,
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: true,
+    allowEIO3: true
   }
 });
 

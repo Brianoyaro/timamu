@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io } from 'socket.io-client';
+import { getSocketUrl } from '../utils/api';
 
 const useSocketStore = create((set, get) => ({
   socket: null,
@@ -10,24 +11,56 @@ const useSocketStore = create((set, get) => ({
 
   // Actions
   connect: (token) => {
-    const socket = io(import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    const socketUrl = getSocketUrl();
+    console.log('Socket environment:', { socketUrl });
+    
+    const socket = io(socketUrl, {
       auth: {
         token: token,
       },
+      transports: ['polling', 'websocket'], // Add fallback transports
+      timeout: 20000,
+      forceNew: true,
+      upgrade: true,
+      autoConnect: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      maxReconnectionAttempts: 5
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Socket connected to:', socketUrl);
       set({ isConnected: true });
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('connected', (data) => {
+      console.log('Socket authenticated:', data);
+      set({ isConnected: true });
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
       set({ isConnected: false });
     });
 
-    socket.on('message-received', (message) => {
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+      set({ isConnected: false });
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
+      set({ isConnected: true });
+    });
+
+    socket.on('reconnect_error', (error) => {
+      console.error('Socket reconnection failed:', error.message);
+    });
+
+    socket.on('new_message', (data) => {
       const { messages } = get();
+      const message = data.message;
       const sessionId = message.sessionId;
       
       set({
@@ -44,16 +77,24 @@ const useSocketStore = create((set, get) => ({
       }));
     });
 
-    socket.on('user-status-changed', ({ userId, status }) => {
+    socket.on('user_online', ({ userId }) => {
       set((state) => {
         const newOnlineUsers = new Set(state.onlineUsers);
-        if (status === 'online') {
-          newOnlineUsers.add(userId);
-        } else {
-          newOnlineUsers.delete(userId);
-        }
+        newOnlineUsers.add(userId);
         return { onlineUsers: newOnlineUsers };
       });
+    });
+
+    socket.on('user_offline', ({ userId }) => {
+      set((state) => {
+        const newOnlineUsers = new Set(state.onlineUsers);
+        newOnlineUsers.delete(userId);
+        return { onlineUsers: newOnlineUsers };
+      });
+    });
+
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
     });
 
     set({ socket });
@@ -70,49 +111,48 @@ const useSocketStore = create((set, get) => ({
   joinSession: (sessionId) => {
     const { socket } = get();
     if (socket) {
-      socket.emit('join-session', sessionId);
+      socket.emit('join_session', { sessionId });
     }
   },
 
   leaveSession: (sessionId) => {
     const { socket } = get();
     if (socket) {
-      socket.emit('leave-session', sessionId);
+      socket.emit('leave_session', { sessionId });
     }
   },
 
-  sendMessage: (sessionId, content, type = 'text') => {
+  sendMessage: (receiverId, content, messageType = 'TEXT', sessionId = null) => {
     const { socket } = get();
     if (socket) {
-      const message = {
-        sessionId,
+      socket.emit('send_message', {
+        receiverId,
         content,
-        type,
-        timestamp: new Date().toISOString(),
-      };
-      socket.emit('send-message', message);
+        messageType,
+        sessionId
+      });
     }
   },
 
   // WebRTC signaling
-  sendOffer: (sessionId, offer) => {
+  sendOffer: (sessionId, targetUserId, offer) => {
     const { socket } = get();
     if (socket) {
-      socket.emit('offer', { sessionId, offer });
+      socket.emit('webrtc_offer', { sessionId, targetUserId, offer });
     }
   },
 
-  sendAnswer: (sessionId, answer) => {
+  sendAnswer: (sessionId, targetUserId, answer) => {
     const { socket } = get();
     if (socket) {
-      socket.emit('answer', { sessionId, answer });
+      socket.emit('webrtc_answer', { sessionId, targetUserId, answer });
     }
   },
 
-  sendIceCandidate: (sessionId, candidate) => {
+  sendIceCandidate: (sessionId, targetUserId, candidate) => {
     const { socket } = get();
     if (socket) {
-      socket.emit('ice-candidate', { sessionId, candidate });
+      socket.emit('webrtc_ice_candidate', { sessionId, targetUserId, candidate });
     }
   },
 

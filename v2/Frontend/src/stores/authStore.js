@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { getApiUrl } from '../utils/api';
 
 const useAuthStore = create(
   persist(
@@ -23,7 +24,7 @@ const useAuthStore = create(
         console.log('🔐 AuthStore: login() called with credentials:', { email: credentials.email, password: '[REDACTED]' });
         set({ isLoading: true });
         try {
-          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`;
+          const apiUrl = `${getApiUrl()}/api/auth/login`;
           console.log('🔐 AuthStore: Making login request to:', apiUrl);
           
           const response = await fetch(apiUrl, {
@@ -76,7 +77,7 @@ const useAuthStore = create(
         });
         set({ isLoading: true });
         try {
-          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`;
+          const apiUrl = `${getApiUrl()}/api/auth/register`;
           console.log('📝 AuthStore: Making register request to:', apiUrl);
           
           const response = await fetch(apiUrl, {
@@ -138,7 +139,7 @@ const useAuthStore = create(
         }
 
         try {
-          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`;
+          const apiUrl = `${getApiUrl()}/api/auth/refresh`;
           console.log('🔄 AuthStore: Making refresh request to:', apiUrl);
           
           const response = await fetch(apiUrl, {
@@ -178,7 +179,7 @@ const useAuthStore = create(
         set({ isLoading: true });
         
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/profile`, {
+          const response = await fetch(`${getApiUrl()}/api/users/profile`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

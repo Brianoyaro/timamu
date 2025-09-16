@@ -1,3 +1,5 @@
+import { getApiUrl } from '../../utils/api';
+
 export default function GoogleAuthButton({ 
   children = "Continue with Google", 
   className = "",
@@ -11,7 +13,7 @@ export default function GoogleAuthButton({
       console.log('🔵 GoogleAuthButton: Button is disabled, aborting');
       return;
     }
-    const googleAuthUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`;
+    const googleAuthUrl = `${getApiUrl()}/api/auth/google`;
     console.log('🔵 GoogleAuthButton: Redirecting to Google OAuth URL:', googleAuthUrl);
     window.location.href = googleAuthUrl;
   };

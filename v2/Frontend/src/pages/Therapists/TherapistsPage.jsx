@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import useAuthStore from '../../stores/authStore';
+import { getApiUrl } from '../../utils/api';
 import toast from 'react-hot-toast';
 
 export default function TherapistsPage() {
@@ -20,7 +21,7 @@ export default function TherapistsPage() {
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/therapists`, {
+        const response = await fetch(`${getApiUrl()}/api/users/therapists`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
