@@ -94,7 +94,7 @@ export default function SessionsPage() {
           {user?.role === 'PATIENT' && (
             <Link
               to="/therapists"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
             >
               <CalendarIcon className="h-4 w-4 mr-2" />
               Book Session
@@ -112,7 +112,7 @@ export default function SessionsPage() {
               onClick={() => setFilter(filterOption)}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 filter === filterOption
-                  ? 'bg-primary-100 text-primary-700'
+                  ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -136,7 +136,7 @@ export default function SessionsPage() {
             {user?.role === 'PATIENT' && (
               <Link
                 to="/therapists"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
               >
                 Book Your First Session
               </Link>
@@ -150,8 +150,8 @@ export default function SessionsPage() {
                   <div className="flex-1">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
-                          <UserIcon className="h-6 w-6 text-primary-600" />
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                          <UserIcon className="h-6 w-6 text-blue-600" />
                         </div>
                       </div>
                       <div className="ml-4">

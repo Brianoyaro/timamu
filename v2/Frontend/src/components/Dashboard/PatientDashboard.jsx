@@ -103,7 +103,7 @@ export default function PatientDashboard({ sessions, isLoading }) {
               <h3 className="text-lg font-medium text-gray-900">Upcoming Sessions</h3>
               <Link
                 to="/sessions"
-                className="text-primary-600 hover:text-primary-500 text-sm font-medium"
+                className="text-blue-600 hover:text-blue-500 text-sm font-medium"
               >
                 View all
               </Link>
@@ -116,7 +116,7 @@ export default function PatientDashboard({ sessions, isLoading }) {
                 <p className="text-gray-500 mb-4">No upcoming sessions</p>
                 <Link
                   to="/therapists"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Book a Session
                 </Link>
@@ -128,8 +128,8 @@ export default function PatientDashboard({ sessions, isLoading }) {
                     <div className="flex-1">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                            <UserIcon className="h-6 w-6 text-primary-600" />
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <UserIcon className="h-6 w-6 text-blue-600" />
                           </div>
                         </div>
                         <div className="ml-4">
@@ -217,21 +217,21 @@ export default function PatientDashboard({ sessions, isLoading }) {
             to="/therapists"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <CalendarIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <CalendarIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Book Session</span>
           </Link>
           <Link
             to="/sessions"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <ClockIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <ClockIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">View Sessions</span>
           </Link>
           <Link
             to="/profile"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <UserIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <UserIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Edit Profile</span>
           </Link>
           <div className="flex items-center p-4 border border-gray-200 rounded-lg bg-gray-50">

@@ -91,7 +91,7 @@ export default function TherapistsPage() {
               onClick={() => setSelectedSpecialty(specialty)}
               className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
                 selectedSpecialty === specialty
-                  ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
                   : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
               }`}
             >
@@ -116,7 +116,7 @@ export default function TherapistsPage() {
             <div key={therapist.id} className="bg-white shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center mb-4">
-                  <div className="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
                     {therapist.avatar ? (
                       <img
                         src={therapist.avatar}
@@ -124,7 +124,7 @@ export default function TherapistsPage() {
                         className="h-16 w-16 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="text-xl font-semibold text-primary-600">
+                      <span className="text-xl font-semibold text-blue-600">
                         {therapist.firstName[0]}{therapist.lastName[0]}
                       </span>
                     )}
@@ -191,7 +191,7 @@ export default function TherapistsPage() {
                 <div className="mt-6">
                   <button
                     onClick={() => handleBookSession(therapist.id)}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
                     Book Session
@@ -244,8 +244,8 @@ export default function TherapistsPage() {
             <div key={therapist.id} className="bg-white shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center mb-4">
-                  <div className="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
-                    <span className="text-xl font-semibold text-primary-600">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-xl font-semibold text-blue-600">
                       {therapist.firstName[0]}{therapist.lastName[0]}
                     </span>
                   </div>
@@ -304,7 +304,7 @@ export default function TherapistsPage() {
                 <div className="mt-6">
                   <button
                     onClick={() => handleBookSession(therapist.id)}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
                     Book Session

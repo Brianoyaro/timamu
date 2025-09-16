@@ -49,7 +49,7 @@ export default function ProfilePage() {
             <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="text-primary-600 hover:text-primary-500 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-500 text-sm font-medium"
             >
               {isEditing ? 'Cancel' : 'Edit'}
             </button>
@@ -58,7 +58,7 @@ export default function ProfilePage() {
 
         <div className="p-6">
           <div className="flex items-center mb-6">
-            <div className="h-24 w-24 rounded-full bg-primary-100 flex items-center justify-center relative">
+            <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center relative">
               {user?.avatar ? (
                 <img
                   src={user.avatar}
@@ -66,7 +66,7 @@ export default function ProfilePage() {
                   className="h-24 w-24 rounded-full object-cover"
                 />
               ) : (
-                <UserIcon className="h-12 w-12 text-primary-600" />
+                <UserIcon className="h-12 w-12 text-blue-600" />
               )}
               <button className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md border border-gray-200 hover:bg-gray-50">
                 <CameraIcon className="h-4 w-4 text-gray-600" />
@@ -94,7 +94,7 @@ export default function ProfilePage() {
                     id="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -107,7 +107,7 @@ export default function ProfilePage() {
                     id="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                   id="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -136,7 +136,7 @@ export default function ProfilePage() {
                   id="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -150,7 +150,7 @@ export default function ProfilePage() {
                   rows={4}
                   value={formData.bio}
                   onChange={handleChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Tell us about yourself..."
                 />
               </div>
@@ -166,7 +166,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {isLoading ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -216,7 +216,7 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-500 mt-1">
                 Last updated {new Date().toLocaleDateString()}
               </p>
-              <button className="mt-2 text-primary-600 hover:text-primary-500 text-sm font-medium">
+              <button className="mt-2 text-blue-600 hover:text-blue-500 text-sm font-medium">
                 Change password
               </button>
             </div>
@@ -226,7 +226,7 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-500 mt-1">
                 Manage how you receive notifications
               </p>
-              <button className="mt-2 text-primary-600 hover:text-primary-500 text-sm font-medium">
+              <button className="mt-2 text-blue-600 hover:text-blue-500 text-sm font-medium">
                 Notification settings
               </button>
             </div>
@@ -236,7 +236,7 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-500 mt-1">
                 Control your privacy and data settings
               </p>
-              <button className="mt-2 text-primary-600 hover:text-primary-500 text-sm font-medium">
+              <button className="mt-2 text-blue-600 hover:text-blue-500 text-sm font-medium">
                 Privacy settings
               </button>
             </div>

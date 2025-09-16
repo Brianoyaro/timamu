@@ -183,7 +183,7 @@ export default function AdminDashboard({ sessions, analytics, isLoading }) {
               <h3 className="text-lg font-medium text-gray-900">Recent Sessions</h3>
               <Link
                 to="/admin"
-                className="text-primary-600 hover:text-primary-500 text-sm font-medium"
+                className="text-blue-600 hover:text-blue-500 text-sm font-medium"
               >
                 View all
               </Link>
@@ -235,21 +235,21 @@ export default function AdminDashboard({ sessions, analytics, isLoading }) {
             to="/admin/users"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <UsersIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <UsersIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Manage Users</span>
           </Link>
           <Link
             to="/admin/analytics"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <ChartBarIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <ChartBarIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">View Analytics</span>
           </Link>
           <Link
             to="/admin/approvals"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <ClockIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <ClockIcon className="h-6 w-6 text-blue-600 mr-3" />
             <div className="text-left">
               <span className="text-sm font-medium text-gray-900 block">Therapist Approvals</span>
               {data.pendingApprovals > 0 && (
@@ -261,7 +261,7 @@ export default function AdminDashboard({ sessions, analytics, isLoading }) {
             to="/admin/audit"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <EyeIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <EyeIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Audit Logs</span>
           </Link>
         </div>

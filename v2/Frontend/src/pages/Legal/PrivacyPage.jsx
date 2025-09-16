@@ -4,23 +4,28 @@ export default function PrivacyPage() {
   console.log('🔒 PrivacyPage: Component rendered');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white rounded-xl shadow-lg border border-green-100 p-8">
           <div className="mb-8">
             <Link
               to="/register"
-              className="inline-flex items-center text-primary-600 hover:text-primary-500 mb-4"
+              className="inline-flex items-center text-green-600 hover:text-green-700 mb-4 font-medium transition-colors"
             >
               ← Back to Registration
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-            <p className="text-gray-600">Last updated: September 16, 2025</p>
+            <div className="border-l-4 border-green-500 pl-6">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">🔒 Privacy Policy</h1>
+              <p className="text-green-600 font-medium">Last updated: September 16, 2025</p>
+            </div>
           </div>
 
           <div className="prose max-w-none">
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
+            <section className="mb-8 bg-blue-50 p-6 rounded-lg border-l-4 border-blue-400">
+              <h2 className="text-2xl font-semibold text-blue-900 mb-4 flex items-center">
+                <span className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">1</span>
+                Introduction
+              </h2>
               <p className="text-gray-700 mb-4">
                 TelePsy ("we," "our," or "us") is committed to protecting your privacy and ensuring the security of your personal 
                 and health information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
@@ -28,8 +33,11 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. HIPAA Compliance</h2>
+            <section className="mb-8 bg-green-50 p-6 rounded-lg border-l-4 border-green-400">
+              <h2 className="text-2xl font-semibold text-green-900 mb-4 flex items-center">
+                <span className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">2</span>
+                🏥 HIPAA Compliance
+              </h2>
               <p className="text-gray-700 mb-4">
                 As a healthcare technology platform, we are committed to complying with the Health Insurance Portability and 
                 Accountability Act (HIPAA) and other applicable privacy regulations. Your Protected Health Information (PHI) 
@@ -37,72 +45,166 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Information We Collect</h2>
+            <section className="mb-8 bg-purple-50 p-6 rounded-lg border-l-4 border-purple-400">
+              <h2 className="text-2xl font-semibold text-purple-900 mb-4 flex items-center">
+                <span className="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">3</span>
+                📊 Information We Collect
+              </h2>
               
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Personal Information</h3>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-                <li>Name, email address, phone number</li>
-                <li>Date of birth and demographic information</li>
-                <li>Insurance information (if applicable)</li>
-                <li>Emergency contact information</li>
+              <h3 className="text-xl font-semibold text-purple-800 mb-3 flex items-center">
+                👤 Personal Information
+              </h3>
+              <ul className="list-none space-y-2 text-gray-700 mb-4">
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Name, email address, phone number
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Date of birth and demographic information
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Insurance information (if applicable)
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Emergency contact information
+                </li>
               </ul>
 
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Health Information</h3>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-                <li>Medical history and current symptoms</li>
-                <li>Treatment goals and preferences</li>
-                <li>Session notes and treatment plans</li>
-                <li>Communication records with healthcare providers</li>
+              <h3 className="text-xl font-semibold text-purple-800 mb-3 flex items-center">
+                ⚕️ Health Information
+              </h3>
+              <ul className="list-none space-y-2 text-gray-700 mb-4">
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Medical history and current symptoms
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Treatment goals and preferences
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Session notes and treatment plans
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Communication records with healthcare providers
+                </li>
               </ul>
 
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Technical Information</h3>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>Device information and browser type</li>
-                <li>IP address and location data</li>
-                <li>Usage patterns and platform interactions</li>
-                <li>Session recordings (with explicit consent)</li>
+              <h3 className="text-xl font-semibold text-purple-800 mb-3 flex items-center">
+                💻 Technical Information
+              </h3>
+              <ul className="list-none space-y-2 text-gray-700">
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Device information and browser type
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  IP address and location data
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Usage patterns and platform interactions
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  Session recordings (with explicit consent)
+                </li>
               </ul>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. How We Use Your Information</h2>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>Facilitate therapy sessions and treatment</li>
-                <li>Match you with appropriate healthcare providers</li>
-                <li>Process payments and insurance claims</li>
-                <li>Improve our platform and services</li>
-                <li>Ensure platform security and prevent fraud</li>
-                <li>Comply with legal and regulatory requirements</li>
+            <section className="mb-8 bg-indigo-50 p-6 rounded-lg border-l-4 border-indigo-400">
+              <h2 className="text-2xl font-semibold text-indigo-900 mb-4 flex items-center">
+                <span className="bg-indigo-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">4</span>
+                🎯 How We Use Your Information
+              </h2>
+              <ul className="list-none space-y-3 text-gray-700">
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Facilitate therapy sessions and treatment
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Match you with appropriate healthcare providers
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Process payments and insurance claims
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Improve our platform and services
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Ensure platform security and prevent fraud
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-500 mr-2">✓</span>
+                  Comply with legal and regulatory requirements
+                </li>
               </ul>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Information Sharing</h2>
+            <section className="mb-8 bg-red-50 p-6 rounded-lg border-l-4 border-red-400">
+              <h2 className="text-2xl font-semibold text-red-900 mb-4 flex items-center">
+                <span className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">5</span>
+                🔄 Information Sharing
+              </h2>
               <p className="text-gray-700 mb-4">
                 We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li><strong>With Your Therapist:</strong> To facilitate treatment and care coordination</li>
-                <li><strong>With Your Consent:</strong> When you explicitly authorize information sharing</li>
-                <li><strong>Legal Requirements:</strong> When required by law or court order</li>
-                <li><strong>Emergency Situations:</strong> To prevent imminent harm to you or others</li>
-                <li><strong>Service Providers:</strong> With trusted partners who assist in platform operations (under strict confidentiality agreements)</li>
-              </ul>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-red-200">
+                  <h4 className="font-semibold text-red-800 mb-2">👩‍⚕️ With Your Therapist</h4>
+                  <p className="text-gray-600 text-sm">To facilitate treatment and care coordination</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-red-200">
+                  <h4 className="font-semibold text-red-800 mb-2">✅ With Your Consent</h4>
+                  <p className="text-gray-600 text-sm">When you explicitly authorize information sharing</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-red-200">
+                  <h4 className="font-semibold text-red-800 mb-2">⚖️ Legal Requirements</h4>
+                  <p className="text-gray-600 text-sm">When required by law or court order</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-red-200">
+                  <h4 className="font-semibold text-red-800 mb-2">🚨 Emergency Situations</h4>
+                  <p className="text-gray-600 text-sm">To prevent imminent harm to you or others</p>
+                </div>
+              </div>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Data Security</h2>
+            <section className="mb-8 bg-cyan-50 p-6 rounded-lg border-l-4 border-cyan-400">
+              <h2 className="text-2xl font-semibold text-cyan-900 mb-4 flex items-center">
+                <span className="bg-cyan-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">6</span>
+                🔐 Data Security
+              </h2>
               <p className="text-gray-700 mb-4">
                 We implement industry-standard security measures to protect your information:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>End-to-end encryption for all communications</li>
-                <li>Secure data storage with regular backups</li>
-                <li>Multi-factor authentication for account access</li>
-                <li>Regular security audits and penetration testing</li>
-                <li>Employee training on privacy and security protocols</li>
-              </ul>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-cyan-200">
+                  <h4 className="font-semibold text-cyan-800 mb-2">🔒 End-to-end encryption</h4>
+                  <p className="text-gray-600 text-sm">For all communications</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-cyan-200">
+                  <h4 className="font-semibold text-cyan-800 mb-2">💾 Secure data storage</h4>
+                  <p className="text-gray-600 text-sm">With regular backups</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-cyan-200">
+                  <h4 className="font-semibold text-cyan-800 mb-2">🔑 Multi-factor authentication</h4>
+                  <p className="text-gray-600 text-sm">For account access</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-cyan-200">
+                  <h4 className="font-semibold text-cyan-800 mb-2">🛡️ Security audits</h4>
+                  <p className="text-gray-600 text-sm">Regular testing and monitoring</p>
+                </div>
+              </div>
             </section>
 
             <section className="mb-8">
@@ -142,17 +244,20 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Contact Us</h2>
+            <section className="mb-8 bg-emerald-50 p-6 rounded-lg border-l-4 border-emerald-400">
+              <h2 className="text-2xl font-semibold text-emerald-900 mb-4 flex items-center">
+                <span className="bg-emerald-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">11</span>
+                📞 Contact Us
+              </h2>
               <p className="text-gray-700 mb-4">
                 If you have questions about this Privacy Policy or wish to exercise your privacy rights, please contact us:
               </p>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-gray-700">
-                  <strong>Privacy Officer</strong><br />
-                  Email: privacy@telepsy.com<br />
-                  Phone: +1 (555) 123-4567<br />
-                  Address: 123 Healthcare Ave, Medical District, NY 10001
+              <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-6 rounded-lg border border-emerald-200">
+                <p className="text-gray-800 font-medium">
+                  <strong className="text-emerald-700">🛡️ Privacy Officer</strong><br />
+                  📧 Email: privacy@telepsy.com<br />
+                  📞 Phone: +1 (555) 123-4567<br />
+                  📍 Address: 123 Healthcare Ave, Medical District, NY 10001
                 </p>
               </div>
             </section>

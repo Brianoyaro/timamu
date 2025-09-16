@@ -130,8 +130,8 @@ export default function TherapistDashboard({ sessions, isLoading }) {
                     <div className="flex-1">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary-600">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-600">
                               {session.patient?.firstName?.[0]}{session.patient?.lastName?.[0]}
                             </span>
                           </div>
@@ -179,7 +179,7 @@ export default function TherapistDashboard({ sessions, isLoading }) {
               <h3 className="text-lg font-medium text-gray-900">Upcoming Sessions</h3>
               <Link
                 to="/sessions"
-                className="text-primary-600 hover:text-primary-500 text-sm font-medium"
+                className="text-blue-600 hover:text-blue-500 text-sm font-medium"
               >
                 View all
               </Link>
@@ -253,7 +253,7 @@ export default function TherapistDashboard({ sessions, isLoading }) {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <button className="text-primary-600 hover:text-primary-500 text-sm font-medium">
+                    <button className="text-blue-600 hover:text-blue-500 text-sm font-medium">
                       View Notes
                     </button>
                   </div>
@@ -278,14 +278,14 @@ export default function TherapistDashboard({ sessions, isLoading }) {
             to="/sessions"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <CalendarIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <CalendarIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Manage Schedule</span>
           </Link>
           <Link
             to="/profile"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <ClockIcon className="h-6 w-6 text-primary-600 mr-3" />
+            <ClockIcon className="h-6 w-6 text-blue-600 mr-3" />
             <span className="text-sm font-medium text-gray-900">Set Availability</span>
           </Link>
           <div className="flex items-center p-4 border border-gray-200 rounded-lg bg-gray-50">

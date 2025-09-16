@@ -154,7 +154,7 @@ export default function SessionRoomPage() {
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
               className={`p-2 rounded-lg transition-colors ${
-                isChatOpen ? 'bg-primary-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                isChatOpen ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
               <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -298,13 +298,13 @@ export default function SessionRoomPage() {
                   <div
                     className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
                       msg.senderId === user?.id
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
                     <p>{msg.content}</p>
                     <p className={`text-xs mt-1 ${
-                      msg.senderId === user?.id ? 'text-primary-200' : 'text-gray-500'
+                      msg.senderId === user?.id ? 'text-blue-200' : 'text-gray-500'
                     }`}>
                       {new Date(msg.timestamp).toLocaleTimeString()}
                     </p>
@@ -320,11 +320,11 @@ export default function SessionRoomPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Send
                 </button>
