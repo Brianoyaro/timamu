@@ -10,7 +10,10 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline';
 
-export default function AdminDashboard({ sessions, analytics, isLoading }) {
+export default function AdminDashboard({ sessions = [], analytics, isLoading }) {
+  // Ensure sessions is always an array
+  const sessionsArray = Array.isArray(sessions) ? sessions : [];
+  
   const defaultAnalytics = {
     totalUsers: 0,
     totalPatients: 0,
@@ -45,7 +48,7 @@ export default function AdminDashboard({ sessions, analytics, isLoading }) {
     },
     {
       name: 'Total Sessions',
-      value: sessions?.length || 0,
+      value: sessionsArray.length,
       change: 8,
       changeType: 'increase',
       icon: ChartBarIcon,

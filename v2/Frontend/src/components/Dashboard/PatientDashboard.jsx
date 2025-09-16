@@ -9,27 +9,30 @@ import {
 } from '@heroicons/react/24/outline';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 
-export default function PatientDashboard({ sessions, isLoading }) {
-  const upcomingSessions = sessions
-    ?.filter(session => new Date(session.scheduledFor) > new Date())
-    ?.sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
-    ?.slice(0, 3) || [];
+export default function PatientDashboard({ sessions = [], isLoading }) {
+  // Ensure sessions is always an array
+  const sessionsArray = Array.isArray(sessions) ? sessions : [];
+  
+  const upcomingSessions = sessionsArray
+    .filter(session => new Date(session.scheduledFor) > new Date())
+    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
+    .slice(0, 3);
 
-  const recentSessions = sessions
-    ?.filter(session => session.status === 'COMPLETED')
-    ?.sort((a, b) => new Date(b.scheduledFor) - new Date(a.scheduledFor))
-    ?.slice(0, 3) || [];
+  const recentSessions = sessionsArray
+    .filter(session => session.status === 'COMPLETED')
+    .sort((a, b) => new Date(b.scheduledFor) - new Date(a.scheduledFor))
+    .slice(0, 3);
 
   const stats = [
     {
       name: 'Total Sessions',
-      value: sessions?.length || 0,
+      value: sessionsArray.length,
       icon: VideoCameraIcon,
       color: 'bg-blue-500',
     },
     {
       name: 'Completed',
-      value: sessions?.filter(s => s.status === 'COMPLETED').length || 0,
+      value: sessionsArray.filter(s => s.status === 'COMPLETED').length,
       icon: CheckCircleIcon,
       color: 'bg-green-500',
     },

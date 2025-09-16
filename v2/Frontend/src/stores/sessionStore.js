@@ -25,11 +25,15 @@ const useSessionStore = create((set, get) => ({
         throw new Error('Failed to fetch sessions');
       }
 
-      const sessions = await response.json();
+      const data = await response.json();
+      // Ensure we always set an array
+      const sessions = Array.isArray(data) ? data : [];
       set({ sessions, isLoading: false });
       return sessions;
     } catch (error) {
-      set({ isLoading: false });
+      console.error('Error fetching sessions:', error);
+      // Set empty array on error to prevent filter issues
+      set({ sessions: [], isLoading: false });
       throw error;
     }
   },

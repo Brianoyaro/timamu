@@ -9,15 +9,18 @@ import {
 } from '@heroicons/react/24/outline';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 
-export default function TherapistDashboard({ sessions, isLoading }) {
-  const todaySessions = sessions
-    ?.filter(session => isToday(parseISO(session.scheduledFor)))
-    ?.sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor)) || [];
+export default function TherapistDashboard({ sessions = [], isLoading }) {
+  // Ensure sessions is always an array
+  const sessionsArray = Array.isArray(sessions) ? sessions : [];
+  
+  const todaySessions = sessionsArray
+    .filter(session => isToday(parseISO(session.scheduledFor)))
+    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
 
-  const upcomingSessions = sessions
-    ?.filter(session => new Date(session.scheduledFor) > new Date())
-    ?.sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
-    ?.slice(0, 5) || [];
+  const upcomingSessions = sessionsArray
+    .filter(session => new Date(session.scheduledFor) > new Date())
+    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
+    .slice(0, 5);
 
   const recentCompletedSessions = sessions
     ?.filter(session => session.status === 'COMPLETED')
@@ -33,25 +36,25 @@ export default function TherapistDashboard({ sessions, isLoading }) {
     },
     {
       name: 'Total Patients',
-      value: new Set(sessions?.map(s => s.patientId)).size || 0,
+      value: new Set(sessionsArray.map(s => s.patientId)).size,
       icon: UsersIcon,
       color: 'bg-green-500',
     },
     {
       name: 'This Week',
-      value: sessions?.filter(s => {
+      value: sessionsArray.filter(s => {
         const sessionDate = parseISO(s.scheduledFor);
         const now = new Date();
         const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
         const weekEnd = new Date(now.setDate(weekStart.getDate() + 6));
         return sessionDate >= weekStart && sessionDate <= weekEnd;
-      }).length || 0,
+      }).length,
       icon: ClockIcon,
       color: 'bg-yellow-500',
     },
     {
       name: 'Completed',
-      value: sessions?.filter(s => s.status === 'COMPLETED').length || 0,
+      value: sessionsArray.filter(s => s.status === 'COMPLETED').length,
       icon: CheckCircleIcon,
       color: 'bg-purple-500',
     },
