@@ -25,6 +25,15 @@ const router = express.Router();
  * @access  Public
  */
 router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
+  console.log('📝 Auth Route: POST /register called');
+  console.log('📝 Auth Route: Request body:', { 
+    email: req.body.email, 
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    role: req.body.role,
+    password: '[REDACTED]'
+  });
+
   const {
     email,
     password,
@@ -39,15 +48,18 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
     experience
   } = req.body;
 
+  console.log('📝 Auth Route: Checking if user already exists for email:', email);
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email }
   });
 
   if (existingUser) {
+    console.log('📝 Auth Route: User already exists with email:', email);
     throw new AppError('User with this email already exists', 400);
   }
 
+  console.log('📝 Auth Route: User does not exist, proceeding with registration');
   // Hash password
   const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -155,8 +167,12 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
  * @access  Public
  */
 router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
+  console.log('🔐 Auth Route: POST /login called');
+  console.log('🔐 Auth Route: Login attempt for email:', req.body.email);
+  
   const { email, password } = req.body;
 
+  console.log('🔐 Auth Route: Looking up user in database for email:', email);
   // Find user with profile data
   const user = await prisma.user.findUnique({
     where: { email },
@@ -167,7 +183,14 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
     }
   });
 
+  if (!user) {
+    console.log('🔐 Auth Route: User not found for email:', email);
+  } else {
+    console.log('🔐 Auth Route: User found, verifying password for user ID:', user.id);
+  }
+
   if (!user || !(await bcrypt.compare(password, user.password))) {
+    console.log('🔐 Auth Route: Login failed - invalid credentials for email:', email);
     await createAuditLog({
       action: 'USER_LOGIN',
       userEmail: email,
@@ -179,6 +202,8 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
 
     throw new AppError('Invalid credentials', 401);
   }
+
+  console.log('🔐 Auth Route: Password verified successfully for user:', user.id);
 
   if (!user.isActive) {
     await createAuditLog({
@@ -420,9 +445,14 @@ router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(async
  * @desc    Google OAuth login
  * @access  Public
  */
-router.get('/google', passport.authenticate('google', {
-  scope: ['profile', 'email']
-}));
+router.get('/google', (req, res, next) => {
+  console.log('🔵 Auth Route: GET /google called - initiating Google OAuth');
+  console.log('🔵 Auth Route: Request IP:', req.ip);
+  console.log('🔵 Auth Route: User Agent:', req.get('User-Agent'));
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
+  })(req, res, next);
+});
 
 /**
  * @route   GET /api/auth/google/callback
@@ -432,7 +462,16 @@ router.get('/google', passport.authenticate('google', {
 router.get('/google/callback', 
   passport.authenticate('google', { session: false }),
   asyncHandler(async (req, res) => {
+    console.log('🔵 Auth Route: GET /google/callback called');
+    console.log('🔵 Auth Route: OAuth user received:', {
+      id: req.user?.id,
+      email: req.user?.email,
+      firstName: req.user?.firstName,
+      lastName: req.user?.lastName
+    });
+
     const { accessToken, refreshToken } = await generateTokens(req.user);
+    console.log('🔵 Auth Route: Generated tokens for OAuth user');
 
     // Log OAuth login
     await createAuditLog({
@@ -446,7 +485,9 @@ router.get('/google/callback',
     });
 
     // Redirect to frontend with tokens
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${accessToken}&refresh=${refreshToken}`);
+    const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${accessToken}&refresh=${refreshToken}`;
+    console.log('🔵 Auth Route: Redirecting to frontend with tokens:', redirectUrl);
+    res.redirect(redirectUrl);
   })
 );
 

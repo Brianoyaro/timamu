@@ -1,0 +1,25 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="20" cy="20" r="18" fill="url(#logoGradient)" />
+  
+  <!-- Brain/Mind icon -->
+  <path d="M12 14c0-1.5 1.5-3 3-3s3 1.5 3 3c1 0 2 1 2 2s-1 2-2 2c0 1.5-1.5 3-3 3s-3-1.5-3-3c-1 0-2-1-2-2s1-2 2-2z" 
+        fill="white" opacity="0.9"/>
+  <path d="M20 16c1 0 2-1 2-2s-1-2-2-2c0-1 1-2 2-2s2 1 2 2c1 0 2 1 2 2s-1 2-2 2c0 1-1 2-2 2s-2-1-2-2z" 
+        fill="white" opacity="0.7"/>
+  
+  <!-- Text -->
+  <text x="45" y="16" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#1F2937">
+    TelePsy
+  </text>
+  <text x="45" y="30" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="400" fill="#6B7280">
+    Mental Health Care
+  </text>
+</svg>

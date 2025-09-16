@@ -20,9 +20,13 @@ const useAuthStore = create(
       }),
 
       login: async (credentials) => {
+        console.log('🔐 AuthStore: login() called with credentials:', { email: credentials.email, password: '[REDACTED]' });
         set({ isLoading: true });
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`;
+          console.log('🔐 AuthStore: Making login request to:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -30,11 +34,21 @@ const useAuthStore = create(
             body: JSON.stringify(credentials),
           });
 
+          console.log('🔐 AuthStore: Login response status:', response.status);
+
           if (!response.ok) {
+            const errorData = await response.text();
+            console.error('🔐 AuthStore: Login failed with error:', errorData);
             throw new Error('Login failed');
           }
 
           const data = await response.json();
+          console.log('🔐 AuthStore: Login successful, user data:', { 
+            userId: data.user?.id, 
+            email: data.user?.email,
+            role: data.user?.role,
+            hasToken: !!data.token 
+          });
           
           set({
             user: data.user,
@@ -46,15 +60,26 @@ const useAuthStore = create(
 
           return data;
         } catch (error) {
+          console.error('🔐 AuthStore: Login error:', error);
           set({ isLoading: false });
           throw error;
         }
       },
 
       register: async (userData) => {
+        console.log('📝 AuthStore: register() called with userData:', { 
+          firstName: userData.firstName, 
+          lastName: userData.lastName,
+          email: userData.email, 
+          role: userData.role,
+          password: '[REDACTED]' 
+        });
         set({ isLoading: true });
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`;
+          console.log('📝 AuthStore: Making register request to:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -62,11 +87,21 @@ const useAuthStore = create(
             body: JSON.stringify(userData),
           });
 
+          console.log('📝 AuthStore: Register response status:', response.status);
+
           if (!response.ok) {
+            const errorData = await response.text();
+            console.error('📝 AuthStore: Registration failed with error:', errorData);
             throw new Error('Registration failed');
           }
 
           const data = await response.json();
+          console.log('📝 AuthStore: Registration successful, user data:', { 
+            userId: data.user?.id, 
+            email: data.user?.email,
+            role: data.user?.role,
+            hasToken: !!data.token 
+          });
           
           set({
             user: data.user,
@@ -78,12 +113,14 @@ const useAuthStore = create(
 
           return data;
         } catch (error) {
+          console.error('📝 AuthStore: Register error:', error);
           set({ isLoading: false });
           throw error;
         }
       },
 
       logout: () => {
+        console.log('🚪 AuthStore: logout() called');
         set({
           user: null,
           token: null,
@@ -93,13 +130,18 @@ const useAuthStore = create(
       },
 
       refreshAccessToken: async () => {
+        console.log('🔄 AuthStore: refreshAccessToken() called');
         const { refreshToken } = get();
         if (!refreshToken) {
+          console.error('🔄 AuthStore: No refresh token available');
           throw new Error('No refresh token available');
         }
 
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`, {
+          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`;
+          console.log('🔄 AuthStore: Making refresh request to:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -107,11 +149,16 @@ const useAuthStore = create(
             body: JSON.stringify({ refreshToken }),
           });
 
+          console.log('🔄 AuthStore: Refresh response status:', response.status);
+
           if (!response.ok) {
+            const errorData = await response.text();
+            console.error('🔄 AuthStore: Token refresh failed with error:', errorData);
             throw new Error('Token refresh failed');
           }
 
           const data = await response.json();
+          console.log('🔄 AuthStore: Token refresh successful, new token received');
           
           set({
             token: data.token,

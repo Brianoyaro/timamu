@@ -8,6 +8,11 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { prisma } = require('../utils/database');
 const logger = require('../utils/logger');
 
+console.log('🔧 Passport: Configuring Google OAuth strategy');
+console.log('🔧 Passport: Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('🔧 Passport: Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+console.log('🔧 Passport: Callback URL:', 'https://timamu-v2-backend.onrender.com/api/auth/google/callback');
+
 // Configure Google OAuth strategy
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -15,12 +20,21 @@ passport.use(new GoogleStrategy({
   callbackURL: 'https://timamu-v2-backend.onrender.com/api/auth/google/callback'
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log('🔧 Passport: Google OAuth callback triggered');
+    console.log('🔧 Passport: Google profile received:', {
+      id: profile.id,
+      email: profile.emails?.[0]?.value,
+      name: profile.displayName
+    });
+
     const email = profile.emails[0].value;
     const googleId = profile.id;
     const firstName = profile.name.givenName;
     const lastName = profile.name.familyName;
     const avatar = profile.photos[0]?.value;
 
+    console.log('🔧 Passport: Looking for existing user with email:', email, 'or Google ID:', googleId);
+    
     // Check if user already exists
     let user = await prisma.user.findFirst({
       where: {

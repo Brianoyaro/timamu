@@ -3,9 +3,17 @@ export default function GoogleAuthButton({
   className = "",
   disabled = false 
 }) {
+  console.log('🔵 GoogleAuthButton: Component rendered with props:', { children, className, disabled });
+
   const handleGoogleAuth = () => {
-    if (disabled) return;
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`;
+    console.log('🔵 GoogleAuthButton: handleGoogleAuth() called, disabled:', disabled);
+    if (disabled) {
+      console.log('🔵 GoogleAuthButton: Button is disabled, aborting');
+      return;
+    }
+    const googleAuthUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`;
+    console.log('🔵 GoogleAuthButton: Redirecting to Google OAuth URL:', googleAuthUrl);
+    window.location.href = googleAuthUrl;
   };
 
   return (

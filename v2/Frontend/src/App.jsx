@@ -15,6 +15,9 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
+import AuthCallbackPage from './pages/Auth/AuthCallbackPage';
+import TermsPage from './pages/Legal/TermsPage';
+import PrivacyPage from './pages/Legal/PrivacyPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import SessionsPage from './pages/Sessions/SessionsPage';
 import SessionRoomPage from './pages/Sessions/SessionRoomPage';
@@ -73,6 +76,9 @@ function App() {
             <Route path="/" element={<AuthRoute><LandingPage /></AuthRoute>} />
             <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
             <Route path="/register" element={<AuthRoute><RegisterPage /></AuthRoute>} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
 
             {/* Protected routes with layout */}
             <Route path="/dashboard" element={<ProtectedLayoutRoute><DashboardPage /></ProtectedLayoutRoute>} />
