@@ -86,7 +86,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 to="/register"
-                className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Get Started
               </Link>
@@ -96,12 +96,12 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-50 to-primary-100 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-blue-50 to-blue-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
               Mental Health Care,
-              <span className="text-primary-600 block">Reimagined</span>
+              <span className="text-blue-600 block">Reimagined</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Connect with licensed therapists from the comfort of your home. 
@@ -110,13 +110,13 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
-                className="bg-primary-600 text-white hover:bg-primary-700 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
+                className="bg-blue-600 text-white hover:bg-blue-700 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
               >
                 Start Your Journey
               </Link>
               <Link
                 to="/therapists"
-                className="border border-primary-600 text-primary-600 hover:bg-primary-50 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
+                className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
               >
                 Find Therapists
               </Link>
@@ -125,8 +125,8 @@ export default function LandingPage() {
         </div>
         
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 -mt-40 -mr-40 w-80 h-80 bg-primary-200 rounded-full opacity-50"></div>
-        <div className="absolute bottom-0 left-0 -mb-40 -ml-40 w-80 h-80 bg-primary-300 rounded-full opacity-30"></div>
+        <div className="absolute top-0 right-0 -mt-40 -mr-40 w-80 h-80 bg-blue-200 rounded-full opacity-50"></div>
+        <div className="absolute bottom-0 left-0 -mb-40 -ml-40 w-80 h-80 bg-blue-300 rounded-full opacity-30"></div>
       </section>
 
       {/* Stats Section */}
@@ -135,7 +135,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
+                <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
                   {stat.number}
                 </div>
                 <div className="text-gray-600 font-medium">{stat.label}</div>
@@ -160,8 +160,8 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div key={index} className="bg-white rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
-                <div className="bg-primary-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                  <feature.icon className="h-6 w-6 text-primary-600" />
+                <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
+                  <feature.icon className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
@@ -185,7 +185,7 @@ export default function LandingPage() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-primary-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 1
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Create Your Profile</h3>
@@ -196,7 +196,7 @@ export default function LandingPage() {
             </div>
             
             <div className="text-center">
-              <div className="bg-primary-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 2
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Choose Your Therapist</h3>
@@ -207,7 +207,7 @@ export default function LandingPage() {
             </div>
             
             <div className="text-center">
-              <div className="bg-primary-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                 3
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Start Your Session</h3>
@@ -252,24 +252,24 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary-600">
+      <section className="py-20 bg-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Begin Your Mental Health Journey?
           </h2>
-          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Join thousands of people who have found support, healing, and growth through TelePsy.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
-              className="bg-white text-primary-600 hover:bg-gray-50 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
+              className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
             >
               Get Started Today
             </Link>
             <Link
               to="/login"
-              className="border border-white text-white hover:bg-primary-700 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
+              className="border border-white text-white hover:bg-blue-700 px-8 py-3 rounded-lg text-lg font-medium transition-colors inline-flex items-center justify-center"
             >
               Sign In
             </Link>
