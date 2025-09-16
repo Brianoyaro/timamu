@@ -58,8 +58,8 @@ app.use(helmet({
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    ? ['https://timamu-v2-frontend.onrender.com'] 
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'https://timamu-v2-frontend.onrender.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token']
