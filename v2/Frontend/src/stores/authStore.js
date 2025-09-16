@@ -44,22 +44,23 @@ const useAuthStore = create(
           }
 
           const data = await response.json();
+          console.log('🔐 AuthStore: Full response data:', data);
           console.log('🔐 AuthStore: Login successful, user data:', { 
-            userId: data.user?.id, 
-            email: data.user?.email,
-            role: data.user?.role,
-            hasToken: !!data.token 
+            userId: data.data?.user?.id, 
+            email: data.data?.user?.email,
+            role: data.data?.user?.role,
+            hasToken: !!data.data?.accessToken 
           });
           
           set({
-            user: data.user,
-            token: data.token,
-            refreshToken: data.refreshToken,
+            user: data.data.user,
+            token: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
 
-          return data;
+          return data.data;
         } catch (error) {
           console.error('🔐 AuthStore: Login error:', error);
           set({ isLoading: false });
@@ -97,18 +98,16 @@ const useAuthStore = create(
           }
 
           const data = await response.json();
+          console.log('📝 AuthStore: Full response data:', data);
           console.log('📝 AuthStore: Registration successful, user data:', { 
-            userId: data.user?.id, 
-            email: data.user?.email,
-            role: data.user?.role,
-            hasToken: !!data.token 
+            userId: data.data?.user?.id, 
+            email: data.data?.user?.email,
+            role: data.data?.user?.role,
+            isVerified: data.data?.user?.isVerified
           });
           
+          // Registration doesn't automatically log in - user needs to verify email first
           set({
-            user: data.user,
-            token: data.token,
-            refreshToken: data.refreshToken,
-            isAuthenticated: true,
             isLoading: false,
           });
 
@@ -159,14 +158,15 @@ const useAuthStore = create(
           }
 
           const data = await response.json();
+          console.log('🔄 AuthStore: Full response data:', data);
           console.log('🔄 AuthStore: Token refresh successful, new token received');
           
           set({
-            token: data.token,
-            refreshToken: data.refreshToken,
+            token: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
           });
 
-          return data.token;
+          return data.data.accessToken;
         } catch (error) {
           // If refresh fails, logout the user
           get().logout();
