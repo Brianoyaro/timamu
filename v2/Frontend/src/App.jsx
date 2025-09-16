@@ -35,8 +35,23 @@ const queryClient = new QueryClient({
   },
 });
 
+// Helper component for auth redirects
+function AuthRoute({ children }) {
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+}
+
+// Helper component for protected routes with layout
+function ProtectedLayoutRoute({ children, requiredRole }) {
+  return (
+    <ProtectedRoute requiredRole={requiredRole}>
+      <Layout>{children}</Layout>
+    </ProtectedRoute>
+  );
+}
+
 function App() {
-  const { isAuthenticated, token, user } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
   const { connect, disconnect } = useSocketStore();
 
   // Connect socket when authenticated
@@ -46,7 +61,6 @@ function App() {
     } else {
       disconnect();
     }
-
     return () => disconnect();
   }, [isAuthenticated, token, connect, disconnect]);
 
@@ -56,124 +70,31 @@ function App() {
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes */}
-            <Route 
-              path="/" 
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <LandingPage />
-                )
-              } 
-            />
-            <Route 
-              path="/login" 
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <LoginPage />
-                )
-              } 
-            />
-            <Route 
-              path="/register" 
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <RegisterPage />
-                )
-              } 
-            />
+            <Route path="/" element={<AuthRoute><LandingPage /></AuthRoute>} />
+            <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
+            <Route path="/register" element={<AuthRoute><RegisterPage /></AuthRoute>} />
 
-            {/* Protected routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <DashboardPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/sessions"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <SessionsPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/session/:sessionId"
-              element={
-                <ProtectedRoute>
-                  <SessionRoomPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ProfilePage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/therapists"
-              element={
-                <ProtectedRoute requiredRole="PATIENT">
-                  <Layout>
-                    <TherapistsPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="ADMIN">
-                  <Layout>
-                    <AdminPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Protected routes with layout */}
+            <Route path="/dashboard" element={<ProtectedLayoutRoute><DashboardPage /></ProtectedLayoutRoute>} />
+            <Route path="/sessions" element={<ProtectedLayoutRoute><SessionsPage /></ProtectedLayoutRoute>} />
+            <Route path="/profile" element={<ProtectedLayoutRoute><ProfilePage /></ProtectedLayoutRoute>} />
+            <Route path="/therapists" element={<ProtectedLayoutRoute requiredRole="PATIENT"><TherapistsPage /></ProtectedLayoutRoute>} />
+            <Route path="/admin" element={<ProtectedLayoutRoute requiredRole="ADMIN"><AdminPage /></ProtectedLayoutRoute>} />
+
+            {/* Protected route without layout */}
+            <Route path="/session/:sessionId" element={<ProtectedRoute><SessionRoomPage /></ProtectedRoute>} />
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
 
-          {/* Global toast notifications */}
           <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                duration: 5000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
+              style: { background: '#363636', color: '#fff' },
+              success: { duration: 3000, iconTheme: { primary: '#10b981', secondary: '#fff' } },
+              error: { duration: 5000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
             }}
           />
         </div>

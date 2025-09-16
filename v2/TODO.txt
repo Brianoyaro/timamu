@@ -80,3 +80,21 @@ The project should include:
 ---
  Backend/ to house backend code
  frontend/ to house frontend code
+++++++++++++++++++++++++++
+cd /home/brian/timamu/v2/Backend
+npm run db:generate
+npm run db:push
+npm run db:seed
+?????
+
+# Generate client
+npx prisma generate
+
+# Push schema
+npx prisma db push
+
+# Run seed
+node src/scripts/seed.js
+
+# Open Prisma Studio
+npx prisma studio
