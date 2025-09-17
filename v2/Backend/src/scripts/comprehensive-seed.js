@@ -569,8 +569,8 @@ async function seedAssignments(users) {
       specializationId: anxietySpec.id,
       assignmentTypeId: primaryType.id,
       status: 'ACTIVE',
-      reason: 'Primary care for anxiety management',
-      requestedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      notes: 'Primary care for anxiety management',
+      requestedBy: patients[0].id,
       approvedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // 6 days ago
       approvedBy: users.admin.id
     }
@@ -584,8 +584,8 @@ async function seedAssignments(users) {
       specializationId: familySpec.id,
       assignmentTypeId: primaryType.id,
       status: 'ACTIVE',
-      reason: 'Family therapy for relationship issues following trauma',
-      requestedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      notes: 'Family therapy for relationship issues following trauma',
+      requestedBy: patients[1].id,
       approvedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
       approvedBy: users.admin.id
     }
@@ -598,10 +598,10 @@ async function seedAssignments(users) {
       specializationId: traumaSpec.id,
       assignmentTypeId: specialistType.id,
       status: 'ACTIVE',
-      reason: 'Specialized trauma therapy for PTSD following car accident',
+      notes: 'Specialized trauma therapy for PTSD following car accident',
       maxSessions: 12,
-      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
-      requestedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+      requestedBy: patients[1].id,
       approvedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       approvedBy: users.admin.id
     }
@@ -614,11 +614,11 @@ async function seedAssignments(users) {
       therapistId: therapist1Profile.id,
       specializationId: anxietySpec.id,
       assignmentTypeId: specialistType.id,
-      status: 'PENDING_APPROVAL',
-      reason: 'Specialist care needed for severe social anxiety and panic disorder',
+      status: 'PENDING',
+      notes: 'Specialist care needed for severe social anxiety and panic disorder',
       maxSessions: 12,
-      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-      requestedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      requestedBy: patients[2].id
     }
   });
 
@@ -630,10 +630,10 @@ async function seedAssignments(users) {
       specializationId: suicideSpec.id,
       assignmentTypeId: emergencyType.id,
       status: 'ACTIVE',
-      reason: 'Emergency access needed for suicide ideation concerns',
+      notes: 'Emergency access needed for suicide ideation concerns',
       maxSessions: 6,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      requestedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      requestedBy: patients[2].id,
       approvedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
       approvedBy: users.admin.id
     }
@@ -721,7 +721,7 @@ async function seedSessions(users, assignments) {
       startedAt: yesterday,
       endedAt: new Date(yesterday.getTime() + 60 * 60 * 1000),
       duration: 60,
-      sessionType: 'PHONE',
+      sessionType: 'AUDIO_ONLY',
       status: 'COMPLETED',
       notes: 'Emergency crisis intervention session - immediate safety planning',
       cost: 200.00,
