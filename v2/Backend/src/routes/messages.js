@@ -6,7 +6,7 @@
 const express = require('express');
 const { prisma } = require('../utils/database');
 const { authenticate, authorize, requireVerified, checkResourceAccess } = require('../middleware/authMiddleware');
-const { validate, sendMessageSchema, uuidSchema, paginationSchema } = require('../middleware/validation');
+const { validate, sendMessageSchema, uuidSchema, uuidParamsSchema, recipientIdParamsSchema, paginationSchema } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorMiddleware');
 const { createAuditLog, AUDIT_ACTIONS } = require('../utils/audit');
 const logger = require('../utils/logger');
@@ -291,7 +291,7 @@ router.get('/conversations',
 router.get('/conversations/:recipientId', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(recipientIdParamsSchema, 'params'),
   validate(paginationSchema, 'query'),
   asyncHandler(async (req, res) => {
     const { recipientId } = req.params;
@@ -368,7 +368,7 @@ router.get('/conversations/:recipientId',
 router.put('/:id/read', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const message = await prisma.message.findUnique({
       where: { id: req.params.id }
@@ -419,7 +419,7 @@ router.put('/:id/read',
 router.delete('/:id', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const message = await prisma.message.findUnique({
       where: { id: req.params.id }

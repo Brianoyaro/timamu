@@ -6,7 +6,7 @@
 const express = require('express');
 const { prisma } = require('../utils/database');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
-const { validate, uuidSchema, paginationSchema } = require('../middleware/validation');
+const { validate, uuidSchema, uuidParamsSchema, paginationSchema } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorMiddleware');
 const { createAuditLog, getAuditLogs, getAuditStats, exportAuditLogs, AUDIT_ACTIONS } = require('../utils/audit');
 const { sendEmail } = require('../utils/email');
@@ -229,7 +229,7 @@ router.get('/users',
  * @access  Private (Admin only)
  */
 router.get('/users/:id', 
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -315,7 +315,7 @@ router.get('/users/:id',
  * @access  Private (Admin only)
  */
 router.put('/users/:id/status', 
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const { isActive } = req.body;
 
@@ -418,7 +418,7 @@ router.get('/therapists/pending',
  * @access  Private (Admin only)
  */
 router.put('/therapists/:id/approve', 
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const { approved, notes } = req.body;
 

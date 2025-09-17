@@ -76,6 +76,20 @@ const uuidSchema = Joi.string()
   });
 
 /**
+ * UUID params validation (for route parameters)
+ */
+const uuidParamsSchema = Joi.object({
+  id: uuidSchema
+});
+
+/**
+ * UUID params validation for recipientId parameter
+ */
+const recipientIdParamsSchema = Joi.object({
+  recipientId: uuidSchema
+});
+
+/**
  * Name validation
  */
 const nameSchema = Joi.string()
@@ -266,6 +280,8 @@ module.exports = {
   
   // Common schemas
   uuidSchema,
+  uuidParamsSchema,
+  recipientIdParamsSchema,
   emailSchema,
   passwordSchema,
   nameSchema,

@@ -6,7 +6,7 @@
 const express = require('express');
 const { prisma } = require('../utils/database');
 const { authenticate, authorize, requireVerified, checkResourceAccess } = require('../middleware/authMiddleware');
-const { validate, createSessionSchema, updateSessionSchema, uuidSchema, paginationSchema } = require('../middleware/validation');
+const { validate, createSessionSchema, updateSessionSchema, uuidSchema, uuidParamsSchema, paginationSchema } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorMiddleware');
 const { createAuditLog, AUDIT_ACTIONS } = require('../utils/audit');
 const { sendEmail } = require('../utils/email');
@@ -277,7 +277,7 @@ router.get('/',
 router.get('/:id', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessSession),
   asyncHandler(async (req, res) => {
     const session = await prisma.session.findUnique({
@@ -367,7 +367,7 @@ router.get('/:id',
 router.put('/:id', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   validate(updateSessionSchema),
   checkResourceAccess(canAccessSession),
   asyncHandler(async (req, res) => {
@@ -453,7 +453,7 @@ router.put('/:id',
 router.post('/:id/join', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessSession),
   asyncHandler(async (req, res) => {
     const session = await prisma.session.findUnique({
@@ -527,7 +527,7 @@ router.post('/:id/join',
 router.post('/:id/leave', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessSession),
   asyncHandler(async (req, res) => {
     const session = await prisma.session.findUnique({
@@ -566,7 +566,7 @@ router.post('/:id/notes',
   authenticate, 
   authorize(['THERAPIST']),
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessSession),
   asyncHandler(async (req, res) => {
     const { content, isPrivate = true } = req.body;

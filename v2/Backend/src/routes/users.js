@@ -7,7 +7,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { prisma } = require('../utils/database');
 const { authenticate, authorize, requireVerified } = require('../middleware/authMiddleware');
-const { validate, updateProfileSchema, changePasswordSchema, uuidSchema } = require('../middleware/validation');
+const { validate, updateProfileSchema, changePasswordSchema, uuidSchema, uuidParamsSchema } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorMiddleware');
 const { createAuditLog, AUDIT_ACTIONS } = require('../utils/audit');
 const logger = require('../utils/logger');
@@ -308,7 +308,7 @@ router.get('/therapists', authenticate, authorize(['PATIENT', 'ADMIN']), asyncHa
  * @desc    Get therapist profile by ID
  * @access  Private
  */
-router.get('/therapists/:id', authenticate, validate(uuidSchema, 'params'), asyncHandler(async (req, res) => {
+router.get('/therapists/:id', authenticate, validate(uuidParamsSchema, 'params'), asyncHandler(async (req, res) => {
   const therapist = await prisma.user.findFirst({
     where: {
       id: req.params.id,
@@ -357,7 +357,7 @@ router.post('/therapists/:id/request',
   authenticate, 
   authorize(['PATIENT']), 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const therapistId = req.params.id;
 

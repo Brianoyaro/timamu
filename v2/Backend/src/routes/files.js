@@ -10,7 +10,7 @@ const fs = require('fs').promises;
 const crypto = require('crypto');
 const { prisma } = require('../utils/database');
 const { authenticate, authorize, requireVerified, checkResourceAccess } = require('../middleware/authMiddleware');
-const { validate, uuidSchema } = require('../middleware/validation');
+const { validate, uuidSchema, uuidParamsSchema, paginationSchema } = require('../middleware/validation');
 const { asyncHandler, AppError } = require('../middleware/errorMiddleware');
 const { createAuditLog, AUDIT_ACTIONS } = require('../utils/audit');
 const logger = require('../utils/logger');
@@ -293,7 +293,7 @@ router.get('/',
 router.get('/:id', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessFile),
   asyncHandler(async (req, res) => {
     const file = await prisma.file.findUnique({
@@ -336,7 +336,7 @@ router.get('/:id',
 router.get('/:id/download', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   checkResourceAccess(canAccessFile),
   asyncHandler(async (req, res) => {
     const file = await prisma.file.findUnique({
@@ -385,7 +385,7 @@ router.get('/:id/download',
 router.delete('/:id', 
   authenticate, 
   requireVerified,
-  validate(uuidSchema, 'params'),
+  validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const file = await prisma.file.findUnique({
       where: { id: req.params.id }
