@@ -32,11 +32,21 @@ export default function AuthCallbackPage() {
       console.log('✅ AuthCallback: Valid tokens received, setting up authentication...');
       
       try {
+        // Validate token format before processing
+        if (!token || typeof token !== 'string' || !token.includes('.')) {
+          throw new Error('Invalid token format');
+        }
+
         // Store tokens
         setTokens(token, refreshToken);
         
         // Decode the JWT to get user info (simple base64 decode for demonstration)
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          throw new Error('Invalid JWT token structure');
+        }
+
+        const payload = JSON.parse(atob(tokenParts[1]));
         console.log('👤 AuthCallback: Decoded user payload:', payload);
         
         setUser({

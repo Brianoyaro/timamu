@@ -14,13 +14,34 @@ export default function PatientDashboard({ sessions = [], isLoading }) {
   const sessionsArray = Array.isArray(sessions) ? sessions : [];
   
   const upcomingSessions = sessionsArray
-    .filter(session => new Date(session.scheduledFor) > new Date())
-    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
+    .filter(session => {
+      try {
+        return session.scheduledFor && new Date(session.scheduledFor) > new Date();
+      } catch (error) {
+        console.error('Error filtering upcoming session:', error, session);
+        return false;
+      }
+    })
+    .sort((a, b) => {
+      try {
+        return new Date(a.scheduledFor) - new Date(b.scheduledFor);
+      } catch (error) {
+        console.error('Error sorting sessions:', error);
+        return 0;
+      }
+    })
     .slice(0, 3);
 
   const recentSessions = sessionsArray
     .filter(session => session.status === 'COMPLETED')
-    .sort((a, b) => new Date(b.scheduledFor) - new Date(a.scheduledFor))
+    .sort((a, b) => {
+      try {
+        return new Date(b.scheduledFor) - new Date(a.scheduledFor);
+      } catch (error) {
+        console.error('Error sorting recent sessions:', error);
+        return 0;
+      }
+    })
     .slice(0, 3);
 
   const stats = [
@@ -45,13 +66,28 @@ export default function PatientDashboard({ sessions = [], isLoading }) {
   ];
 
   const getSessionTimeText = (scheduledFor) => {
-    const date = parseISO(scheduledFor);
-    if (isToday(date)) {
-      return `Today at ${format(date, 'h:mm a')}`;
-    } else if (isTomorrow(date)) {
-      return `Tomorrow at ${format(date, 'h:mm a')}`;
-    } else {
-      return format(date, 'MMM d, yyyy \'at\' h:mm a');
+    try {
+      if (!scheduledFor) {
+        return 'Time not available';
+      }
+      
+      const date = parseISO(scheduledFor);
+      
+      // Check if the parsed date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      if (isToday(date)) {
+        return `Today at ${format(date, 'h:mm a')}`;
+      } else if (isTomorrow(date)) {
+        return `Tomorrow at ${format(date, 'h:mm a')}`;
+      } else {
+        return format(date, 'MMM d, yyyy \'at\' h:mm a');
+      }
+    } catch (error) {
+      console.error('Error formatting session time:', error, 'scheduledFor:', scheduledFor);
+      return 'Time not available';
     }
   };
 
@@ -146,15 +182,26 @@ export default function PatientDashboard({ sessions = [], isLoading }) {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      {new Date(session.scheduledFor) <= new Date(Date.now() + 10 * 60 * 1000) && (
-                        <Link
-                          to={`/session/${session.id}`}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                        >
-                          <VideoCameraIcon className="h-4 w-4 mr-1" />
-                          Join
-                        </Link>
-                      )}
+                      {(() => {
+                        try {
+                          const sessionTime = new Date(session.scheduledFor);
+                          const now = new Date();
+                          const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000);
+                          
+                          return sessionTime <= tenMinutesFromNow && (
+                            <Link
+                              to={`/session/${session.id}`}
+                              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                            >
+                              <VideoCameraIcon className="h-4 w-4 mr-1" />
+                              Join
+                            </Link>
+                          );
+                        } catch (error) {
+                          console.error('Error checking session join time:', error);
+                          return null;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -188,7 +235,14 @@ export default function PatientDashboard({ sessions = [], isLoading }) {
                             Dr. {session.therapist?.firstName} {session.therapist?.lastName}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {format(parseISO(session.scheduledFor), 'MMM d, yyyy')}
+                            {(() => {
+                              try {
+                                return session.scheduledFor ? format(parseISO(session.scheduledFor), 'MMM d, yyyy') : 'Date not available';
+                              } catch (error) {
+                                console.error('Error formatting recent session date:', error);
+                                return 'Date not available';
+                              }
+                            })()}
                           </p>
                         </div>
                       </div>

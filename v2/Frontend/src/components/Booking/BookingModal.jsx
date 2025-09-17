@@ -12,7 +12,7 @@ import useSessionStore from '../../stores/sessionStore';
 import toast from 'react-hot-toast';
 
 export default function BookingModal({ isOpen, onClose, therapist }) {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   const { createSession, assignTherapist } = useSessionStore();
   
   const [selectedDate, setSelectedDate] = useState('');
@@ -21,31 +21,57 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: assign therapist, 2: book session
+  const [isInitializing, setIsInitializing] = useState(false);
 
-  // Reset form when modal opens
+  // Reset form when modal opens and check if therapist is already assigned
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && therapist?.id) {
       setSelectedDate('');
       setSelectedTime('');
       setSessionType('VIDEO');
       setNotes('');
-      setStep(1);
+      setIsInitializing(true);
+      
+      // Check if user already has this therapist assigned
+      // In a production app, you'd check the user's assigned therapist
+      // For now, we'll assume they need to assign if it's the first time
+      const checkAssignment = async () => {
+        try {
+          // Skip to booking if user already has an assigned therapist
+          // This would typically be a separate API call or check user data
+          if (user?.assignedTherapistId === therapist.id) {
+            setStep(2);
+          } else {
+            setStep(1);
+          }
+        } catch (error) {
+          console.error('Error checking therapist assignment:', error);
+          setStep(1); // Default to assignment step
+        } finally {
+          setIsInitializing(false);
+        }
+      };
+      
+      checkAssignment();
     }
-  }, [isOpen]);
+  }, [isOpen, therapist?.id, user?.assignedTherapistId]);
 
-  // Generate available dates (next 30 days, excluding weekends for demo)
+  // Generate available dates (next 60 days, excluding past dates)
   const getAvailableDates = () => {
     const dates = [];
     const today = new Date();
+    const currentTime = new Date();
     
-    for (let i = 1; i <= 30; i++) {
+    // Start from tomorrow if it's late in the day (after 6 PM), otherwise start from today
+    const startDay = currentTime.getHours() >= 18 ? 1 : 0;
+    
+    for (let i = startDay; i <= 60; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
-      // Skip weekends for demo (can be customized based on therapist availability)
-      if (date.getDay() !== 0 && date.getDay() !== 6) {
-        dates.push(date);
-      }
+      // Include all days - let therapist availability determine actual availability
+      // In production, this would check against therapist's actual availability calendar
+      dates.push(date);
     }
     
     return dates;
@@ -56,53 +82,79 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
     const slots = [];
     const workingHours = therapist?.therapistProfile?.workingHours;
     
-    // Default working hours if not specified
+    // Default working hours (9 AM to 5 PM)
     let startHour = 9;
     let endHour = 17;
     
-    // Parse working hours if available (simplified for demo)
+    // Parse working hours if available
     if (workingHours && typeof workingHours === 'object') {
-      const selectedDay = new Date(selectedDate).toLocaleLowerCase();
       const dayKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(selectedDate).getDay()];
       
-      if (workingHours[dayKey]) {
+      if (workingHours[dayKey] && typeof workingHours[dayKey] === 'object') {
         const dayHours = workingHours[dayKey];
-        if (dayHours.start) {
-          startHour = parseInt(dayHours.start.split(':')[0]);
+        
+        // Safely parse start hour
+        if (dayHours.start && typeof dayHours.start === 'string' && dayHours.start.includes(':')) {
+          const startTime = dayHours.start.split(':')[0];
+          const parsedStart = parseInt(startTime, 10);
+          if (!isNaN(parsedStart) && parsedStart >= 0 && parsedStart <= 23) {
+            startHour = parsedStart;
+          }
         }
-        if (dayHours.end) {
-          endHour = parseInt(dayHours.end.split(':')[0]);
+        
+        // Safely parse end hour
+        if (dayHours.end && typeof dayHours.end === 'string' && dayHours.end.includes(':')) {
+          const endTime = dayHours.end.split(':')[0];
+          const parsedEnd = parseInt(endTime, 10);
+          if (!isNaN(parsedEnd) && parsedEnd >= 0 && parsedEnd <= 23 && parsedEnd > startHour) {
+            endHour = parsedEnd;
+          }
         }
       }
     }
     
+    // Generate 30-minute time slots
     for (let hour = startHour; hour < endHour; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      if (hour < endHour - 1 || (hour === endHour - 1 && endHour < 24)) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
     }
     
     return slots;
   };
 
   const handleAssignTherapist = async () => {
+    if (!therapist?.id) {
+      toast.error('Therapist information is not available');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const result = await assignTherapist(therapist.id, token);
       
-      if (result.success) {
+      if (result?.success) {
         toast.success('Therapist assigned successfully!');
         setStep(2);
       } else {
-        toast.error(result.message || 'Failed to assign therapist');
+        const errorMessage = result?.message || 'Failed to assign therapist';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Assignment error:', error);
-      if (error.message.includes('already have an assigned therapist')) {
+      const errorMessage = error?.message || '';
+      
+      if (errorMessage.includes('already have an assigned therapist') || 
+          errorMessage.includes('already assigned')) {
         // If already assigned, skip to booking step
+        toast.success('Therapist is already assigned');
         setStep(2);
+      } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+        toast.error('Please log in again to continue');
       } else {
-        toast.error(error.message || 'Failed to assign therapist');
+        toast.error(errorMessage || 'An unexpected error occurred while assigning therapist');
       }
     } finally {
       setIsLoading(false);
@@ -112,41 +164,83 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validation
     if (!selectedDate || !selectedTime) {
       toast.error('Please select both date and time');
+      return;
+    }
+
+    if (!therapist?.id) {
+      toast.error('Therapist information is not available');
+      return;
+    }
+
+    // Check if selected date is in the past
+    const selectedDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    const now = new Date();
+    
+    if (selectedDateTime <= now) {
+      toast.error('Selected time must be in the future');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Combine date and time
-      const scheduledAt = new Date(`${selectedDate}T${selectedTime}:00`);
-      
       const sessionData = {
         therapistId: therapist.id,
-        scheduledAt: scheduledAt.toISOString(),
+        scheduledAt: selectedDateTime.toISOString(),
         sessionType,
         notes: notes.trim() || undefined
       };
 
       const result = await createSession(sessionData, token);
       
-      if (result.success) {
+      if (result?.success) {
         toast.success('Session booked successfully!');
         onClose();
+        // In production, you might want to refresh the sessions list or redirect
       } else {
-        toast.error(result.message || 'Failed to book session');
+        const errorMessage = result?.message || 'Failed to book session';
+        toast.error(errorMessage);
+        
+        // Handle specific error cases
+        if (errorMessage.includes('therapist not assigned')) {
+          setStep(1); // Go back to assignment step
+        }
       }
     } catch (error) {
       console.error('Booking error:', error);
-      toast.error(error.message || 'Failed to book session');
+      const errorMessage = error?.message || 'An unexpected error occurred while booking the session';
+      toast.error(errorMessage);
+      
+      // Handle network or authentication errors
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+        toast.error('Please log in again to continue');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !therapist) return null;
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading booking information...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const availableDates = getAvailableDates();
   const availableTimeSlots = selectedDate ? getAvailableTimeSlots() : [];
@@ -170,18 +264,24 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
                 {therapist?.avatar ? (
                   <img
                     src={therapist.avatar}
-                    alt={`${therapist.firstName} ${therapist.lastName}`}
+                    alt={`Dr. ${therapist.firstName || ''} ${therapist.lastName || ''}`}
                     className="h-12 w-12 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <span className="text-lg font-semibold text-blue-600">
-                    {therapist?.firstName[0]}{therapist?.lastName[0]}
-                  </span>
-                )}
+                ) : null}
+                <span 
+                  className={`text-lg font-semibold text-blue-600 ${therapist?.avatar ? 'hidden' : 'flex'}`}
+                  style={{ display: therapist?.avatar ? 'none' : 'flex' }}
+                >
+                  {therapist?.firstName?.[0] || 'D'}{therapist?.lastName?.[0] || 'R'}
+                </span>
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {step === 1 ? 'Assign Therapist' : 'Book Session with'} Dr. {therapist?.firstName} {therapist?.lastName}
+                  {step === 1 ? 'Assign Therapist' : 'Book Session with'} Dr. {therapist?.firstName || 'Unknown'} {therapist?.lastName || 'Therapist'}
                 </h2>
                 <p className="text-sm text-gray-600">
                   {therapist?.therapistProfile?.education || 'Licensed Therapist'}
@@ -206,7 +306,7 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Assign Dr. {therapist?.firstName} {therapist?.lastName} as Your Therapist
+                  Assign Dr. {therapist?.firstName || 'Unknown'} {therapist?.lastName || 'Therapist'} as Your Therapist
                 </h3>
                 <p className="text-gray-600 mb-6">
                   To book sessions, you need to have this therapist assigned to your account first. 
@@ -218,7 +318,7 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
                   <h4 className="font-medium text-gray-900 mb-2">About This Therapist</h4>
                   <div className="space-y-2 text-sm text-gray-600">
                     <p><strong>Education:</strong> {therapist?.therapistProfile?.education || 'Licensed Therapist'}</p>
-                    {therapist?.therapistProfile?.specializations && (
+                    {therapist?.therapistProfile?.specializations && Array.isArray(therapist.therapistProfile.specializations) && therapist.therapistProfile.specializations.length > 0 && (
                       <p><strong>Specializations:</strong> {therapist.therapistProfile.specializations.join(', ')}</p>
                     )}
                     <p><strong>Experience:</strong> {therapist?.therapistProfile?.experience || 'Several'} years</p>
