@@ -12,9 +12,14 @@ const logger = require('../utils/logger');
  */
 const authenticate = async (req, res, next) => {
   try {
+    logger.info(`🔐 Authentication attempt for ${req.method} ${req.path}`);
     const authHeader = req.headers.authorization;
     
+    logger.debug('Auth header present:', !!authHeader);
+    logger.debug('Auth header value:', authHeader ? authHeader.substring(0, 20) + '...' : 'none');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('❌ Authentication failed: No valid authorization header');
       return res.status(401).json({
         success: false,
         message: 'Access token required'
@@ -22,11 +27,16 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    logger.debug('Token extracted, length:', token ? token.length : 0);
     
     // Verify token
+    logger.debug('🔍 Verifying access token...');
     const decoded = verifyAccessToken(token);
+    logger.info('✅ Token verified successfully for user ID:', decoded.id);
+    logger.info('✅ Token verified successfully for user ID:', decoded.id);
     
     // Get fresh user data from database
+    logger.debug('🔍 Fetching user data from database...');
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: {
@@ -36,7 +46,22 @@ const authenticate = async (req, res, next) => {
       }
     });
 
+    logger.debug('User found:', !!user);
+    if (user) {
+      logger.debug('User details:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        isVerified: user.isVerified
+      });
+    }
+
     if (!user || !user.isActive) {
+      logger.warn('❌ Authentication failed: User not found or inactive', {
+        userExists: !!user,
+        isActive: user?.isActive
+      });
       return res.status(401).json({
         success: false,
         message: 'User not found or inactive'
@@ -45,10 +70,18 @@ const authenticate = async (req, res, next) => {
 
     // Add user to request object
     req.user = user;
+    logger.info('✅ Authentication successful for user:', user.email);
+    logger.info('✅ Authentication successful for user:', user.email);
     next();
     
   } catch (error) {
-    logger.error('Authentication error:', error.message);
+    logger.error('❌ Authentication error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      endpoint: `${req.method} ${req.path}`,
+      authHeader: req.headers.authorization ? 'present' : 'missing'
+    });
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token'

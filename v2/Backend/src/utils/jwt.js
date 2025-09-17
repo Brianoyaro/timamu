@@ -72,12 +72,31 @@ const generateTokens = async (user) => {
  */
 const verifyAccessToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET, {
+    logger.debug('🔐 JWT: Attempting to verify access token...');
+    logger.debug('JWT: Token length:', token ? token.length : 0);
+    logger.debug('JWT: JWT_SECRET present:', !!process.env.JWT_SECRET);
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
       issuer: 'telepsychology-platform',
       audience: 'telepsychology-users'
     });
+    
+    logger.debug('✅ JWT: Token verified successfully', {
+      userId: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      exp: new Date(decoded.exp * 1000).toISOString()
+    });
+    
+    return decoded;
   } catch (error) {
-    logger.error('Access token verification failed:', error.message);
+    logger.error('❌ JWT: Access token verification failed', {
+      error: error.message,
+      name: error.name,
+      tokenPresent: !!token,
+      tokenLength: token ? token.length : 0,
+      secretPresent: !!process.env.JWT_SECRET
+    });
     throw new Error('Invalid or expired access token');
   }
 };

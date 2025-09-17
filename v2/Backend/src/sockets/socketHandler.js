@@ -17,14 +17,25 @@ const activeRooms = new Map(); // For video sessions
  */
 const authenticateSocket = async (socket, next) => {
   try {
+    logger.info('🔌 Socket.IO: Authentication attempt from client');
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
     
+    logger.debug('Socket.IO: Token sources:', {
+      authToken: !!socket.handshake.auth.token,
+      headerToken: !!socket.handshake.headers.authorization,
+      tokenLength: token ? token.length : 0
+    });
+    
     if (!token) {
+      logger.warn('❌ Socket.IO: No authentication token provided');
       return next(new Error('Authentication token required'));
     }
 
+    logger.debug('🔍 Socket.IO: Verifying JWT token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    logger.info('✅ Socket.IO: Token verified for user ID:', decoded.id);
     
+    logger.debug('🔍 Socket.IO: Fetching user from database...');
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: {
@@ -34,15 +45,31 @@ const authenticateSocket = async (socket, next) => {
       }
     });
 
+    logger.debug('Socket.IO: User lookup result:', {
+      userFound: !!user,
+      isActive: user?.isActive,
+      email: user?.email
+    });
+
     if (!user || !user.isActive) {
+      logger.warn('❌ Socket.IO: User not found or inactive', {
+        userExists: !!user,
+        isActive: user?.isActive
+      });
       return next(new Error('User not found or inactive'));
     }
 
     socket.userId = user.id;
     socket.user = user;
+    logger.info('✅ Socket.IO: Authentication successful for user:', user.email);
     next();
   } catch (error) {
-    logger.error('Socket authentication failed:', error);
+    logger.error('❌ Socket.IO: Authentication failed', {
+      error: error.message,
+      name: error.name,
+      tokenPresent: !!socket.handshake.auth.token,
+      headerPresent: !!socket.handshake.headers.authorization
+    });
     next(new Error('Invalid authentication token'));
   }
 };
