@@ -18,6 +18,39 @@ export default function TherapistsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
 
+  // Helper function to format working hours
+  const formatWorkingHours = (workingHours) => {
+    if (!workingHours) return 'Mon-Fri';
+    if (typeof workingHours === 'string') return workingHours;
+    
+    // If it's an object with day keys, format it
+    if (typeof workingHours === 'object') {
+      const dayKeys = Object.keys(workingHours);
+      if (dayKeys.length === 0) return 'Mon-Fri';
+      
+      const dayNames = {
+        monday: 'Mon',
+        tuesday: 'Tue', 
+        wednesday: 'Wed',
+        thursday: 'Thu',
+        friday: 'Fri',
+        saturday: 'Sat',
+        sunday: 'Sun'
+      };
+      
+      const availableDays = dayKeys
+        .filter(day => workingHours[day]) // Only include days that are true/available
+        .map(day => dayNames[day.toLowerCase()] || day)
+        .filter(Boolean);
+        
+      if (availableDays.length > 0) {
+        return availableDays.join(', ');
+      }
+    }
+    
+    return 'Mon-Fri';
+  };
+
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
@@ -29,9 +62,7 @@ export default function TherapistsPage() {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Therapists API response:', data);
           const therapistsArray = data.data?.therapists || [];
-          console.log('Therapists array:', therapistsArray);
           setTherapists(therapistsArray);
         } else {
           console.error('Failed to fetch therapists:', response.status);
@@ -167,7 +198,9 @@ export default function TherapistsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <AcademicCapIcon className="h-4 w-4 mr-2" />
-                    <span>{therapist.therapistProfile?.education || 'Licensed Therapist'}</span>
+                    <span>{typeof therapist.therapistProfile?.education === 'string' 
+                      ? therapist.therapistProfile.education 
+                      : 'Licensed Therapist'}</span>
                   </div>
                   
                   <div className="flex items-center text-sm text-gray-600">
@@ -177,11 +210,11 @@ export default function TherapistsPage() {
 
                   <div className="flex items-center text-sm text-gray-600">
                     <ClockIcon className="h-4 w-4 mr-2" />
-                    <span>Available {therapist.therapistProfile?.workingHours || 'Mon-Fri'}</span>
+                    <span>Available {formatWorkingHours(therapist.therapistProfile?.workingHours)}</span>
                   </div>
                 </div>
 
-                {therapist.therapistProfile?.specializations && (
+                {therapist.therapistProfile?.specializations && Array.isArray(therapist.therapistProfile.specializations) && (
                   <div className="mt-4">
                     <div className="flex flex-wrap gap-1">
                       {therapist.therapistProfile.specializations.slice(0, 3).map((specialty, index) => (
@@ -189,7 +222,7 @@ export default function TherapistsPage() {
                           key={index}
                           className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded"
                         >
-                          {specialty}
+                          {String(specialty)}
                         </span>
                       ))}
                       {therapist.therapistProfile.specializations.length > 3 && (
