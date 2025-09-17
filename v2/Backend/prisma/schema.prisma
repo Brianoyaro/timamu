@@ -71,9 +71,8 @@ model PatientProfile {
   preferredLanguage String @default("en")
   timezone         String  @default("UTC")
   
-  // Assigned therapist
-  assignedTherapistId String?
-  assignedTherapist   TherapistProfile? @relation(fields: [assignedTherapistId], references: [id])
+  // Therapist relationships (many-to-many)
+  therapistAssignments PatientTherapistAssignment[]
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -104,11 +103,12 @@ model TherapistProfile {
   workingHours      Json?     // Flexible JSON structure for availability
   timezone          String    @default("UTC")
   
-  // Patients assigned to this therapist
-  assignedPatients  PatientProfile[]
+  // Patient relationships (many-to-many)
+  patientAssignments PatientTherapistAssignment[]
+  capabilities       TherapistSpecializationCapability[]
   
   // Session notes
-  sessionNotes      SessionNote[]
+  sessionNotes       SessionNote[]
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -135,7 +135,11 @@ model AdminProfile {
 model Session {
   id              String        @id @default(uuid())
   
-  // Participants
+  // Assignment context (optional during migration)
+  assignmentId    String?
+  assignment      PatientTherapistAssignment? @relation(fields: [assignmentId], references: [id])
+  
+  // Participants (derived from assignment)
   patientId       String
   patient         User          @relation("PatientSessions", fields: [patientId], references: [id])
   therapistId     String
@@ -290,6 +294,124 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// Normalized therapy specialization catalog
+model TherapySpecialization {
+  id                    String  @id @default(uuid())
+  code                  String  @unique // "FAM001", "SUI001", "ADD001"
+  name                  String  // "Family Therapy", "Suicide Prevention"
+  category              String  // "specialized", "general", "emergency"
+  description           String?
+  requiresSpecialCert   Boolean @default(false)
+  emergencyAccess       Boolean @default(false) // Can be accessed without assignment
+  maxConcurrentPatients Int?    // Per therapist limit
+  
+  // Relations
+  assignments           PatientTherapistAssignment[]
+  therapistCapabilities TherapistSpecializationCapability[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("therapy_specializations")
+}
+
+// Therapist capabilities - what they can provide
+model TherapistSpecializationCapability {
+  id               String                @id @default(uuid())
+  therapistId      String
+  therapist        TherapistProfile      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  specializationId String
+  specialization   TherapySpecialization @relation(fields: [specializationId], references: [id])
+  
+  // Capability details
+  certificationLevel String? // "certified", "expert", "trainee"
+  yearsExperience   Int?
+  isActive          Boolean @default(true)
+  hourlyRate        Decimal? @db.Decimal(10, 2) // Can override base rate
+  maxPatients       Int?     // Override specialization limit
+  
+  // Verification
+  certifiedAt       DateTime?
+  certifiedBy       String?  // Admin who verified
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([therapistId, specializationId])
+  @@map("therapist_specialization_capabilities")
+}
+
+// Assignment types for flexible relationships
+model AssignmentType {
+  id          String  @id @default(uuid())
+  code        String  @unique // "primary", "specialist", "emergency", "consultation"
+  name        String  // "Primary Care", "Specialist Care"
+  description String?
+  priority    Int     @default(1) // Higher number = higher priority
+  
+  // Business rules
+  allowsConcurrent     Boolean @default(false) // Can have multiple of this type
+  requiresApproval     Boolean @default(false)
+  defaultMaxSessions   Int?
+  defaultDurationDays  Int?
+  
+  // Relations
+  assignments          PatientTherapistAssignment[]
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  @@map("assignment_types")
+}
+
+// Flexible patient-therapist relationships
+model PatientTherapistAssignment {
+  id                  String                @id @default(uuid())
+  
+  // Core relationship
+  patientId           String
+  patient             PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapistId         String
+  therapist           TherapistProfile      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  
+  // Assignment metadata
+  assignmentTypeId    String
+  assignmentType      AssignmentType        @relation(fields: [assignmentTypeId], references: [id])
+  specializationId    String
+  specialization      TherapySpecialization @relation(fields: [specializationId], references: [id])
+  
+  // Status and lifecycle
+  status              AssignmentStatus      @default(PENDING)
+  startDate           DateTime              @default(now())
+  endDate             DateTime?
+  
+  // Session management
+  maxSessions         Int?
+  sessionsCompleted   Int                   @default(0)
+  
+  // Financial
+  agreedRate          Decimal?              @db.Decimal(10, 2)
+  
+  // Approval workflow
+  requestedBy         String                // User ID who requested
+  approvedBy          String?               // Admin/therapist who approved
+  approvedAt          DateTime?
+  rejectionReason     String?
+  
+  // Metadata
+  referralSource      String?               // "self", "primary_therapist", "emergency"
+  notes               String?
+  
+  // Relations
+  sessions            Session[]
+  
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  
+  @@unique([patientId, therapistId, specializationId, status], name: "unique_active_assignment")
+  @@map("patient_therapist_assignments")
+}
+
 // Enums
 enum Role {
   PATIENT
@@ -329,4 +451,13 @@ enum MessageType {
   FILE
   IMAGE
   SYSTEM
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  SUSPENDED
+  EXPIRED
 }

@@ -71,8 +71,8 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
-  // Assign therapist to patient
-  assignTherapist: async (therapistId, token) => {
+  // Assign therapist to patient with new assignment system
+  assignTherapist: async (therapistId, specializationCode, assignmentTypeCode, reason, token) => {
     try {
       const response = await fetch(`${getApiUrl()}/api/users/therapists/${therapistId}/request`, {
         method: 'POST',
@@ -80,6 +80,11 @@ const useSessionStore = create((set, get) => ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          specializationCode: specializationCode || 'GEN001',
+          assignmentTypeCode: assignmentTypeCode || 'primary',
+          reason: reason || 'Patient requested assignment'
+        }),
       });
 
       const data = await response.json();
@@ -89,6 +94,69 @@ const useSessionStore = create((set, get) => ({
       }
 
       return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Fetch available specializations
+  fetchSpecializations: async (token) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/users/specializations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch specializations');
+      }
+
+      return data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Fetch available assignment types
+  fetchAssignmentTypes: async (token) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/users/assignment-types`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch assignment types');
+      }
+
+      return data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Fetch patient's current assignments
+  fetchMyAssignments: async (token) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/users/my-assignments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch assignments');
+      }
+
+      return data.data;
     } catch (error) {
       throw error;
     }

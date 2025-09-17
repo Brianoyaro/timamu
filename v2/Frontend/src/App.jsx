@@ -23,6 +23,7 @@ import SessionsPage from './pages/Sessions/SessionsPage';
 import SessionRoomPage from './pages/Sessions/SessionRoomPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import TherapistsPage from './pages/Therapists/TherapistsPage';
+import AssignmentsPage from './pages/Assignments/AssignmentsPage';
 import AdminPage from './pages/Admin/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -85,6 +86,7 @@ function App() {
             <Route path="/sessions" element={<ProtectedLayoutRoute><SessionsPage /></ProtectedLayoutRoute>} />
             <Route path="/profile" element={<ProtectedLayoutRoute><ProfilePage /></ProtectedLayoutRoute>} />
             <Route path="/therapists" element={<ProtectedLayoutRoute requiredRole="PATIENT"><TherapistsPage /></ProtectedLayoutRoute>} />
+            <Route path="/assignments" element={<ProtectedLayoutRoute requiredRole="PATIENT"><AssignmentsPage /></ProtectedLayoutRoute>} />
             <Route path="/admin" element={<ProtectedLayoutRoute requiredRole="ADMIN"><AdminPage /></ProtectedLayoutRoute>} />
 
             {/* Protected route without layout */}

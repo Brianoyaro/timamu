@@ -349,8 +349,104 @@ router.get('/therapists/:id', authenticate, validate(uuidParamsSchema, 'params')
 }));
 
 /**
+ * @route   GET /api/users/specializations
+ * @desc    Get available therapy specializations
+ * @access  Private
+ */
+router.get('/specializations', authenticate, asyncHandler(async (req, res) => {
+  const specializations = await prisma.therapySpecialization.findMany({
+    orderBy: [
+      { category: 'asc' },
+      { name: 'asc' }
+    ]
+  });
+
+  // Group by category
+  const groupedSpecializations = specializations.reduce((acc, spec) => {
+    if (!acc[spec.category]) {
+      acc[spec.category] = [];
+    }
+    acc[spec.category].push(spec);
+    return acc;
+  }, {});
+
+  res.json({
+    success: true,
+    data: {
+      specializations: groupedSpecializations,
+      all: specializations
+    }
+  });
+}));
+
+/**
+ * @route   GET /api/users/assignment-types
+ * @desc    Get available assignment types
+ * @access  Private
+ */
+router.get('/assignment-types', authenticate, asyncHandler(async (req, res) => {
+  const assignmentTypes = await prisma.assignmentType.findMany({
+    orderBy: { priority: 'asc' }
+  });
+
+  res.json({
+    success: true,
+    data: { assignmentTypes }
+  });
+}));
+
+/**
+ * @route   GET /api/users/my-assignments
+ * @desc    Get patient's current therapist assignments
+ * @access  Private (Patients only)
+ */
+router.get('/my-assignments', 
+  authenticate, 
+  authorize(['PATIENT']), 
+  requireVerified,
+  asyncHandler(async (req, res) => {
+    const patientProfile = await prisma.patientProfile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!patientProfile) {
+      throw new AppError('Patient profile not found', 404);
+    }
+
+    const assignments = await prisma.patientTherapistAssignment.findMany({
+      where: { patientId: patientProfile.id },
+      include: {
+        specialization: true,
+        assignmentType: true,
+        therapist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { status: 'asc' }, // Active first
+        { createdAt: 'desc' }
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: { assignments }
+    });
+  })
+);
+
+/**
  * @route   POST /api/users/therapists/:id/request
- * @desc    Request a specific therapist (for patients)
+ * @desc    Request a specific therapist assignment (for patients)
  * @access  Private (Patients only)
  */
 router.post('/therapists/:id/request', 
@@ -360,6 +456,7 @@ router.post('/therapists/:id/request',
   validate(uuidParamsSchema, 'params'),
   asyncHandler(async (req, res) => {
     const therapistId = req.params.id;
+    const { specializationCode, assignmentTypeCode, reason } = req.body;
 
     // Check if therapist exists and is approved
     const therapist = await prisma.user.findFirst({
@@ -372,7 +469,11 @@ router.post('/therapists/:id/request',
         }
       },
       include: {
-        therapistProfile: true
+        therapistProfile: {
+          include: {
+            specializations: true
+          }
+        }
       }
     });
 
@@ -380,42 +481,119 @@ router.post('/therapists/:id/request',
       throw new AppError('Therapist not found or not available', 404);
     }
 
-    // Check if patient already has an assigned therapist
+    // Get patient profile
     const patientProfile = await prisma.patientProfile.findUnique({
       where: { userId: req.user.id }
     });
 
-    if (patientProfile?.assignedTherapistId) {
-      throw new AppError('You already have an assigned therapist', 400);
+    if (!patientProfile) {
+      throw new AppError('Patient profile not found', 404);
     }
 
-    // Assign therapist to patient
-    await prisma.patientProfile.update({
-      where: { userId: req.user.id },
-      data: { assignedTherapistId: therapist.therapistProfile.id }
+    // Validate specialization and assignment type
+    const specialization = await prisma.therapySpecialization.findUnique({
+      where: { code: specializationCode || 'GEN001' }
+    });
+
+    const assignmentType = await prisma.assignmentType.findUnique({
+      where: { code: assignmentTypeCode || 'primary' }
+    });
+
+    if (!specialization || !assignmentType) {
+      throw new AppError('Invalid specialization or assignment type', 400);
+    }
+
+    // Check if therapist has this specialization
+    const hasSpecialization = therapist.therapistProfile.specializations.some(
+      spec => spec.id === specialization.id
+    );
+
+    if (!hasSpecialization) {
+      throw new AppError('Therapist does not offer this specialization', 400);
+    }
+
+    // Check for existing assignments if concurrent not allowed
+    if (!assignmentType.allowsConcurrent) {
+      const existingAssignment = await prisma.patientTherapistAssignment.findFirst({
+        where: {
+          patientId: patientProfile.id,
+          assignmentTypeId: assignmentType.id,
+          status: 'ACTIVE'
+        }
+      });
+
+      if (existingAssignment) {
+        throw new AppError(`You already have an active ${assignmentType.name.toLowerCase()} assignment`, 400);
+      }
+    }
+
+    // Create assignment
+    const assignment = await prisma.patientTherapistAssignment.create({
+      data: {
+        patientId: patientProfile.id,
+        therapistId: therapist.therapistProfile.id,
+        specializationId: specialization.id,
+        assignmentTypeId: assignmentType.id,
+        status: assignmentType.requiresApproval ? 'PENDING_APPROVAL' : 'ACTIVE',
+        maxSessions: assignmentType.defaultMaxSessions,
+        expiresAt: assignmentType.defaultDurationDays ? 
+          new Date(Date.now() + assignmentType.defaultDurationDays * 24 * 60 * 60 * 1000) : null,
+        reason,
+        requestedAt: new Date()
+      },
+      include: {
+        specialization: true,
+        assignmentType: true,
+        therapist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
+      }
     });
 
     // Log audit event
     await createAuditLog({
-      action: 'THERAPIST_REQUEST',
+      action: 'THERAPIST_ASSIGNMENT_REQUEST',
       userId: req.user.id,
       userEmail: req.user.email,
-      resource: 'THERAPIST',
-      resourceId: therapistId,
+      resource: 'ASSIGNMENT',
+      resourceId: assignment.id,
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      details: {
+        therapistId,
+        specializationCode,
+        assignmentTypeCode,
+        requiresApproval: assignmentType.requiresApproval
+      }
     });
 
     res.json({
       success: true,
-      message: 'Therapist assigned successfully',
+      message: assignmentType.requiresApproval ? 
+        'Assignment request submitted for approval' : 
+        'Therapist assigned successfully',
       data: {
-        therapist: {
-          id: therapist.id,
-          firstName: therapist.firstName,
-          lastName: therapist.lastName,
-          specializations: therapist.therapistProfile.specializations
+        assignment: {
+          id: assignment.id,
+          status: assignment.status,
+          specialization: assignment.specialization.name,
+          assignmentType: assignment.assignmentType.name,
+          maxSessions: assignment.maxSessions,
+          expiresAt: assignment.expiresAt,
+          therapist: {
+            id: assignment.therapist.user.id,
+            firstName: assignment.therapist.user.firstName,
+            lastName: assignment.therapist.user.lastName
+          }
         }
       }
     });

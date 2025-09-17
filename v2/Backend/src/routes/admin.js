@@ -751,4 +751,254 @@ router.get('/analytics', asyncHandler(async (req, res) => {
   });
 }));
 
+/**
+ * @route   GET /api/admin/assignments
+ * @desc    Get all therapist assignments with filtering
+ * @access  Private (Admin only)
+ */
+router.get('/assignments', validate(paginationSchema), asyncHandler(async (req, res) => {
+  const { page = 1, limit = 50, status, specializationCode, assignmentTypeCode } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const where = {};
+  if (status) where.status = status;
+  if (specializationCode) {
+    where.specialization = { code: specializationCode };
+  }
+  if (assignmentTypeCode) {
+    where.assignmentType = { code: assignmentTypeCode };
+  }
+
+  const [assignments, total] = await Promise.all([
+    prisma.patientTherapistAssignment.findMany({
+      where,
+      include: {
+        patient: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        therapist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        specialization: true,
+        assignmentType: true
+      },
+      skip,
+      take: parseInt(limit),
+      orderBy: [
+        { status: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    }),
+    prisma.patientTherapistAssignment.count({ where })
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      assignments,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    }
+  });
+}));
+
+/**
+ * @route   PUT /api/admin/assignments/:id/approve
+ * @desc    Approve a pending assignment
+ * @access  Private (Admin only)
+ */
+router.put('/assignments/:id/approve', 
+  validate(uuidParamsSchema, 'params'),
+  asyncHandler(async (req, res) => {
+    const assignmentId = req.params.id;
+    const { maxSessions, expiresAt } = req.body;
+
+    const assignment = await prisma.patientTherapistAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        patient: {
+          include: { user: true }
+        },
+        therapist: {
+          include: { user: true }
+        },
+        specialization: true,
+        assignmentType: true
+      }
+    });
+
+    if (!assignment) {
+      throw new AppError('Assignment not found', 404);
+    }
+
+    if (assignment.status !== 'PENDING_APPROVAL') {
+      throw new AppError('Assignment is not pending approval', 400);
+    }
+
+    // Update assignment
+    const updatedAssignment = await prisma.patientTherapistAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        status: 'ACTIVE',
+        approvedAt: new Date(),
+        approvedBy: req.user.id,
+        maxSessions: maxSessions || assignment.maxSessions,
+        expiresAt: expiresAt ? new Date(expiresAt) : assignment.expiresAt
+      }
+    });
+
+    // Log audit event
+    await createAuditLog({
+      action: 'ASSIGNMENT_APPROVED',
+      userId: req.user.id,
+      userEmail: req.user.email,
+      resource: 'ASSIGNMENT',
+      resourceId: assignmentId,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      status: 'SUCCESS',
+      details: {
+        patientId: assignment.patient.user.id,
+        therapistId: assignment.therapist.user.id,
+        specialization: assignment.specialization.name,
+        assignmentType: assignment.assignmentType.name
+      }
+    });
+
+    // Send notification email to patient
+    try {
+      await sendEmail({
+        to: assignment.patient.user.email,
+        subject: 'Therapist Assignment Approved',
+        template: 'assignment-approved',
+        data: {
+          patientName: assignment.patient.user.firstName,
+          therapistName: `${assignment.therapist.user.firstName} ${assignment.therapist.user.lastName}`,
+          specialization: assignment.specialization.name,
+          assignmentType: assignment.assignmentType.name
+        }
+      });
+    } catch (emailError) {
+      logger.error('Failed to send assignment approval email:', emailError);
+    }
+
+    res.json({
+      success: true,
+      message: 'Assignment approved successfully',
+      data: { assignment: updatedAssignment }
+    });
+  })
+);
+
+/**
+ * @route   PUT /api/admin/assignments/:id/reject
+ * @desc    Reject a pending assignment
+ * @access  Private (Admin only)
+ */
+router.put('/assignments/:id/reject',
+  validate(uuidParamsSchema, 'params'),
+  asyncHandler(async (req, res) => {
+    const assignmentId = req.params.id;
+    const { reason } = req.body;
+
+    const assignment = await prisma.patientTherapistAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        patient: {
+          include: { user: true }
+        },
+        therapist: {
+          include: { user: true }
+        },
+        specialization: true,
+        assignmentType: true
+      }
+    });
+
+    if (!assignment) {
+      throw new AppError('Assignment not found', 404);
+    }
+
+    if (assignment.status !== 'PENDING_APPROVAL') {
+      throw new AppError('Assignment is not pending approval', 400);
+    }
+
+    // Update assignment
+    const updatedAssignment = await prisma.patientTherapistAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        status: 'REJECTED',
+        rejectedAt: new Date(),
+        rejectedBy: req.user.id,
+        rejectionReason: reason
+      }
+    });
+
+    // Log audit event
+    await createAuditLog({
+      action: 'ASSIGNMENT_REJECTED',
+      userId: req.user.id,
+      userEmail: req.user.email,
+      resource: 'ASSIGNMENT',
+      resourceId: assignmentId,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      status: 'SUCCESS',
+      details: {
+        patientId: assignment.patient.user.id,
+        therapistId: assignment.therapist.user.id,
+        specialization: assignment.specialization.name,
+        assignmentType: assignment.assignmentType.name,
+        reason
+      }
+    });
+
+    // Send notification email to patient
+    try {
+      await sendEmail({
+        to: assignment.patient.user.email,
+        subject: 'Therapist Assignment Update',
+        template: 'assignment-rejected',
+        data: {
+          patientName: assignment.patient.user.firstName,
+          therapistName: `${assignment.therapist.user.firstName} ${assignment.therapist.user.lastName}`,
+          specialization: assignment.specialization.name,
+          assignmentType: assignment.assignmentType.name,
+          reason: reason || 'No reason provided'
+        }
+      });
+    } catch (emailError) {
+      logger.error('Failed to send assignment rejection email:', emailError);
+    }
+
+    res.json({
+      success: true,
+      message: 'Assignment rejected successfully',
+      data: { assignment: updatedAssignment }
+    });
+  })
+);
+
 module.exports = router;

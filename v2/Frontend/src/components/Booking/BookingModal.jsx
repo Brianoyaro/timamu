@@ -9,21 +9,24 @@ import {
 } from '@heroicons/react/24/outline';
 import useAuthStore from '../../stores/authStore';
 import useSessionStore from '../../stores/sessionStore';
+import AssignmentModal from './AssignmentModal';
 import toast from 'react-hot-toast';
 
 export default function BookingModal({ isOpen, onClose, therapist }) {
   const { token, user } = useAuthStore();
-  const { createSession, assignTherapist } = useSessionStore();
+  const { createSession, fetchMyAssignments } = useSessionStore();
   
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('VIDEO');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: assign therapist, 2: book session
+  const [step, setStep] = useState(1); // 1: check assignments, 2: book session
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [userAssignments, setUserAssignments] = useState([]);
 
-  // Reset form when modal opens and check if therapist is already assigned
+  // Reset form when modal opens and check current assignments
   useEffect(() => {
     if (isOpen && therapist?.id) {
       setSelectedDate('');
@@ -32,29 +35,34 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
       setNotes('');
       setIsInitializing(true);
       
-      // Check if user already has this therapist assigned
-      // In a production app, you'd check the user's assigned therapist
-      // For now, we'll assume they need to assign if it's the first time
-      const checkAssignment = async () => {
-        try {
-          // Skip to booking if user already has an assigned therapist
-          // This would typically be a separate API call or check user data
-          if (user?.assignedTherapistId === therapist.id) {
-            setStep(2);
-          } else {
-            setStep(1);
-          }
-        } catch (error) {
-          console.error('Error checking therapist assignment:', error);
-          setStep(1); // Default to assignment step
-        } finally {
-          setIsInitializing(false);
-        }
-      };
-      
-      checkAssignment();
+      checkUserAssignments();
     }
-  }, [isOpen, therapist?.id, user?.assignedTherapistId]);
+  }, [isOpen, therapist?.id]);
+
+  const checkUserAssignments = async () => {
+    try {
+      const assignmentsData = await fetchMyAssignments(token);
+      const assignments = assignmentsData.assignments || [];
+      setUserAssignments(assignments);
+      
+      // Check if user has an active assignment with this therapist
+      const hasActiveAssignment = assignments.some(assignment => 
+        assignment.therapist.user.id === therapist.id && 
+        assignment.status === 'ACTIVE'
+      );
+      
+      if (hasActiveAssignment) {
+        setStep(2); // Go directly to booking
+      } else {
+        setStep(1); // Show assignment options
+      }
+    } catch (error) {
+      console.error('Error checking assignments:', error);
+      setStep(1); // Default to assignment step
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
   // Generate available dates (next 60 days, excluding past dates)
   const getAvailableDates = () => {
@@ -124,40 +132,18 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
     return slots;
   };
 
-  const handleAssignTherapist = async () => {
-    if (!therapist?.id) {
-      toast.error('Therapist information is not available');
-      return;
-    }
+  const handleRequestAssignment = () => {
+    setShowAssignmentModal(true);
+  };
 
-    setIsLoading(true);
-
-    try {
-      const result = await assignTherapist(therapist.id, token);
-      
-      if (result?.success) {
-        toast.success('Therapist assigned successfully!');
-        setStep(2);
-      } else {
-        const errorMessage = result?.message || 'Failed to assign therapist';
-        toast.error(errorMessage);
-      }
-    } catch (error) {
-      console.error('Assignment error:', error);
-      const errorMessage = error?.message || '';
-      
-      if (errorMessage.includes('already have an assigned therapist') || 
-          errorMessage.includes('already assigned')) {
-        // If already assigned, skip to booking step
-        toast.success('Therapist is already assigned');
-        setStep(2);
-      } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
-        toast.error('Please log in again to continue');
-      } else {
-        toast.error(errorMessage || 'An unexpected error occurred while assigning therapist');
-      }
-    } finally {
-      setIsLoading(false);
+  const handleAssignmentSuccess = (assignmentData) => {
+    // If assignment is active, go to booking step
+    if (assignmentData.status === 'ACTIVE') {
+      setStep(2);
+      checkUserAssignments(); // Refresh assignments
+    } else {
+      // If pending approval, close the modal
+      onClose();
     }
   };
 
@@ -306,12 +292,33 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Assign Dr. {therapist?.firstName || 'Unknown'} {therapist?.lastName || 'Therapist'} as Your Therapist
+                  Request Assignment with Dr. {therapist?.firstName || 'Unknown'} {therapist?.lastName || 'Therapist'}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  To book sessions, you need to have this therapist assigned to your account first. 
-                  This is a one-time setup that allows for secure communication and session scheduling.
+                  To book sessions, you need to request an assignment with this therapist first. 
+                  You can choose the type of care and specialization that best fits your needs.
                 </p>
+
+                {/* Current Assignments */}
+                {userAssignments.length > 0 && (
+                  <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
+                    <h4 className="font-medium text-blue-900 mb-2">Your Current Assignments</h4>
+                    <div className="space-y-2 text-sm text-blue-800">
+                      {userAssignments.map((assignment) => (
+                        <div key={assignment.id} className="flex justify-between">
+                          <span>Dr. {assignment.therapist.user.firstName} {assignment.therapist.user.lastName}</span>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            assignment.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                            assignment.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {assignment.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Therapist Info */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
@@ -336,11 +343,10 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
                   </button>
                   <button
                     type="button"
-                    onClick={handleAssignTherapist}
-                    disabled={isLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleRequestAssignment}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    {isLoading ? 'Assigning...' : 'Assign Therapist & Continue'}
+                    Request Assignment
                   </button>
                 </div>
               </div>
@@ -481,6 +487,14 @@ export default function BookingModal({ isOpen, onClose, therapist }) {
           )}
         </div>
       </div>
+
+      {/* Assignment Modal */}
+      <AssignmentModal
+        isOpen={showAssignmentModal}
+        onClose={() => setShowAssignmentModal(false)}
+        therapist={therapist}
+        onSuccess={handleAssignmentSuccess}
+      />
     </div>
   );
 }

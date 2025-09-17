@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', roles: ['PATIENT', 'THERAPIST', 'ADMIN'] },
   { name: 'Sessions', href: '/sessions', roles: ['PATIENT', 'THERAPIST'] },
   { name: 'Find Therapists', href: '/therapists', roles: ['PATIENT'] },
+  { name: 'My Assignments', href: '/assignments', roles: ['PATIENT'] },
   { name: 'Admin Panel', href: '/admin', roles: ['ADMIN'] },
 ];
 
