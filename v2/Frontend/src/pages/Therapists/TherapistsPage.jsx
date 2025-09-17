@@ -29,10 +29,19 @@ export default function TherapistsPage() {
         
         if (response.ok) {
           const data = await response.json();
-          setTherapists(data);
+          console.log('Therapists API response:', data);
+          const therapistsArray = data.data?.therapists || [];
+          console.log('Therapists array:', therapistsArray);
+          setTherapists(therapistsArray);
+        } else {
+          console.error('Failed to fetch therapists:', response.status);
+          setTherapists([]);
+          toast.error('Failed to load therapists');
         }
       } catch (error) {
         console.error('Error fetching therapists:', error);
+        setTherapists([]);
+        toast.error('Failed to load therapists');
       } finally {
         setIsLoading(false);
       }
@@ -40,15 +49,18 @@ export default function TherapistsPage() {
 
     if (token) {
       fetchTherapists();
+    } else {
+      setIsLoading(false);
+      setTherapists([]);
     }
   }, [token]);
 
   const specialties = ['all', 'anxiety', 'depression', 'trauma', 'couples', 'family', 'addiction'];
 
-  const filteredTherapists = therapists.filter(therapist => 
+  const filteredTherapists = Array.isArray(therapists) ? therapists.filter(therapist => 
     selectedSpecialty === 'all' || 
-    therapist.specialties?.includes(selectedSpecialty)
-  );
+    therapist.therapistProfile?.specializations?.includes(selectedSpecialty)
+  ) : [];
 
   const handleBookSession = (therapistId) => {
     // TODO: Implement booking modal or navigation
@@ -155,24 +167,24 @@ export default function TherapistsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <AcademicCapIcon className="h-4 w-4 mr-2" />
-                    <span>{therapist.credentials || 'Licensed Therapist'}</span>
+                    <span>{therapist.therapistProfile?.education || 'Licensed Therapist'}</span>
                   </div>
                   
                   <div className="flex items-center text-sm text-gray-600">
                     <MapPinIcon className="h-4 w-4 mr-2" />
-                    <span>{therapist.location || 'Online Sessions'}</span>
+                    <span>Online Sessions</span>
                   </div>
 
                   <div className="flex items-center text-sm text-gray-600">
                     <ClockIcon className="h-4 w-4 mr-2" />
-                    <span>Available {therapist.availability || 'Mon-Fri'}</span>
+                    <span>Available {therapist.therapistProfile?.workingHours || 'Mon-Fri'}</span>
                   </div>
                 </div>
 
-                {therapist.specialties && (
+                {therapist.therapistProfile?.specializations && (
                   <div className="mt-4">
                     <div className="flex flex-wrap gap-1">
-                      {therapist.specialties.slice(0, 3).map((specialty, index) => (
+                      {therapist.therapistProfile.specializations.slice(0, 3).map((specialty, index) => (
                         <span
                           key={index}
                           className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded"
@@ -180,9 +192,9 @@ export default function TherapistsPage() {
                           {specialty}
                         </span>
                       ))}
-                      {therapist.specialties.length > 3 && (
+                      {therapist.therapistProfile.specializations.length > 3 && (
                         <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                          +{therapist.specialties.length - 3} more
+                          +{therapist.therapistProfile.specializations.length - 3} more
                         </span>
                       )}
                     </div>
