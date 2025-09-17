@@ -14,17 +14,17 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
   const sessionsArray = Array.isArray(sessions) ? sessions : [];
   
   const todaySessions = sessionsArray
-    .filter(session => isToday(parseISO(session.scheduledFor)))
-    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
+    .filter(session => session.scheduledAt && isToday(parseISO(session.scheduledAt)))
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
   const upcomingSessions = sessionsArray
-    .filter(session => new Date(session.scheduledFor) > new Date())
-    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor))
+    .filter(session => session.scheduledAt && new Date(session.scheduledAt) > new Date())
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
     .slice(0, 5);
 
   const recentCompletedSessions = sessions
     ?.filter(session => session.status === 'COMPLETED')
-    ?.sort((a, b) => new Date(b.scheduledFor) - new Date(a.scheduledFor))
+    ?.sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
     ?.slice(0, 3) || [];
 
   const stats = [
@@ -43,7 +43,7 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
     {
       name: 'This Week',
       value: sessionsArray.filter(s => {
-        const sessionDate = parseISO(s.scheduledFor);
+        const sessionDate = parseISO(s.scheduledAt);
         const now = new Date();
         const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
         const weekEnd = new Date(now.setDate(weekStart.getDate() + 6));
@@ -60,8 +60,8 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
     },
   ];
 
-  const getSessionTimeText = (scheduledFor) => {
-    const date = parseISO(scheduledFor);
+  const getSessionTimeText = (scheduledAt) => {
+    const date = parseISO(scheduledAt);
     if (isToday(date)) {
       return `Today at ${format(date, 'h:mm a')}`;
     } else if (isTomorrow(date)) {
@@ -144,13 +144,13 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
                             {session.patient?.firstName} {session.patient?.lastName}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {format(parseISO(session.scheduledFor), 'h:mm a')}
+                            {format(parseISO(session.scheduledAt), 'h:mm a')}
                           </p>
                         </div>
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      {new Date(session.scheduledFor) <= new Date(Date.now() + 10 * 60 * 1000) && (
+                      {new Date(session.scheduledAt) <= new Date(Date.now() + 10 * 60 * 1000) && (
                         <Link
                           to={`/session/${session.id}`}
                           className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
@@ -212,7 +212,7 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
                             {session.patient?.firstName} {session.patient?.lastName}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {getSessionTimeText(session.scheduledFor)}
+                            {getSessionTimeText(session.scheduledAt)}
                           </p>
                         </div>
                       </div>
@@ -250,7 +250,7 @@ export default function TherapistDashboard({ sessions = [], isLoading }) {
                           {session.patient?.firstName} {session.patient?.lastName}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {format(parseISO(session.scheduledFor), 'MMM d, yyyy \'at\' h:mm a')}
+                          {format(parseISO(session.scheduledAt), 'MMM d, yyyy \'at\' h:mm a')}
                         </p>
                       </div>
                     </div>

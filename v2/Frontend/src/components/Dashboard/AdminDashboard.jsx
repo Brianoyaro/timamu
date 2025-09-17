@@ -208,8 +208,8 @@ export default function AdminDashboard({ sessions = [], analytics, isLoading }) 
                         ↔ Dr. {session.therapist?.firstName} {session.therapist?.lastName}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {new Date(session.scheduledFor).toLocaleDateString()} at{' '}
-                        {new Date(session.scheduledFor).toLocaleTimeString()}
+                        {new Date(session.scheduledAt).toLocaleDateString()} at{' '}
+                        {new Date(session.scheduledAt).toLocaleTimeString()}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

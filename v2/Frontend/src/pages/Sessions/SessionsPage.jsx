@@ -24,28 +24,47 @@ export default function SessionsPage() {
   }, [token, fetchSessions]);
 
   const filteredSessions = sessions?.filter(session => {
-    const now = new Date();
-    const sessionDate = parseISO(session.scheduledFor);
-    
-    switch (filter) {
-      case 'upcoming':
-        return isAfter(sessionDate, now);
-      case 'completed':
-        return session.status === 'COMPLETED';
-      case 'cancelled':
-        return session.status === 'CANCELLED';
-      default:
-        return true;
+    // Safety check for required fields
+    if (!session || !session.scheduledAt) {
+      return false;
+    }
+
+    try {
+      const now = new Date();
+      const sessionDate = parseISO(session.scheduledAt);
+      
+      switch (filter) {
+        case 'upcoming':
+          return isAfter(sessionDate, now);
+        case 'completed':
+          return session.status === 'COMPLETED';
+        case 'cancelled':
+          return session.status === 'CANCELLED';
+        default:
+          return true;
+      }
+    } catch (error) {
+      console.error('Error parsing session date:', error, session);
+      return false;
     }
   }) || [];
 
   const canJoinSession = (session) => {
-    const now = new Date();
-    const sessionStart = parseISO(session.scheduledFor);
-    const joinWindow = addMinutes(sessionStart, -10); // Allow joining 10 minutes early
-    const sessionEnd = addMinutes(sessionStart, 60); // 1 hour session
-    
-    return isAfter(now, joinWindow) && isBefore(now, sessionEnd) && session.status === 'SCHEDULED';
+    if (!session || !session.scheduledAt || session.status !== 'SCHEDULED') {
+      return false;
+    }
+
+    try {
+      const now = new Date();
+      const sessionStart = parseISO(session.scheduledAt);
+      const joinWindow = addMinutes(sessionStart, -10); // Allow joining 10 minutes early
+      const sessionEnd = addMinutes(sessionStart, 60); // 1 hour session
+      
+      return isAfter(now, joinWindow) && isBefore(now, sessionEnd);
+    } catch (error) {
+      console.error('Error checking join session availability:', error, session);
+      return false;
+    }
   };
 
   const getStatusColor = (status) => {
@@ -158,17 +177,25 @@ export default function SessionsPage() {
                         <div className="flex items-center">
                           <h3 className="text-lg font-medium text-gray-900">
                             {user?.role === 'PATIENT' 
-                              ? `Dr. ${session.therapist?.firstName} ${session.therapist?.lastName}`
-                              : `${session.patient?.firstName} ${session.patient?.lastName}`
+                              ? (session.therapist?.firstName && session.therapist?.lastName 
+                                  ? `Dr. ${session.therapist.firstName} ${session.therapist.lastName}` 
+                                  : 'Therapist')
+                              : (session.patient?.firstName && session.patient?.lastName 
+                                  ? `${session.patient.firstName} ${session.patient.lastName}`
+                                  : 'Patient')
                             }
                           </h3>
-                          <span className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                            {session.status.replace('_', ' ').toLowerCase()}
+                          <span className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(session.status || 'UNKNOWN')}`}>
+                            {session.status ? session.status.replace('_', ' ').toLowerCase() : 'unknown'}
                           </span>
                         </div>
                         <div className="flex items-center mt-1 text-sm text-gray-500">
                           <ClockIcon className="h-4 w-4 mr-1" />
-                          {format(parseISO(session.scheduledFor), 'EEEE, MMMM d, yyyy \'at\' h:mm a')}
+                          {session.scheduledAt ? (
+                            format(parseISO(session.scheduledAt), 'EEEE, MMMM d, yyyy \'at\' h:mm a')
+                          ) : (
+                            'Date not available'
+                          )}
                         </div>
                         {session.type && (
                           <div className="mt-1 text-sm text-gray-600">
