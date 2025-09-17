@@ -21,14 +21,15 @@ const useSessionStore = create((set, get) => ({
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to fetch sessions');
+        throw new Error(data.message || 'Failed to fetch sessions');
       }
 
-      const data = await response.json();
-      // Ensure we always set an array
-      const sessions = Array.isArray(data) ? data : [];
-      set({ sessions, isLoading: false });
+      // Handle API response format
+      const sessions = data.data?.sessions || data.data || [];
+      set({ sessions: Array.isArray(sessions) ? sessions : [], isLoading: false });
       return sessions;
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -50,20 +51,45 @@ const useSessionStore = create((set, get) => ({
         body: JSON.stringify(sessionData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to create session');
+        throw new Error(data.message || 'Failed to create session');
       }
 
-      const newSession = await response.json();
+      const newSession = data.data?.session || data;
       
       set((state) => ({
         sessions: [...state.sessions, newSession],
         isLoading: false,
       }));
 
-      return newSession;
+      return data;
     } catch (error) {
       set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  // Assign therapist to patient
+  assignTherapist: async (therapistId, token) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/users/therapists/${therapistId}/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to assign therapist');
+      }
+
+      return data;
+    } catch (error) {
       throw error;
     }
   },

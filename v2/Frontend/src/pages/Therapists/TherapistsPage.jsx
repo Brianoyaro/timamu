@@ -11,12 +11,15 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import useAuthStore from '../../stores/authStore';
 import { getApiUrl } from '../../utils/api';
 import toast from 'react-hot-toast';
+import BookingModal from '../../components/Booking/BookingModal';
 
 export default function TherapistsPage() {
   const { token } = useAuthStore();
   const [therapists, setTherapists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Helper function to format working hours
   const formatWorkingHours = (workingHours) => {
@@ -93,9 +96,14 @@ export default function TherapistsPage() {
     therapist.therapistProfile?.specializations?.includes(selectedSpecialty)
   ) : [];
 
-  const handleBookSession = (therapistId) => {
-    // TODO: Implement booking modal or navigation
-    toast.success('Booking functionality coming soon!');
+  const handleBookSession = (therapist) => {
+    setSelectedTherapist(therapist);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
+    setSelectedTherapist(null);
   };
 
   if (isLoading) {
@@ -236,7 +244,7 @@ export default function TherapistsPage() {
 
                 <div className="mt-6">
                   <button
-                    onClick={() => handleBookSession(therapist.id)}
+                    onClick={() => handleBookSession(therapist)}
                     className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
@@ -349,7 +357,7 @@ export default function TherapistsPage() {
 
                 <div className="mt-6">
                   <button
-                    onClick={() => handleBookSession(therapist.id)}
+                    onClick={() => handleBookSession(therapist)}
                     className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
@@ -361,6 +369,13 @@ export default function TherapistsPage() {
           ))}
         </div>
       )}
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={handleCloseBookingModal}
+        therapist={selectedTherapist}
+      />
     </div>
   );
 }
