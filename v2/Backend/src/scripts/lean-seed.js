@@ -6,19 +6,22 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting lean NGO telepsychology platform seed...');
 
-  // Clear existing data
+  // Clear existing data (gracefully handle missing tables)
   console.log('🧹 Cleaning up existing data...');
-  await prisma.auditLog.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.file.deleteMany();
-  await prisma.rating.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.sessionNote.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.adminProfile.deleteMany();
-  await prisma.therapistProfile.deleteMany();
-  await prisma.patientProfile.deleteMany();
-  await prisma.user.deleteMany();
+  const tables = [
+    'auditLog', 'refreshToken', 'file', 'rating', 
+    'message', 'sessionNote', 'session', 'adminProfile', 
+    'therapistProfile', 'patientProfile', 'user'
+  ];
+  
+  for (const table of tables) {
+    try {
+      await prisma[table].deleteMany();
+      console.log(`✅ Cleared ${table} table`);
+    } catch (error) {
+      console.log(`⏭️ Skipping ${table} table (doesn't exist yet)`);
+    }
+  }
 
   // Hash password for demo users
   const hashedPassword = await bcrypt.hash('password123', 10);
