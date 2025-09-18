@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { prisma } = require('../utils/database');
+const { authenticate } = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
 
-const prisma = new PrismaClient();
-
 // Get user's sessions (patients see their sessions, therapists see their sessions)
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
@@ -88,7 +86,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // Create new session (direct booking)
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const patientId = req.user.id;
     const { 
@@ -182,7 +180,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // Update session
-router.put('/:sessionId', requireAuth, async (req, res) => {
+router.put('/:sessionId', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
@@ -269,7 +267,7 @@ router.put('/:sessionId', requireAuth, async (req, res) => {
 });
 
 // Cancel session
-router.post('/:sessionId/cancel', requireAuth, async (req, res) => {
+router.post('/:sessionId/cancel', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
@@ -319,7 +317,7 @@ router.post('/:sessionId/cancel', requireAuth, async (req, res) => {
 });
 
 // Join session (start session)
-router.post('/:sessionId/join', requireAuth, async (req, res) => {
+router.post('/:sessionId/join', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
@@ -421,7 +419,7 @@ router.post('/:sessionId/join', requireAuth, async (req, res) => {
 });
 
 // Add session notes
-router.post('/:sessionId/notes', requireAuth, async (req, res) => {
+router.post('/:sessionId/notes', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
@@ -486,7 +484,7 @@ router.post('/:sessionId/notes', requireAuth, async (req, res) => {
 });
 
 // Rate session
-router.post('/:sessionId/rate', requireAuth, async (req, res) => {
+router.post('/:sessionId/rate', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
