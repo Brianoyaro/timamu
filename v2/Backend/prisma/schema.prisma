@@ -1,6 +1,3 @@
-// Professional NGO Telepsychology Platform Schema
-// Clean, lean, and DRY design focused on core functionality
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,304 +7,211 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core user model
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password      String?  // Nullable for OAuth users
-  firstName     String
-  lastName      String
-  role          Role     @default(PATIENT)
-  isActive      Boolean  @default(true)
-  isVerified    Boolean  @default(false)
-  avatar        String?
-  phone         String?
-  dateOfBirth   DateTime?
-  gender        Gender?
-  
-  // OAuth
-  googleId      String?  @unique
-  
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  lastLoginAt   DateTime?
-  
-  // Role-specific profiles
-  patientProfile    PatientProfile?
-  therapistProfile  TherapistProfile?
+  id                String            @id @default(uuid())
+  email             String            @unique
+  password          String?
+  firstName         String
+  lastName          String
+  role              Role              @default(PATIENT)
+  isActive          Boolean           @default(true)
+  isVerified        Boolean           @default(false)
+  avatar            String?
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            Gender?
+  googleId          String?           @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  lastLoginAt       DateTime?
   adminProfile      AdminProfile?
-  
-  // Sessions
-  patientSessions   Session[] @relation("PatientSessions")
-  therapistSessions Session[] @relation("TherapistSessions")
-  
-  // Messages
-  sentMessages      Message[] @relation("MessageSender")
-  receivedMessages  Message[] @relation("MessageReceiver")
-  
-  // Files and tokens
-  uploadedFiles     File[]
-  refreshTokens     RefreshToken[]
   auditLogs         AuditLog[]
-  
-  // Ratings
-  givenRatings      Rating[] @relation("RatingGiver")
-  receivedRatings   Rating[] @relation("RatingReceiver")
-  
+  uploadedFiles     File[]
+  receivedMessages  Message[]         @relation("MessageReceiver")
+  sentMessages      Message[]         @relation("MessageSender")
+  patientProfile    PatientProfile?
+  givenRatings      Rating[]          @relation("RatingGiver")
+  receivedRatings   Rating[]          @relation("RatingReceiver")
+  refreshTokens     RefreshToken[]
+  patientSessions   Session[]         @relation("PatientSessions")
+  therapistSessions Session[]         @relation("TherapistSessions")
+  therapistProfile  TherapistProfile?
+
   @@map("users")
 }
 
-// Patient profile with essential info
 model PatientProfile {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Medical & emergency info
-  medicalHistory   String?
-  emergencyContact String?
-  
-  // Preferences
-  preferredLanguage String  @default("en")
-  timezone         String   @default("UTC")
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  medicalHistory    String?
+  emergencyContact  String?
+  preferredLanguage String   @default("en")
+  timezone          String   @default("UTC")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("patient_profiles")
 }
 
-// Therapist profile with professional info
 model TherapistProfile {
-  id               String    @id @default(uuid())
-  userId           String    @unique
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Professional info
-  licenseNumber    String    @unique
-  specializations  String[]  // ["anxiety", "depression", "trauma", "family"]
-  languages        String[]  // ["en", "es", "fr"]
-  experience       Int       // Years of experience
+  id               String        @id @default(uuid())
+  userId           String        @unique
+  licenseNumber    String        @unique
+  specializations  String[]
+  experience       Int
   education        String?
   biography        String?
-  
-  // Status
-  isApproved       Boolean   @default(false)
+  isApproved       Boolean       @default(false)
   approvedAt       DateTime?
-  
-  // Availability calendar (JSON for flexibility)
-  availability     Json?     // { "monday": {"9:00": "17:00"}, ... }
-  timezone         String    @default("UTC")
-  
-  // Emergency availability
-  acceptsEmergency Boolean   @default(false)
-  
-  // Notes
+  timezone         String        @default("UTC")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  acceptsEmergency Boolean       @default(false)
+  availability     Json?
+  languages        String[]
   sessionNotes     SessionNote[]
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("therapist_profiles")
 }
 
-// Simple admin profile
 model AdminProfile {
   id          String     @id @default(uuid())
   userId      String     @unique
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  permissions String[]   // ["manage_users", "view_analytics", "handle_reports"]
+  permissions String[]
   level       AdminLevel @default(MODERATOR)
-  
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("admin_profiles")
 }
 
-// Core appointment/session model
 model Session {
-  id              String        @id @default(uuid())
-  
-  // Participants
-  patientId       String
-  patient         User          @relation("PatientSessions", fields: [patientId], references: [id])
-  therapistId     String
-  therapist       User          @relation("TherapistSessions", fields: [therapistId], references: [id])
-  
-  // Session details
-  scheduledAt     DateTime
-  startedAt       DateTime?
-  endedAt         DateTime?
-  duration        Int?          // Duration in minutes
-  status          SessionStatus @default(SCHEDULED)
-  sessionType     SessionType   @default(VIDEO)
-  
-  // Session content
-  title           String?       // Brief title/reason
-  notes           String?       // Patient notes when booking
-  recordingUrl    String?       // Encrypted recording URL
-  
-  // Emergency session
-  isEmergency     Boolean       @default(false)
-  emergencyNotes  String?
-  
-  // Relations
-  messages        Message[]
-  files           File[]
-  sessionNotes    SessionNote[]
-  rating          Rating?
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
+  id             String        @id @default(uuid())
+  patientId      String
+  therapistId    String
+  scheduledAt    DateTime
+  startedAt      DateTime?
+  endedAt        DateTime?
+  duration       Int?
+  status         SessionStatus @default(SCHEDULED)
+  sessionType    SessionType   @default(VIDEO)
+  notes          String?
+  recordingUrl   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  emergencyNotes String?
+  isEmergency    Boolean       @default(false)
+  title          String?
+  files          File[]
+  messages       Message[]
+  rating         Rating?
+  sessionNotes   SessionNote[]
+  patient        User          @relation("PatientSessions", fields: [patientId], references: [id])
+  therapist      User          @relation("TherapistSessions", fields: [therapistId], references: [id])
+
   @@map("sessions")
 }
 
-// Session notes by therapists (professional notes)
 model SessionNote {
-  id            String           @id @default(uuid())
-  sessionId     String
-  session       Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  therapistId   String
-  therapist     TherapistProfile @relation(fields: [therapistId], references: [id])
-  
-  content       String
-  isSharedWithPatient Boolean    @default(false) // Therapist can choose to share
-  
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  
+  id                  String           @id @default(uuid())
+  sessionId           String
+  therapistId         String
+  content             String
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  isSharedWithPatient Boolean          @default(false)
+  session             Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  therapist           TherapistProfile @relation(fields: [therapistId], references: [id])
+
   @@map("session_notes")
 }
 
-// Real-time messaging between patient and therapist
 model Message {
   id          String      @id @default(uuid())
-  
-  // Participants
   senderId    String
-  sender      User        @relation("MessageSender", fields: [senderId], references: [id])
   receiverId  String
-  receiver    User        @relation("MessageReceiver", fields: [receiverId], references: [id])
-  
-  // Message content
   content     String
   messageType MessageType @default(TEXT)
-  
-  // Session context (optional)
   sessionId   String?
-  session     Session?    @relation(fields: [sessionId], references: [id])
-  
-  // Status
   isRead      Boolean     @default(false)
   readAt      DateTime?
-  
   createdAt   DateTime    @default(now())
-  
+  receiver    User        @relation("MessageReceiver", fields: [receiverId], references: [id])
+  sender      User        @relation("MessageSender", fields: [senderId], references: [id])
+  session     Session?    @relation(fields: [sessionId], references: [id])
+
   @@map("messages")
 }
 
-// Rating/review system
 model Rating {
   id          String   @id @default(uuid())
-  
-  // Session context
   sessionId   String   @unique
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
-  // Participants
-  giverId     String   // Usually patient
-  giver       User     @relation("RatingGiver", fields: [giverId], references: [id])
-  receiverId  String   // Usually therapist
-  receiver    User     @relation("RatingReceiver", fields: [receiverId], references: [id])
-  
-  // Rating details
-  rating      Int      // 1-5 stars
-  review      String?  // Optional review text
+  giverId     String
+  receiverId  String
+  rating      Int
+  review      String?
   isAnonymous Boolean  @default(false)
-  
   createdAt   DateTime @default(now())
-  
+  giver       User     @relation("RatingGiver", fields: [giverId], references: [id])
+  receiver    User     @relation("RatingReceiver", fields: [receiverId], references: [id])
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@map("ratings")
 }
 
-// File uploads and resource sharing
 model File {
-  id            String   @id @default(uuid())
-  
-  // File metadata
-  originalName  String
-  fileName      String   @unique
-  filePath      String
-  mimeType      String
-  size          Int      // File size in bytes
-  
-  // Relations
-  uploaderId    String
-  uploader      User     @relation(fields: [uploaderId], references: [id])
-  sessionId     String?
-  session       Session? @relation(fields: [sessionId], references: [id])
-  
-  // Description for patient resources
-  description   String?
-  category      FileCategory @default(OTHER)
-  
-  // Access control
-  isPublic      Boolean  @default(false)
-  expiresAt     DateTime?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  id           String       @id @default(uuid())
+  originalName String
+  fileName     String       @unique
+  filePath     String
+  mimeType     String
+  size         Int
+  uploaderId   String
+  sessionId    String?
+  isPublic     Boolean      @default(false)
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  category     FileCategory @default(OTHER)
+  description  String?
+  session      Session?     @relation(fields: [sessionId], references: [id])
+  uploader     User         @relation(fields: [uploaderId], references: [id])
+
   @@map("files")
 }
 
-// JWT refresh tokens
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   expiresAt DateTime
   isRevoked Boolean  @default(false)
-  
   createdAt DateTime @default(now())
-  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("refresh_tokens")
 }
 
-// Audit logging for security
 model AuditLog {
-  id          String     @id @default(uuid())
-  
-  // User context
-  userId      String?
-  user        User?      @relation(fields: [userId], references: [id])
-  userEmail   String?
-  
-  // Action details
-  action      String     // LOGIN, BOOK_SESSION, CANCEL_SESSION, etc.
-  resource    String?    // What was acted upon
-  resourceId  String?    // ID of the resource
-  
-  // Request details
-  ipAddress   String?
-  userAgent   String?
-  
-  // Result
-  status      String     // SUCCESS, FAILURE
-  details     Json?      // Additional context
-  
-  createdAt   DateTime   @default(now())
-  
+  id         String   @id @default(uuid())
+  userId     String?
+  userEmail  String?
+  action     String
+  resource   String?
+  resourceId String?
+  ipAddress  String?
+  userAgent  String?
+  status     String
+  details    Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
   @@map("audit_logs")
 }
 
-// Simple enums
 enum Role {
   PATIENT
   THERAPIST
@@ -349,8 +253,8 @@ enum MessageType {
 }
 
 enum FileCategory {
-  RESOURCE          // Therapist shared resources
-  HOMEWORK          // Assignments/exercises
-  REPORT            // Professional reports
+  RESOURCE
+  HOMEWORK
+  REPORT
   OTHER
 }
