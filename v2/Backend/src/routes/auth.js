@@ -85,7 +85,8 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
       await tx.patientProfile.create({
         data: {
           userId: newUser.id,
-          preferredLanguage: 'en'
+          preferredLanguage: 'en',
+          timezone: 'UTC'
         }
       });
     } else if (role === 'THERAPIST') {

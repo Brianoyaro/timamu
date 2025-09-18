@@ -1,0 +1,374 @@
+🔵 Auth Route: GET /google called - initiating Google OAuth
+🔵 Auth Route: Request IP: ::1
+🔵 Auth Route: User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+info: ::1 - - [18/Sep/2025:09:56:07 +0000] "GET /api/auth/google HTTP/1.1" 302 0 "https://timamu-v2-frontend.onrender.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:56:07:567"}
+info: ::1 - - [18/Sep/2025:09:56:07 +0000] "GET /api/auth/google HTTP/1.1" 302 0 "https://timamu-v2-frontend.onrender.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:56:07:567"}
+🔧 Passport: Google OAuth callback triggered
+🔧 Passport: Google profile received: {
+  id: '114504208963388018619',
+  email: 'brianoyaro2000@gmail.com',
+  name: 'brian oyaro'
+}
+🔧 Passport: Looking for existing user with email: brianoyaro2000@gmail.com or Google ID: 114504208963388018619
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 170ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 170ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: [] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: [] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["1fcc6dfa-4f76-41bc-9774-d13f20814f4c","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:56:20.407 UTC","2025-09-18 09:56:20.407 UTC","2025-09-18 09:56:20.404 UTC"] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["1fcc6dfa-4f76-41bc-9774-d13f20814f4c","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:56:20.407 UTC","2025-09-18 09:56:20.407 UTC","2025-09-18 09:56:20.404 UTC"] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 144ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 144ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["86300d39-cd23-4a3e-b2b4-a2d1b6552e4e","1fcc6dfa-4f76-41bc-9774-d13f20814f4c","en","UTC","2025-09-18 09:56:20.554 UTC","2025-09-18 09:56:20.554 UTC"] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: ["86300d39-cd23-4a3e-b2b4-a2d1b6552e4e","1fcc6dfa-4f76-41bc-9774-d13f20814f4c","en","UTC","2025-09-18 09:56:20.554 UTC","2025-09-18 09:56:20.554 UTC"] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 67ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 67ms {"timestamp":"2025-09-18 09:56:20:5620"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:56:20:5620"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: [] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Params: [] {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 78ms {"timestamp":"2025-09-18 09:56:20:5620"}
+debug: Duration: 78ms {"timestamp":"2025-09-18 09:56:20:5620"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:56:20:5620"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:56:20:5620"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:56:20:5620","url":"/api/auth/google/callback?code=4%2F0AVGzR1BsvlzkAazE5DAaJK2qWW0CwLkqjZGzvrlCL_QFI8yICAEfQP0tPgDJjwpO__7bfA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:56:20:5620","url":"/api/auth/google/callback?code=4%2F0AVGzR1BsvlzkAazE5DAaJK2qWW0CwLkqjZGzvrlCL_QFI8yICAEfQP0tPgDJjwpO__7bfA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+info: ::1 - - [18/Sep/2025:09:56:20 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BsvlzkAazE5DAaJK2qWW0CwLkqjZGzvrlCL_QFI8yICAEfQP0tPgDJjwpO__7bfA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:56:20:5620"}
+info: ::1 - - [18/Sep/2025:09:56:20 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BsvlzkAazE5DAaJK2qWW0CwLkqjZGzvrlCL_QFI8yICAEfQP0tPgDJjwpO__7bfA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:56:20:5620"}
+🔵 Auth Route: GET /google called - initiating Google OAuth
+🔵 Auth Route: Request IP: ::1
+🔵 Auth Route: User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+info: ::1 - - [18/Sep/2025:09:57:00 +0000] "GET /api/auth/google HTTP/1.1" 302 0 "https://timamu-v2-frontend.onrender.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:00:570"}
+info: ::1 - - [18/Sep/2025:09:57:00 +0000] "GET /api/auth/google HTTP/1.1" 302 0 "https://timamu-v2-frontend.onrender.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:00:570"}
+🔧 Passport: Google OAuth callback triggered
+🔧 Passport: Google profile received: {
+  id: '114504208963388018619',
+  email: 'brianoyaro2000@gmail.com',
+  name: 'brian oyaro'
+}
+🔧 Passport: Looking for existing user with email: brianoyaro2000@gmail.com or Google ID: 114504208963388018619
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+info: ::1 - - [18/Sep/2025:09:57:05 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:05:575"}
+info: ::1 - - [18/Sep/2025:09:57:05 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: Error in PostgreSQL connection: Error { kind: Closed, cause: None } {"target":"quaint::connector::postgres::native","timestamp":"2025-09-18 10:02:25:225"}
+error: Database error: Error in PostgreSQL connection: Error { kind: Closed, cause: None } {"target":"quaint::connector::postgres::native","timestamp":"2025-09-18 10:02:25:225"}
+  email: 'brianoyaro2000@gmail.com',
+  name: 'brian oyaro'
+}
+🔧 Passport: Looking for existing user with email: brianoyaro2000@gmail.com or Google ID: 114504208963388018619
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+info: ::1 - - [18/Sep/2025:09:57:05 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:05:575"}
+info: ::1 - - [18/Sep/2025:09:57:05 +0000] "GET /api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none HTTP/1.1" 500 1104 "https://accounts.google.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" {"timestamp":"2025-09-18 09:57:05:575"}
+==> Detected service running on port 5000
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+error: Database error: Error in PostgreSQL connection: Error { kind: Closed, cause: None } {"target":"quaint::connector::postgres::native","timestamp":"2025-09-18 10:02:25:225"}
+error: Database error: Error in PostgreSQL connection: Error { kind: Closed, cause: None } {"target":"quaint::connector::postgres::native","timestamp":"2025-09-18 10:02:25:225"}
+  email: 'brianoyaro2000@gmail.com',
+  name: 'brian oyaro'
+}
+🔧 Passport: Looking for existing user with email: brianoyaro2000@gmail.com or Google ID: 114504208963388018619
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT 1 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 66ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 OR "public"."users"."googleId" = $2) LIMIT $3 OFFSET $4 {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Params: ["brianoyaro2000@gmail.com","114504208963388018619",1,0] {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:04:574"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: BEGIN {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 139ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."users" ("id","email","firstName","lastName","role","isActive","isVerified","avatar","googleId","createdAt","updatedAt","lastLoginAt") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role"::text, "public"."users"."isActive", "public"."users"."isVerified", "public"."users"."avatar", "public"."users"."phone", "public"."users"."dateOfBirth", "public"."users"."gender"::text, "public"."users"."googleId", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLoginAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["c2cef858-12b6-4525-80c2-e9b994ef37aa","brianoyaro2000@gmail.com","brian","oyaro","PATIENT",true,true,"https://lh3.googleusercontent.com/a/ACg8ocLsRCQ4dAEl5MZZxsK0DC5L2YdcjNapW2eGJV-mSFo61vEVaA=s96-c","114504208963388018619","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.045 UTC","2025-09-18 09:57:05.044 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 70ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: INSERT INTO "public"."patient_profiles" ("id","userId","preferredLanguage","timezone","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "public"."patient_profiles"."id", "public"."patient_profiles"."userId", "public"."patient_profiles"."medicalHistory", "public"."patient_profiles"."emergencyContact", "public"."patient_profiles"."insuranceInfo", "public"."patient_profiles"."preferredLanguage", "public"."patient_profiles"."timezone", "public"."patient_profiles"."assignedTherapistId", "public"."patient_profiles"."createdAt", "public"."patient_profiles"."updatedAt" {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: ["cfd12158-21ed-4e16-b575-5cdd0db2a560","c2cef858-12b6-4525-80c2-e9b994ef37aa","en","UTC","2025-09-18 09:57:05.118 UTC","2025-09-18 09:57:05.118 UTC"] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+error: Database error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"target":"patientProfile.create","timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Query: ROLLBACK {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Params: [] {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+debug: Duration: 65ms {"timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Google OAuth error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"clientVersion":"5.22.0","code":"P2022","meta":{"column":"patient_profiles.insuranceInfo","modelName":"PatientProfile"},"name":"PrismaClientKnownRequestError","stack":"PrismaClientKnownRequestError: \nInvalid `tx.patientProfile.create()` invocation in\n/opt/render/project/src/v2/Backend/src/config/passport.js:93:31\n\n  90 });\n  91 \n  92 // Create patient profile for new OAuth users\n→ 93 await tx.patientProfile.create(\nThe column `patient_profiles.insuranceInfo` does not exist in the current database.\n    at $n.handleRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:7315)\n    at $n.handleAndLogRequestError (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6623)\n    at $n.request (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:121:6307)\n    at async l (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:9633)\n    at async /opt/render/project/src/v2/Backend/src/config/passport.js:93:7\n    at async Proxy._transactionWithCallback (/opt/render/project/src/v2/Backend/node_modules/@prisma/client/runtime/library.js:130:8000)\n    at async Strategy._verify (/opt/render/project/src/v2/Backend/src/config/passport.js:77:12)","timestamp":"2025-09-18 09:57:05:575"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+error: Error: 
+Invalid `tx.patientProfile.create()` invocation in
+/opt/render/project/src/v2/Backend/src/config/passport.js:93:31
+  90 });
+  91 
+  92 // Create patient profile for new OAuth users
+→ 93 await tx.patientProfile.create(
+The column `patient_profiles.insuranceInfo` does not exist in the current database. {"ip":"::1","method":"GET","timestamp":"2025-09-18 09:57:05:575","url":"/api/auth/google/callback?code=4%2F0AVGzR1BHOvXHkINN8ZDi0fLKfJgPaIDXg8YUaHVeOgS4U_od5s7g-NLm84Oad10mOTgKCg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email&authuser=0&prompt=none","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}

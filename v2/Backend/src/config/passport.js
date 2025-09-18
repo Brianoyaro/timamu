@@ -93,7 +93,8 @@ passport.use(new GoogleStrategy({
       await tx.patientProfile.create({
         data: {
           userId: newUser.id,
-          preferredLanguage: 'en'
+          preferredLanguage: 'en',
+          timezone: 'UTC'
         }
       });
 
