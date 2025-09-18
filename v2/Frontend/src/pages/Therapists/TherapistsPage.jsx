@@ -11,7 +11,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import useAuthStore from '../../stores/authStore';
 import { getApiUrl } from '../../utils/api';
 import toast from 'react-hot-toast';
-import BookingModal from '../../components/Booking/BookingModal';
+import BookingModal from '../../components/Booking/LeanBookingModal';
 
 export default function TherapistsPage() {
   const { token } = useAuthStore();
@@ -21,43 +21,34 @@ export default function TherapistsPage() {
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  // Helper function to format working hours
-  const formatWorkingHours = (workingHours) => {
-    if (!workingHours) return 'Mon-Fri';
-    if (typeof workingHours === 'string') return workingHours;
+  // Helper function to format availability
+  const formatAvailability = (availability) => {
+    if (!availability) return 'Schedule varies';
+    if (typeof availability === 'string') return availability;
     
-    // If it's an object with day keys, format it
-    if (typeof workingHours === 'object') {
-      const dayKeys = Object.keys(workingHours);
-      if (dayKeys.length === 0) return 'Mon-Fri';
+    // If it's JSON object with day keys, format it
+    if (typeof availability === 'object') {
+      const dayKeys = Object.keys(availability);
+      if (dayKeys.length === 0) return 'Schedule varies';
       
-      const dayNames = {
-        monday: 'Mon',
-        tuesday: 'Tue', 
-        wednesday: 'Wed',
-        thursday: 'Thu',
-        friday: 'Fri',
-        saturday: 'Sat',
-        sunday: 'Sun'
-      };
+      // Show first and last day with times
+      const firstDay = dayKeys[0];
+      const lastDay = dayKeys[dayKeys.length - 1];
+      const firstTime = availability[firstDay];
       
-      const availableDays = dayKeys
-        .filter(day => workingHours[day]) // Only include days that are true/available
-        .map(day => dayNames[day.toLowerCase()] || day)
-        .filter(Boolean);
-        
-      if (availableDays.length > 0) {
-        return availableDays.join(', ');
+      if (typeof firstTime === 'object') {
+        const times = Object.keys(firstTime);
+        return `${firstDay} ${times[0]}-${firstTime[times[0]]}`;
       }
+      
+      return `${dayKeys.length} days/week`;
     }
     
-    return 'Mon-Fri';
-  };
-
-  useEffect(() => {
+    return 'Schedule varies';
+  };  useEffect(() => {
     const fetchTherapists = async () => {
       try {
-        const response = await fetch(`${getApiUrl()}/api/users/therapists`, {
+        const response = await fetch(`${getApiUrl()}/api/lean/users/therapists`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -89,11 +80,13 @@ export default function TherapistsPage() {
     }
   }, [token]);
 
-  const specialties = ['all', 'anxiety', 'depression', 'trauma', 'couples', 'family', 'addiction'];
+  const specialties = ['all', 'anxiety', 'depression', 'trauma', 'family', 'adolescent', 'addiction', 'behavioral'];
 
   const filteredTherapists = Array.isArray(therapists) ? therapists.filter(therapist => 
     selectedSpecialty === 'all' || 
-    therapist.therapistProfile?.specializations?.includes(selectedSpecialty)
+    (therapist.therapistProfile?.specializations && 
+     Array.isArray(therapist.therapistProfile.specializations) &&
+     therapist.therapistProfile.specializations.includes(selectedSpecialty))
   ) : [];
 
   const handleBookSession = (therapist) => {
@@ -218,8 +211,22 @@ export default function TherapistsPage() {
 
                   <div className="flex items-center text-sm text-gray-600">
                     <ClockIcon className="h-4 w-4 mr-2" />
-                    <span>Available {formatWorkingHours(therapist.therapistProfile?.workingHours)}</span>
+                    <span>Available {formatAvailability(therapist.therapistProfile?.availability)}</span>
                   </div>
+
+                  {therapist.therapistProfile?.languages && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <span className="h-4 w-4 mr-2">🌐</span>
+                      <span>Languages: {therapist.therapistProfile.languages.join(', ')}</span>
+                    </div>
+                  )}
+
+                  {therapist.therapistProfile?.acceptsEmergency && (
+                    <div className="flex items-center text-sm text-red-600">
+                      <span className="h-4 w-4 mr-2">🚨</span>
+                      <span>Emergency sessions available</span>
+                    </div>
+                  )}
                 </div>
 
                 {therapist.therapistProfile?.specializations && Array.isArray(therapist.therapistProfile.specializations) && (

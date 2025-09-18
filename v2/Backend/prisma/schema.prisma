@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Professional NGO Telepsychology Platform Schema
+// Clean, lean, and DRY design focused on core functionality
 
 generator client {
   provider = "prisma-client-js"
@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model with role-based access
+// Core user model
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
@@ -25,7 +25,7 @@ model User {
   dateOfBirth   DateTime?
   gender        Gender?
   
-  // OAuth fields
+  // OAuth
   googleId      String?  @unique
   
   // Timestamps
@@ -33,113 +33,105 @@ model User {
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
   
-  // Relations
+  // Role-specific profiles
   patientProfile    PatientProfile?
   therapistProfile  TherapistProfile?
   adminProfile      AdminProfile?
   
-  // Sessions and messages
+  // Sessions
   patientSessions   Session[] @relation("PatientSessions")
   therapistSessions Session[] @relation("TherapistSessions")
+  
+  // Messages
   sentMessages      Message[] @relation("MessageSender")
   receivedMessages  Message[] @relation("MessageReceiver")
   
-  // Files and documents
+  // Files and tokens
   uploadedFiles     File[]
-  
-  // Audit logs
+  refreshTokens     RefreshToken[]
   auditLogs         AuditLog[]
   
-  // Refresh tokens
-  refreshTokens     RefreshToken[]
+  // Ratings
+  givenRatings      Rating[] @relation("RatingGiver")
+  receivedRatings   Rating[] @relation("RatingReceiver")
   
   @@map("users")
 }
 
-// Patient-specific profile
+// Patient profile with essential info
 model PatientProfile {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Medical information
-  medicalHistory  String?
+  // Medical & emergency info
+  medicalHistory   String?
   emergencyContact String?
-  insuranceInfo   String?
   
   // Preferences
-  preferredLanguage String @default("en")
-  timezone         String  @default("UTC")
+  preferredLanguage String  @default("en")
+  timezone         String   @default("UTC")
   
-  // Therapist relationships (many-to-many)
-  therapistAssignments PatientTherapistAssignment[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
   @@map("patient_profiles")
 }
 
-// Therapist-specific profile
+// Therapist profile with professional info
 model TherapistProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Professional information
-  licenseNumber     String    @unique
-  specializations   String[]  // Array of specialization tags
-  experience        Int       // Years of experience
-  education         String?
-  biography         String?
-  hourlyRate        Decimal?  @db.Decimal(10, 2)
+  // Professional info
+  licenseNumber    String    @unique
+  specializations  String[]  // ["anxiety", "depression", "trauma", "family"]
+  languages        String[]  // ["en", "es", "fr"]
+  experience       Int       // Years of experience
+  education        String?
+  biography        String?
   
   // Status
-  isApproved        Boolean   @default(false)
-  approvedAt        DateTime?
-  approvedBy        String?
+  isApproved       Boolean   @default(false)
+  approvedAt       DateTime?
   
-  // Availability
-  workingHours      Json?     // Flexible JSON structure for availability
-  timezone          String    @default("UTC")
+  // Availability calendar (JSON for flexibility)
+  availability     Json?     // { "monday": {"9:00": "17:00"}, ... }
+  timezone         String    @default("UTC")
   
-  // Patient relationships (many-to-many)
-  patientAssignments PatientTherapistAssignment[]
-  capabilities       TherapistSpecializationCapability[]
+  // Emergency availability
+  acceptsEmergency Boolean   @default(false)
   
-  // Session notes
-  sessionNotes       SessionNote[]
+  // Notes
+  sessionNotes     SessionNote[]
   
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   
   @@map("therapist_profiles")
 }
 
-// Admin-specific profile
+// Simple admin profile
 model AdminProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(uuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  permissions String[] // Array of admin permissions
+  permissions String[]   // ["manage_users", "view_analytics", "handle_reports"]
   level       AdminLevel @default(MODERATOR)
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   
   @@map("admin_profiles")
 }
 
-// Session model for therapy sessions
+// Core appointment/session model
 model Session {
   id              String        @id @default(uuid())
   
-  // Assignment context (optional during migration)
-  assignmentId    String?
-  assignment      PatientTherapistAssignment? @relation(fields: [assignmentId], references: [id])
-  
-  // Participants (derived from assignment)
+  // Participants
   patientId       String
   patient         User          @relation("PatientSessions", fields: [patientId], references: [id])
   therapistId     String
@@ -151,20 +143,22 @@ model Session {
   endedAt         DateTime?
   duration        Int?          // Duration in minutes
   status          SessionStatus @default(SCHEDULED)
-  
-  // Session metadata
   sessionType     SessionType   @default(VIDEO)
-  notes           String?
+  
+  // Session content
+  title           String?       // Brief title/reason
+  notes           String?       // Patient notes when booking
   recordingUrl    String?       // Encrypted recording URL
   
-  // Billing
-  cost            Decimal?      @db.Decimal(10, 2)
-  isPaid          Boolean       @default(false)
+  // Emergency session
+  isEmergency     Boolean       @default(false)
+  emergencyNotes  String?
   
   // Relations
   messages        Message[]
   files           File[]
   sessionNotes    SessionNote[]
+  rating          Rating?
   
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -172,7 +166,7 @@ model Session {
   @@map("sessions")
 }
 
-// Session notes by therapists
+// Session notes by therapists (professional notes)
 model SessionNote {
   id            String           @id @default(uuid())
   sessionId     String
@@ -181,7 +175,7 @@ model SessionNote {
   therapist     TherapistProfile @relation(fields: [therapistId], references: [id])
   
   content       String
-  isPrivate     Boolean          @default(true) // Private notes only for therapist
+  isSharedWithPatient Boolean    @default(false) // Therapist can choose to share
   
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -189,7 +183,7 @@ model SessionNote {
   @@map("session_notes")
 }
 
-// Real-time messaging
+// Real-time messaging between patient and therapist
 model Message {
   id          String      @id @default(uuid())
   
@@ -202,7 +196,6 @@ model Message {
   // Message content
   content     String
   messageType MessageType @default(TEXT)
-  isEncrypted Boolean     @default(true)
   
   // Session context (optional)
   sessionId   String?
@@ -213,12 +206,35 @@ model Message {
   readAt      DateTime?
   
   createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
   
   @@map("messages")
 }
 
-// File uploads and documents
+// Rating/review system
+model Rating {
+  id          String   @id @default(uuid())
+  
+  // Session context
+  sessionId   String   @unique
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Participants
+  giverId     String   // Usually patient
+  giver       User     @relation("RatingGiver", fields: [giverId], references: [id])
+  receiverId  String   // Usually therapist
+  receiver    User     @relation("RatingReceiver", fields: [receiverId], references: [id])
+  
+  // Rating details
+  rating      Int      // 1-5 stars
+  review      String?  // Optional review text
+  isAnonymous Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("ratings")
+}
+
+// File uploads and resource sharing
 model File {
   id            String   @id @default(uuid())
   
@@ -229,15 +245,15 @@ model File {
   mimeType      String
   size          Int      // File size in bytes
   
-  // Security
-  isEncrypted   Boolean  @default(true)
-  encryptionKey String?  // Encrypted with app secret
-  
   // Relations
   uploaderId    String
   uploader      User     @relation(fields: [uploaderId], references: [id])
   sessionId     String?
   session       Session? @relation(fields: [sessionId], references: [id])
+  
+  // Description for patient resources
+  description   String?
+  category      FileCategory @default(OTHER)
   
   // Access control
   isPublic      Boolean  @default(false)
@@ -249,7 +265,7 @@ model File {
   @@map("files")
 }
 
-// Refresh tokens for JWT authentication
+// JWT refresh tokens
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
@@ -260,33 +276,30 @@ model RefreshToken {
   isRevoked Boolean  @default(false)
   
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   
   @@map("refresh_tokens")
 }
 
-// Audit logging for security and compliance
+// Audit logging for security
 model AuditLog {
   id          String     @id @default(uuid())
   
   // User context
   userId      String?
   user        User?      @relation(fields: [userId], references: [id])
-  userEmail   String?    // Store email in case user is deleted
+  userEmail   String?
   
   // Action details
-  action      String     // LOGIN, LOGOUT, CREATE_SESSION, etc.
+  action      String     // LOGIN, BOOK_SESSION, CANCEL_SESSION, etc.
   resource    String?    // What was acted upon
   resourceId  String?    // ID of the resource
   
   // Request details
   ipAddress   String?
   userAgent   String?
-  method      String?    // HTTP method
-  endpoint    String?    // API endpoint
   
   // Result
-  status      String     // SUCCESS, FAILURE, ERROR
+  status      String     // SUCCESS, FAILURE
   details     Json?      // Additional context
   
   createdAt   DateTime   @default(now())
@@ -294,125 +307,7 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// Normalized therapy specialization catalog
-model TherapySpecialization {
-  id                    String  @id @default(uuid())
-  code                  String  @unique // "FAM001", "SUI001", "ADD001"
-  name                  String  // "Family Therapy", "Suicide Prevention"
-  category              String  // "specialized", "general", "emergency"
-  description           String?
-  requiresSpecialCert   Boolean @default(false)
-  emergencyAccess       Boolean @default(false) // Can be accessed without assignment
-  maxConcurrentPatients Int?    // Per therapist limit
-  
-  // Relations
-  assignments           PatientTherapistAssignment[]
-  therapistCapabilities TherapistSpecializationCapability[]
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  @@map("therapy_specializations")
-}
-
-// Therapist capabilities - what they can provide
-model TherapistSpecializationCapability {
-  id               String                @id @default(uuid())
-  therapistId      String
-  therapist        TherapistProfile      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
-  specializationId String
-  specialization   TherapySpecialization @relation(fields: [specializationId], references: [id])
-  
-  // Capability details
-  certificationLevel String? // "certified", "expert", "trainee"
-  yearsExperience   Int?
-  isActive          Boolean @default(true)
-  hourlyRate        Decimal? @db.Decimal(10, 2) // Can override base rate
-  maxPatients       Int?     // Override specialization limit
-  
-  // Verification
-  certifiedAt       DateTime?
-  certifiedBy       String?  // Admin who verified
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  @@unique([therapistId, specializationId])
-  @@map("therapist_specialization_capabilities")
-}
-
-// Assignment types for flexible relationships
-model AssignmentType {
-  id          String  @id @default(uuid())
-  code        String  @unique // "primary", "specialist", "emergency", "consultation"
-  name        String  // "Primary Care", "Specialist Care"
-  description String?
-  priority    Int     @default(1) // Higher number = higher priority
-  
-  // Business rules
-  allowsConcurrent     Boolean @default(false) // Can have multiple of this type
-  requiresApproval     Boolean @default(false)
-  defaultMaxSessions   Int?
-  defaultDurationDays  Int?
-  
-  // Relations
-  assignments          PatientTherapistAssignment[]
-  
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  
-  @@map("assignment_types")
-}
-
-// Flexible patient-therapist relationships
-model PatientTherapistAssignment {
-  id                  String                @id @default(uuid())
-  
-  // Core relationship
-  patientId           String
-  patient             PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  therapistId         String
-  therapist           TherapistProfile      @relation(fields: [therapistId], references: [id], onDelete: Cascade)
-  
-  // Assignment metadata
-  assignmentTypeId    String
-  assignmentType      AssignmentType        @relation(fields: [assignmentTypeId], references: [id])
-  specializationId    String
-  specialization      TherapySpecialization @relation(fields: [specializationId], references: [id])
-  
-  // Status and lifecycle
-  status              AssignmentStatus      @default(PENDING)
-  startDate           DateTime              @default(now())
-  endDate             DateTime?
-  
-  // Session management
-  maxSessions         Int?
-  sessionsCompleted   Int                   @default(0)
-  
-  // Financial
-  agreedRate          Decimal?              @db.Decimal(10, 2)
-  
-  // Approval workflow
-  requestedBy         String                // User ID who requested
-  approvedBy          String?               // Admin/therapist who approved
-  approvedAt          DateTime?
-  rejectionReason     String?
-  
-  // Metadata
-  referralSource      String?               // "self", "primary_therapist", "emergency"
-  notes               String?
-  
-  // Relations
-  sessions            Session[]
-  
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  
-  @@unique([patientId, therapistId, specializationId, status], name: "unique_active_assignment")
-  @@map("patient_therapist_assignments")
-}
-
-// Enums
+// Simple enums
 enum Role {
   PATIENT
   THERAPIST
@@ -453,11 +348,9 @@ enum MessageType {
   SYSTEM
 }
 
-enum AssignmentStatus {
-  PENDING
-  ACTIVE
-  COMPLETED
-  CANCELLED
-  SUSPENDED
-  EXPIRED
+enum FileCategory {
+  RESOURCE          // Therapist shared resources
+  HOMEWORK          // Assignments/exercises
+  REPORT            // Professional reports
+  OTHER
 }

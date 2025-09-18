@@ -20,6 +20,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "node src/scripts/comprehensive-seed.js",
+    "seed:lean": "node src/scripts/lean-seed.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "logs": "tail -f logs/app.log"

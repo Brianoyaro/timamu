@@ -3,32 +3,22 @@ import useAuthStore from '../../stores/authStore';
 import useSessionStore from '../../stores/sessionStore';
 import PatientDashboard from '../../components/Dashboard/PatientDashboard';
 import TherapistDashboard from '../../components/Dashboard/TherapistDashboard';
-import AdminDashboard from '../../components/Dashboard/AdminDashboard';
+import LeanAdminPage from '../Admin/LeanAdminPage';
 import { getApiUrl } from '../../utils/api';
 
 export default function DashboardPage() {
   const { user, token } = useAuthStore();
   const { fetchSessions, sessions, isLoading } = useSessionStore();
-  const [dashboardData, setDashboardData] = useState(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        await fetchSessions(token);
-        
-        // Fetch additional role-specific data
-        if (user?.role === 'ADMIN') {
-          // Fetch admin analytics
-          const response = await fetch(`${getApiUrl()}/api/admin/analytics`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (response.ok) {
-            const analytics = await response.json();
-            setDashboardData(analytics);
-          }
+        // Load sessions for patients and therapists
+        if (user?.role === 'PATIENT' || user?.role === 'THERAPIST') {
+          await fetchSessions(token);
         }
+        
+        // Admin data is handled directly in LeanAdminPage
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       }
@@ -46,11 +36,11 @@ export default function DashboardPage() {
       case 'THERAPIST':
         return <TherapistDashboard sessions={sessions} isLoading={isLoading} />;
       case 'ADMIN':
-        return <AdminDashboard sessions={sessions} analytics={dashboardData} isLoading={isLoading} />;
+        return <LeanAdminPage />;
       default:
         return (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900">Welcome to TelePsy</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Welcome to NGO TelePsy</h2>
             <p className="mt-2 text-gray-600">Your dashboard is loading...</p>
           </div>
         );

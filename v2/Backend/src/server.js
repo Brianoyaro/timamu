@@ -28,6 +28,11 @@ const messageRoutes = require('./routes/messages');
 const fileRoutes = require('./routes/files');
 const adminRoutes = require('./routes/admin');
 
+// Lean NGO platform routes
+const leanUserRoutes = require('./routes/lean-users');
+const leanAdminRoutes = require('./routes/lean-admin');
+const leanSessionRoutes = require('./routes/lean-sessions');
+
 // Import socket handlers
 const socketHandler = require('./sockets/socketHandler');
 
@@ -130,13 +135,18 @@ app.get('/debug/cors', (req, res) => {
   });
 });
 
-// API Routes
+// API Routes - Legacy (commented out for lean migration)
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/sessions', sessionRoutes);
+// app.use('/api/users', userRoutes);
+// app.use('/api/sessions', sessionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
-app.use('/api/admin', adminRoutes);
+// app.use('/api/admin', adminRoutes);
+
+// Lean API Routes for NGO platform (active)
+app.use('/api/lean/users', leanUserRoutes);
+app.use('/api/lean/admin', leanAdminRoutes);
+app.use('/api/lean/sessions', leanSessionRoutes);
 
 // Socket.IO setup
 socketHandler(io);

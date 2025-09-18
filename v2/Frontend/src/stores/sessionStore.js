@@ -5,6 +5,7 @@ const useSessionStore = create((set, get) => ({
   sessions: [],
   currentSession: null,
   isLoading: false,
+  therapists: [],
   availability: [],
 
   // Actions
@@ -12,10 +13,13 @@ const useSessionStore = create((set, get) => ({
   
   setCurrentSession: (session) => set({ currentSession: session }),
 
+  setTherapists: (therapists) => set({ therapists }),
+
+  // Fetch user's sessions (lean API)
   fetchSessions: async (token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -39,10 +43,11 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
+  // Create new session with direct booking (lean API)
   createSession: async (sessionData, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +62,7 @@ const useSessionStore = create((set, get) => ({
         throw new Error(data.message || 'Failed to create session');
       }
 
-      const newSession = data.data?.session || data;
+      const newSession = data.data?.session || data.data;
       
       set((state) => ({
         sessions: [...state.sessions, newSession],
@@ -71,38 +76,43 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
-  // Assign therapist to patient with new assignment system
-  assignTherapist: async (therapistId, specializationCode, assignmentTypeCode, reason, token) => {
+  // Search therapists with filters (lean API)
+  searchTherapists: async (filters, token) => {
+    set({ isLoading: true });
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/therapists/${therapistId}/request`, {
-        method: 'POST',
+      const queryParams = new URLSearchParams();
+      
+      if (filters.specialization) queryParams.append('specialization', filters.specialization);
+      if (filters.language) queryParams.append('language', filters.language);
+      if (filters.availability) queryParams.append('availability', filters.availability);
+      if (filters.emergency !== undefined) queryParams.append('emergency', filters.emergency);
+
+      const response = await fetch(`${getApiUrl()}/api/lean/therapists/search?${queryParams}`, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          specializationCode: specializationCode || 'GEN001',
-          assignmentTypeCode: assignmentTypeCode || 'primary',
-          reason: reason || 'Patient requested assignment'
-        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to assign therapist');
+        throw new Error(data.message || 'Failed to search therapists');
       }
 
-      return data;
+      const therapists = data.data?.therapists || [];
+      set({ therapists, isLoading: false });
+      return therapists;
     } catch (error) {
+      console.error('Error searching therapists:', error);
+      set({ therapists: [], isLoading: false });
       throw error;
     }
   },
 
-  // Fetch available specializations
-  fetchSpecializations: async (token) => {
+  // Get therapist availability (lean API)
+  getTherapistAvailability: async (therapistId, date, token) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/specializations`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/therapists/${therapistId}/availability?date=${date}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -111,28 +121,7 @@ const useSessionStore = create((set, get) => ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch specializations');
-      }
-
-      return data.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Fetch available assignment types
-  fetchAssignmentTypes: async (token) => {
-    try {
-      const response = await fetch(`${getApiUrl()}/api/users/assignment-types`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch assignment types');
+        throw new Error(data.message || 'Failed to get therapist availability');
       }
 
       return data.data;
@@ -141,31 +130,11 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
-  // Fetch patient's current assignments
-  fetchMyAssignments: async (token) => {
-    try {
-      const response = await fetch(`${getApiUrl()}/api/users/my-assignments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch assignments');
-      }
-
-      return data.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
+  // Update session status/details (lean API)
   updateSession: async (sessionId, updates, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions/${sessionId}`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions/${sessionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -174,11 +143,13 @@ const useSessionStore = create((set, get) => ({
         body: JSON.stringify(updates),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to update session');
+        throw new Error(data.message || 'Failed to update session');
       }
 
-      const updatedSession = await response.json();
+      const updatedSession = data.data?.session || data.data;
       
       set((state) => ({
         sessions: state.sessions.map((session) =>
@@ -197,18 +168,21 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
+  // Cancel session (lean API)
   cancelSession: async (sessionId, token) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions/${sessionId}`, {
-        method: 'DELETE',
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions/${sessionId}/cancel`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to cancel session');
+        throw new Error(data.message || 'Failed to cancel session');
       }
 
       set((state) => ({
@@ -226,20 +200,23 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
+  // Join session (lean API)
   joinSession: async (sessionId, token) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions/${sessionId}/join`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions/${sessionId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to join session');
+        throw new Error(data.message || 'Failed to join session');
       }
 
-      const session = await response.json();
+      const session = data.data?.session || data.data;
       set({ currentSession: session });
       return session;
     } catch (error) {
@@ -247,9 +224,10 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
+  // Add session notes (lean API)
   addSessionNotes: async (sessionId, notes, token) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions/${sessionId}/notes`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions/${sessionId}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,11 +236,13 @@ const useSessionStore = create((set, get) => ({
         body: JSON.stringify({ notes }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to add session notes');
+        throw new Error(data.message || 'Failed to add session notes');
       }
 
-      const updatedSession = await response.json();
+      const updatedSession = data.data?.session || data.data;
       
       set((state) => ({
         sessions: state.sessions.map((session) =>
@@ -279,22 +259,49 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
-  // Availability management (for therapists)
+  // Rate session/therapist (lean API)
+  rateSession: async (sessionId, rating, comment, token) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/lean/sessions/${sessionId}/rate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rating, comment }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to rate session');
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Therapist availability management (lean API)
   setAvailability: (availability) => set({ availability }),
 
-  fetchAvailability: async (token) => {
+  // Fetch therapist's availability (lean API)
+  fetchMyAvailability: async (token) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/availability`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/therapists/availability`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to fetch availability');
+        throw new Error(data.message || 'Failed to fetch availability');
       }
 
-      const availability = await response.json();
+      const availability = data.data?.availability || {};
       set({ availability });
       return availability;
     } catch (error) {
@@ -302,9 +309,10 @@ const useSessionStore = create((set, get) => ({
     }
   },
 
-  updateAvailability: async (availabilityData, token) => {
+  // Update therapist's availability (lean API)
+  updateMyAvailability: async (availabilityData, token) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/availability`, {
+      const response = await fetch(`${getApiUrl()}/api/lean/therapists/availability`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -313,17 +321,28 @@ const useSessionStore = create((set, get) => ({
         body: JSON.stringify(availabilityData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to update availability');
+        throw new Error(data.message || 'Failed to update availability');
       }
 
-      const availability = await response.json();
+      const availability = data.data?.availability || {};
       set({ availability });
       return availability;
     } catch (error) {
       throw error;
     }
   },
+
+  // Clear store data
+  clearSessionData: () => set({
+    sessions: [],
+    currentSession: null,
+    therapists: [],
+    availability: [],
+    isLoading: false,
+  }),
 }));
 
 export default useSessionStore;
