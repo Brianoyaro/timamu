@@ -1,11 +1,10 @@
 from flask import request, jsonify, Blueprint
 from .. import db, bcrypt
 import jwt
-from flask import current_app
 from datetime import datetime, timedelta
 from ..utils.email_utils import send_welcome_email, send_forgot_password_email
 from authlib.integrations.flask_client import OAuth
-from flask import redirect, url_for, session
+from flask import redirect, url_for, session, current_app
 from ..utils.audit_utils import create_audit_log
 import logging
 
@@ -212,7 +211,8 @@ def forgot_password():
 
     # Generate a password reset token
     reset_token = generate_jwt(user, exp_duration=15*60)  # 15 minutes expiration
-    reset_link = f"{current_app.config['FRONTEND_URL']}/reset-password?token={reset_token}" # Replace with your frontend URL!!!!
+    reset_link = f"{current_app.config['FRONTEND_URL']}/reset-password?token={reset_token}"
+
     send_forgot_password_email(user.email, reset_link)
     create_audit_log('FORGOT_PASSWORD', user.id, user.email, 'AUTH', status='SUCCESS')
     logging.info(f'Password reset email sent to {user.email}')
