@@ -19,6 +19,7 @@ class User(db.Model):
     patient_profile = db.relationship('PatientProfile', backref='user', uselist=False)
     admin_profile = db.relationship('AdminProfile', backref='user', uselist=False)
 
+
 class TherapistProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -34,6 +35,7 @@ class TherapistProfile(db.Model):
     timezone = db.Column(db.String(50), default='UTC')
     accepts_emergency = db.Column(db.Boolean, default=False)
 
+
 class PatientProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -42,11 +44,13 @@ class PatientProfile(db.Model):
     preferred_language = db.Column(db.String(20))
     timezone = db.Column(db.String(50), default='UTC')
 
+
 class AdminProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     permissions = db.Column(JSONB)
     level = db.Column(db.String(20))
+
 
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,12 +67,14 @@ class Session(db.Model):
     is_emergency = db.Column(db.Boolean, default=False)
     emergency_notes = db.Column(db.Text)
 
+
 class SessionNote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
     therapist_id = db.Column(db.Integer, db.ForeignKey('therapist_profile.id'))
     content = db.Column(db.Text)
     is_shared_with_patient = db.Column(db.Boolean, default=False)
+
 
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -79,6 +85,7 @@ class Rating(db.Model):
     review = db.Column(db.Text)
     is_anonymous = db.Column(db.Boolean, default=False)
 
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -88,6 +95,7 @@ class Message(db.Model):
     session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
     is_read = db.Column(db.Boolean, default=False)
     read_at = db.Column(db.DateTime)
+
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -120,3 +128,4 @@ class RefreshToken(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     refresh_token = db.Column(db.String(256), unique=True, nullable=False)
     revoked = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref='refresh_tokens')
