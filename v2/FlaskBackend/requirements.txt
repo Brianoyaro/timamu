@@ -7,4 +7,4 @@ psycopg2-binary
 Flask-Mail
 Flask-SocketIO
 Authlib
-
+python-dotenv

@@ -212,7 +212,7 @@ def forgot_password():
 
     # Generate a password reset token
     reset_token = generate_jwt(user, exp_duration=15*60)  # 15 minutes expiration
-    reset_link = f"https://yourdomain.com/reset-password?token={reset_token}" # Replace with your frontend URL!!!!
+    reset_link = f"{current_app.config['FRONTEND_URL']}/reset-password?token={reset_token}" # Replace with your frontend URL!!!!
     send_forgot_password_email(user.email, reset_link)
     create_audit_log('FORGOT_PASSWORD', user.id, user.email, 'AUTH', status='SUCCESS')
     logging.info(f'Password reset email sent to {user.email}')
