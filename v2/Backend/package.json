@@ -13,7 +13,7 @@
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
-    "db:seed": "node src/scripts/comprehensive-seed.js",
+    "db:seed": "node src/scripts/lean-seed.js",
     "db:studio": "npx prisma studio",
     "db:reset": "npx prisma migrate reset --force",
     "prisma:generate": "prisma generate",
@@ -25,36 +25,41 @@
     "lint:fix": "eslint src/ --fix",
     "logs": "tail -f logs/app.log"
   },
-  "keywords": ["telepsychology", "healthcare", "express", "postgresql"],
+  "keywords": [
+    "telepsychology",
+    "healthcare",
+    "express",
+    "postgresql"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.0.0",
-    "dotenv": "^16.3.1",
+    "@prisma/client": "^6.16.2",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.10.0",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
     "joi": "^17.9.2",
-    "zod": "^3.22.2",
-    "@prisma/client": "^5.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.4",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "socket.io": "^4.7.2",
-    "express-rate-limit": "^6.10.0",
-    "morgan": "^1.10.0",
+    "uuid": "^9.0.0",
     "winston": "^3.10.0",
-    "express-validator": "^7.0.1",
-    "crypto": "^1.0.1",
-    "uuid": "^9.0.0"
+    "zod": "^3.22.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
     "jest": "^29.6.2",
-    "supertest": "^6.3.3",
-    "prisma": "^5.2.0"
+    "nodemon": "^3.0.1",
+    "prisma": "^6.16.2",
+    "supertest": "^6.3.3"
   }
 }
