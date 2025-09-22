@@ -4,9 +4,25 @@ import jwt
 from flask import current_app
 from datetime import datetime, timedelta
 from ..utils.email_utils import send_welcome_email, send_forgot_password_email
+from authlib.integrations.flask_client import OAuth
+from flask import redirect, url_for, session
 
 auth_bp = Blueprint('auth', __name__)
 from ..models import RefreshToken, TherapistProfile, User, PatientProfile
+
+oauth = OAuth()
+
+def init_oauth(app):
+    oauth.init_app(app)
+    oauth.register(
+        name='google',
+        client_id=app.config['GOOGLE_CLIENT_ID'],
+        client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+        server_metadata_url=app.config['GOOGLE_DISCOVERY_URL'],
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
 
 def generate_jwt(user, exp_duration=10):
     '''Generate JWT token for a user.
@@ -225,3 +241,23 @@ def reset_password():
     
 
 # Google OAuth2 login route
+@auth_bp.route('/google-login')
+def google_login():
+    redirect_uri = url_for('auth.google_callback', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@auth_bp.route('/google-callback')
+def google_callback():
+    token = oauth.google.authorize_access_token()
+    user_info = token.get('userinfo') or oauth.google.parse_id_token(token)
+    email = user_info['email']
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, first_name=user_info.get('given_name'), last_name=user_info.get('family_name'), role='PATIENT', is_verified=True)
+        db.session.add(user)
+        db.session.commit()
+    access_token = generate_jwt(user)
+    refresh_token = generate_jwt(user, exp_duration=7*24*60)
+    session['access_token'] = access_token
+    session['refresh_token'] = refresh_token
+    return redirect('/dashboard')  # Change to your frontend route
