@@ -4,6 +4,8 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from .utils.email_utils import init_mail
+from .sockets.socket_handler import init_socketio, socketio
+from .auth.routes import init_oauth
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -18,6 +20,8 @@ def create_app():
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     init_mail(app)  # Initialize Flask-Mail
+    init_socketio(app)  # Initialize Flask-SocketIO
+    init_oauth(app)  # Initialize Authlib OAuth
 
     # Register blueprints
     from .auth import auth_bp
