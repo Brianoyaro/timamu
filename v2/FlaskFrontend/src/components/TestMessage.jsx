@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 const TestMessage = () => {
   const [message, setMessage] = useState('');
   const [receiverId, setReceiverId] = useState('');
-  const [receivedMessages, setReceivedMessages] = useState([]);
+  const [receivedMessages, setReceivedMessages] = useState([]); // How will I set the receiverId????///
   const { socket, sendMessage } = useSocketStore();
   const { user } = useAuthStore();
 

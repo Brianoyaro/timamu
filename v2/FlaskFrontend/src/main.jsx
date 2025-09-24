@@ -18,7 +18,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
 
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
-import TestMessage from './components/TestMessage.jsx';
+import TestMessage from './components/TestMessage.jsx'; // Temporary for testing purposes
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
