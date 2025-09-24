@@ -6,10 +6,16 @@ yarn-error.log*
 
 # Environment variables
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Vim swap files
+*.swp
+*.swo
+*~
 
 
 # Logs
