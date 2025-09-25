@@ -99,6 +99,15 @@ const Layout = () => {
                 
                 {isAuthenticated && (
                   <Link
+                    to="/sessions"
+                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Sessions
+                  </Link>
+                )}
+                
+                {isAuthenticated && (
+                  <Link
                     to="/test-socket"
                     className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
@@ -197,6 +206,15 @@ const Layout = () => {
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
               >
                 Dashboard
+              </Link>
+            )}
+            {isAuthenticated && (
+              <Link
+                to="/sessions"
+                onClick={closeMobileMenu}
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              >
+                Sessions
               </Link>
             )}
             {isAuthenticated && user?.role === 'admin' && (
