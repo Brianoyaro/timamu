@@ -29,8 +29,7 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=debug,
-        allow_unsafe_werkzeug=True,  # Needed for socketio in development
-        async_mode='threading'  # Use threading instead of gevent for development
+        allow_unsafe_werkzeug=True  # Needed for socketio in development
     )
 else:
     # For production deployment (Gunicorn, etc.)

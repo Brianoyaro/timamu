@@ -17,6 +17,9 @@ class Config:
     # Security
     SECRET_KEY = os.getenv('SECRET_KEY', 'supersecretkey')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', os.getenv('SECRET_KEY', 'jwt-supersecretkey'))
+    JWT_TOKEN_LOCATION = ['headers']  # JWT tokens will be in Authorization header
+    JWT_HEADER_NAME = 'Authorization'
+    JWT_HEADER_TYPE = 'Bearer'
 
     # OAuth2 Configuration for Google
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'your-google-client-id')

@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from .extensions import db, migrate, bcrypt, socketio, mail, oauth
+from .extensions import db, migrate, bcrypt, socketio, mail, oauth, jwt
 from .sockets.socket_handler import init_socketio
 
 # App factory
@@ -13,6 +13,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
+    jwt.init_app(app)  # Initialize Flask-JWT-Extended
     mail.init_app(app)  # Initialize Flask-Mail
     socketio.init_app(app, cors_allowed_origins="*")  # Initialize Flask-SocketIO
     oauth.init_app(app)  # Initialize Authlib OAuth

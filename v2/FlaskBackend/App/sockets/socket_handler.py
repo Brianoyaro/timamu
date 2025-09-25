@@ -56,6 +56,165 @@ def init_socketio():
             active_rooms[room_name].append(active_connections.get(flask_request.sid)) # Add user to room list
         emit('session_joined', {'sessionId': session_id})
 
+    @socketio.on('join-video-room')
+    def join_video_room(data):
+        '''Join a video conference room'''
+        room = data.get('room')
+        session_id = data.get('sessionId')
+        user_data = data.get('user')
+        
+        if not room or not user_data:
+            emit('error', {'message': 'Missing room or user data'})
+            return
+        
+        join_room(room)
+        
+        # Add to active rooms tracking
+        if room not in active_rooms:
+            active_rooms[room] = []
+        
+        user_id = active_connections.get(flask_request.sid)
+        if user_id and user_id not in active_rooms[room]:
+            active_rooms[room].append(user_id)
+        
+        # Notify other participants that user joined
+        emit('user-joined', {
+            'user': user_data,
+            'socketId': flask_request.sid
+        }, room=room, include_self=False)
+        
+        # Send current participants to the new user
+        emit('room-users', {
+            'users': active_rooms.get(room, [])
+        })
+        
+        print(f"User {user_data.get('name')} joined video room {room}")
+
+    @socketio.on('leave-video-room')
+    def leave_video_room(data):
+        '''Leave a video conference room'''
+        room = data.get('room')
+        
+        if not room:
+            return
+        
+        leave_room(room)
+        
+        # Remove from active rooms
+        user_id = active_connections.get(flask_request.sid)
+        if room in active_rooms and user_id in active_rooms[room]:
+            active_rooms[room].remove(user_id)
+        
+        # Notify other participants
+        emit('user-left', {
+            'userId': user_id,
+            'socketId': flask_request.sid
+        }, room=room)
+        
+        print(f"User {user_id} left video room {room}")
+
+    @socketio.on('offer')
+    def handle_offer(data):
+        '''Handle WebRTC offer for video calls'''
+        room = data.get('room')
+        offer = data.get('offer')
+        
+        if not room or not offer:
+            emit('error', {'message': 'Missing room or offer data'})
+            return
+        
+        # Broadcast offer to other participants in the room
+        emit('offer', {
+            'offer': offer,
+            'from': flask_request.sid
+        }, room=room, include_self=False)
+
+    @socketio.on('answer')
+    def handle_answer(data):
+        '''Handle WebRTC answer for video calls'''
+        room = data.get('room')
+        answer = data.get('answer')
+        
+        if not room or not answer:
+            emit('error', {'message': 'Missing room or answer data'})
+            return
+        
+        # Broadcast answer to other participants in the room
+        emit('answer', {
+            'answer': answer,
+            'from': flask_request.sid
+        }, room=room, include_self=False)
+
+    @socketio.on('ice-candidate')
+    def handle_ice_candidate(data):
+        '''Handle WebRTC ICE candidate for video calls'''
+        room = data.get('room')
+        candidate = data.get('candidate')
+        
+        if not room or not candidate:
+            emit('error', {'message': 'Missing room or candidate data'})
+            return
+        
+        # Broadcast ICE candidate to other participants in the room
+        emit('ice-candidate', {
+            'candidate': candidate,
+            'from': flask_request.sid
+        }, room=room, include_self=False)
+
+    @socketio.on('session-message')
+    def handle_session_message(data):
+        '''Handle chat messages during video sessions'''
+        room = data.get('room')
+        session_id = data.get('sessionId')
+        message = data.get('message')
+        sender = data.get('sender')
+        
+        if not room or not message or not sender:
+            emit('error', {'message': 'Missing message data'})
+            return
+        
+        # Save message to database
+        try:
+            from ..models import SessionMessage
+            session_message = SessionMessage(
+                session_id=session_id,
+                sender_id=sender['id'],
+                message=message,
+                message_type='text'
+            )
+            db.session.add(session_message)
+            db.session.commit()
+        except Exception as e:
+            print(f"Error saving session message: {e}")
+        
+        # Broadcast message to all participants in the room
+        emit('session-message', {
+            'id': session_message.id if 'session_message' in locals() else None,
+            'message': message,
+            'sender': sender,
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=room)
+
+    @socketio.on('participant-update')
+    def handle_participant_update(data):
+        '''Handle participant status updates (video/audio/screen share)'''
+        room = data.get('room')
+        updates = data.get('updates')
+        
+        if not room or not updates:
+            emit('error', {'message': 'Missing update data'})
+            return
+        
+        user_id = active_connections.get(flask_request.sid)
+        
+        # Broadcast updates to other participants
+        emit('participant-update', {
+            'userId': user_id,
+            'socketId': flask_request.sid,
+            'updates': updates
+        }, room=room, include_self=False)
+
+    # irrlevant code starting here
     @socketio.on('leave_session')
     def leave_session(data):
         '''Leave a therapy session room.
@@ -130,6 +289,7 @@ def init_socketio():
         '''
         emit('online_users', {'users': list(active_connections.values())})
 
+    # irrlevant code ends here probably
     @socketio.on('disconnect')
     def handle_disconnect():
         '''Handle socket disconnections.
@@ -137,7 +297,17 @@ def init_socketio():
         # Remove user from active_connections and rooms
         user_id = active_connections.pop(flask_request.sid, None)
         if user_id:
-            for room in active_rooms.values():
-                if user_id in room:
-                    room.remove(user_id)
-                    break
+            # Remove from all active rooms and notify other participants
+            for room_name, users in active_rooms.items():
+                if user_id in users:
+                    users.remove(user_id)
+                    
+                    # If this is a video room, notify other participants
+                    if room_name.startswith('session_') and len(room_name.split('_')) == 2:
+                        emit('user-left', {
+                            'userId': user_id,
+                            'socketId': flask_request.sid
+                        }, room=room_name)
+            
+            # Emit offline status
+            emit('online_status', {'userId': user_id, 'status': 'offline'}, broadcast=True)

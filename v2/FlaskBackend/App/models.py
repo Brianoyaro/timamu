@@ -58,13 +58,99 @@ class Session(db.Model):
     scheduled_at = db.Column(db.DateTime)
     started_at = db.Column(db.DateTime)
     ended_at = db.Column(db.DateTime)
-    duration = db.Column(db.Integer)
-    status = db.Column(db.String(20))
-    session_type = db.Column(db.String(20))
+    duration = db.Column(db.Integer)  # planned duration in minutes
+    actual_duration = db.Column(db.Integer)  # actual duration in minutes
+    status = db.Column(db.String(20))  # scheduled, started, completed, cancelled, no_show
+    session_type = db.Column(db.String(20))  # individual, group, emergency
     title = db.Column(db.String(100))
     notes = db.Column(db.Text)
     is_emergency = db.Column(db.Boolean, default=False)
     emergency_notes = db.Column(db.Text)
+    
+    # Video conferencing fields
+    room_id = db.Column(db.String(100), unique=True)  # unique room identifier for video calls
+    join_url = db.Column(db.String(500))  # video conference join URL
+    meeting_password = db.Column(db.String(50))  # optional meeting password
+    
+    # Scheduling fields
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    timezone = db.Column(db.String(50), default='UTC')
+    reminder_sent_patient = db.Column(db.Boolean, default=False)
+    reminder_sent_therapist = db.Column(db.Boolean, default=False)
+    
+    # Cancellation fields
+    cancelled_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    cancelled_at = db.Column(db.DateTime)
+    cancellation_reason = db.Column(db.Text)
+    
+    # Relationships
+    patient = db.relationship('User', foreign_keys=[patient_id], backref='patient_sessions')
+    therapist = db.relationship('User', foreign_keys=[therapist_id], backref='therapist_sessions')
+    cancelled_by_user = db.relationship('User', foreign_keys=[cancelled_by])
+
+
+class SessionParticipant(db.Model):
+    """Track participants in video conference sessions"""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    joined_at = db.Column(db.DateTime)
+    left_at = db.Column(db.DateTime)
+    connection_quality = db.Column(db.String(20))  # excellent, good, fair, poor
+    device_info = db.Column(db.JSON)  # browser, device type, etc.
+    
+    # Video/Audio status tracking
+    video_enabled = db.Column(db.Boolean, default=True)
+    audio_enabled = db.Column(db.Boolean, default=True)
+    screen_sharing = db.Column(db.Boolean, default=False)
+    
+    session = db.relationship('Session', backref='participants')
+    user = db.relationship('User', backref='session_participations')
+
+
+class SessionMessage(db.Model):
+    """Messages sent during video conference sessions"""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    message = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(20), default='text')  # text, system, file
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    session = db.relationship('Session', backref='session_messages')
+    sender = db.relationship('User', backref='sent_session_messages')
+
+
+class SessionRecording(db.Model):
+    """Store information about session recordings"""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
+    file_path = db.Column(db.String(500))
+    file_size = db.Column(db.Integer)
+    duration = db.Column(db.Integer)  # duration in seconds
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_available = db.Column(db.Boolean, default=True)
+    
+    # Privacy and access control
+    patient_consent = db.Column(db.Boolean, default=False)
+    therapist_consent = db.Column(db.Boolean, default=False)
+    expiry_date = db.Column(db.DateTime)  # when recording should be deleted
+    
+    session = db.relationship('Session', backref='recordings')
+
+
+class SessionReminder(db.Model):
+    """Track email reminders for scheduled sessions"""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    reminder_type = db.Column(db.String(30))  # confirmation, 24h_reminder, 1h_reminder, starting_now
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    email_status = db.Column(db.String(20), default='sent')  # sent, delivered, failed, bounced
+    
+    session = db.relationship('Session', backref='reminders')
+    recipient = db.relationship('User', backref='session_reminders')
 
 
 class SessionNote(db.Model):

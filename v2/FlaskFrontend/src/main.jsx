@@ -16,6 +16,11 @@ import RegisterPage from './pages/Auth/RegisterPage.jsx';
 // Dashboard Pages
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
 
+// Session Pages  
+import SessionsPage from './pages/Sessions/SessionsPage.jsx';
+import ScheduleSessionPage from './pages/Sessions/ScheduleSessionPage.jsx';
+import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
+
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import TestMessage from './components/TestMessage.jsx'; // Temporary for testing purposes
@@ -34,6 +39,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
+            <Route path="sessions" element={<SessionsPage />} />
+            <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
+            <Route path="video-call/:roomId" element={<VideoCallPage />} />
             <Route path="test-socket" element={<TestMessage />} />
           </Route>
 
