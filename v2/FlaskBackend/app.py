@@ -5,8 +5,15 @@ This file is used by hosting platforms like Render to start the application.
 """
 
 import os
-from FlaskBackend import create_app
-from FlaskBackend.sockets.socket_handler import socketio
+import sys
+
+# # Add the current directory to Python path
+# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# from __init__ import create_app
+# from sockets.socket_handler import socketio
+from App import create_app
+from App.extensions import socketio
 
 # Create the Flask app
 app = create_app()

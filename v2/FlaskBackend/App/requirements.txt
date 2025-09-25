@@ -13,4 +13,5 @@ Authlib==1.2.1
 python-dotenv==1.0.0
 PyJWT==2.8.0
 gunicorn==21.2.0
-requests==2.31.0
+
+pymysql==1.0.3 # Added for MySQL support. I don't know why I need it yet.!!!!
