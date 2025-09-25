@@ -1,12 +1,31 @@
 import { create } from 'zustand';
 import api from '../utils/api';
 
-export const useAuthStore = create((set) => ({
+// Helper function to safely get token from localStorage
+const getStoredToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token') || null;
+  }
+  return null;
+};
+
+export const useAuthStore = create((set, get) => ({
   user: null,
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
+  isInitialized: false,
+
+  // Initialize store with localStorage data
+  initialize: () => {
+    const token = getStoredToken();
+    set({ 
+      token, 
+      isAuthenticated: !!token,
+      isInitialized: true 
+    });
+  },
 
   // Login function
   login: async (email, password, rememberMe) => {
@@ -16,13 +35,14 @@ export const useAuthStore = create((set) => ({
       const response = await api.post('/auth/login', { email, password });
       const { access_token, refresh_token, user } = response.data;
       
-      // Store token in localStorage if Remember Me is checked
-      if (rememberMe) {
-        localStorage.setItem('token', refresh_token);
-      }
+      // Choose which token to store based on remember me
+      const tokenToStore = rememberMe ? refresh_token : access_token;
+      
+      // Always store token in localStorage for API requests
+      localStorage.setItem('token', tokenToStore);
 
       // Update state
-      set({ token, user, isAuthenticated: true, isLoading: false });
+      set({ token: tokenToStore, user, isAuthenticated: true, isLoading: false });
       return user;
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -51,16 +71,24 @@ export const useAuthStore = create((set) => ({
 
   // Load user profile
   loadUser: async () => {
-    const token = localStorage.getItem('token');
+    const currentState = get();
+    const token = currentState.token || getStoredToken();
+    
     if (!token) {
       set({ isAuthenticated: false, user: null });
       return;
     }
 
+    // If we already have a user, don't make another API call
+    if (currentState.user) {
+      return;
+    }
+
     set({ isLoading: true });
     try {
-      const response = await api.get('/auth/me');
-      set({ user: response.data, isAuthenticated: true, isLoading: false });
+      // Since /auth/me doesn't exist, we'll skip loading user profile
+      // The user data should come from the login response
+      set({ isLoading: false });
     } catch (error) {
       localStorage.removeItem('token');
       set({ user: null, token: null, isAuthenticated: false, isLoading: false, error: error.message });

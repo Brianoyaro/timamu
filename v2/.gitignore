@@ -1,0 +1,32 @@
+# Global environment files
+.env
+.env.*
+!.env.example
+
+# Vim swap files and backups
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

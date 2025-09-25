@@ -1,4 +1,4 @@
-import { use, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -9,7 +9,7 @@ const RegisterPage = () => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'patient', // Default role
+    role: 'PATIENT', // Default role
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,8 +166,8 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
               >
-                <option value="patient">Patient</option>
-                <option value="therapist">Therapist</option>
+                <option value="PATIENT">Patient</option>
+                <option value="THERAPIST">Therapist</option>
               </select>
             </div>
           </div>

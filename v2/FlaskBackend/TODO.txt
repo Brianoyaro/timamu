@@ -1,0 +1,73 @@
+When I login this is what I get on the backend (It also happens whenever I reload any page):
+
+[2025-09-25 19:50:37 +0300] [22303] [ERROR] Error handling request /socket.io/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJlbWFpbCI6ImJyaWFub3lhcm8yMDAwQGdtYWlsLmNvbSIsInJvbGUiOiJQQVRJRU5UIiwiZXhwIjoxNzU4ODE5NDg1fQ.6LxVCsfjrbRMeC7VaIaN1qYtjj1fgCnGItBZkFoJccE&EIO=4&transport=websocket&sid=ay5W6F4K-pvali34AAAE
+Traceback (most recent call last):
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/gunicorn/workers/base_async.py", line 55, in handle
+    self.handle_request(listener_name, req, client, addr)
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/gunicorn/workers/ggevent.py", line 128, in handle_request
+    super().handle_request(listener_name, req, sock, addr)
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/gunicorn/workers/base_async.py", line 108, in handle_request
+    respiter = self.wsgi(environ, resp.start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/flask/app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/flask_socketio/__init__.py", line 43, in __call__
+    return super(_SocketIOMiddleware, self).__call__(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/engineio/middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/socketio/server.py", line 607, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/engineio/server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/engineio/socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brian/timamu/v2/FlaskBackend/venv/lib/python3.12/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+    raise RuntimeError('The gevent-websocket server is not '
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+
+
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+Also rom the console logs bellow, what icons are they? Are they relevant?
+
+
+Layout.jsx:39 Disconnecting from socket server...
+Layout.jsx:44 Cleanup: Disconnecting from socket server...
+Layout.jsx:39 Disconnecting from socket server...
+Layout.jsx:44 Cleanup: Disconnecting from socket server...
+Layout.jsx:36 Connecting to socket server...
+socketStore.js:15 Socket environment: {socketUrl: 'http://localhost:5000'}
+socket__io-client.js?v=6db5e85d:1059 WebSocket connection to 'ws://localhost:5000/socket.io/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJlbWFpbCI6ImJyaWFub3lhcm8yMDAwQGdtYWlsLmNvbSIsInJvbGUiOiJQQVRJRU5UIiwiZXhwIjoxNzU4ODIxNTgwfQ.xaHJeLCWtlgoANgoF1mJ86z-XEeFKWTbKdKNHyFRhkg&EIO=4&transport=websocket&sid=m5WfqhRRlajuGm9TAAAU' failed: 
+createSocket @ socket__io-client.js?v=6db5e85d:1059
+doOpen @ socket__io-client.js?v=6db5e85d:986
+open @ socket__io-client.js?v=6db5e85d:503
+_probe @ socket__io-client.js?v=6db5e85d:1731
+onOpen @ socket__io-client.js?v=6db5e85d:1640
+onHandshake @ socket__io-client.js?v=6db5e85d:1399
+onHandshake @ socket__io-client.js?v=6db5e85d:1736
+_onPacket @ socket__io-client.js?v=6db5e85d:1365
+Emitter.emit @ socket__io-client.js?v=6db5e85d:354
+onPacket @ socket__io-client.js?v=6db5e85d:553
+callback @ socket__io-client.js?v=6db5e85d:663
+onData @ socket__io-client.js?v=6db5e85d:665
+Emitter.emit @ socket__io-client.js?v=6db5e85d:354
+_onLoad @ socket__io-client.js?v=6db5e85d:908
+xhr.onreadystatechange @ socket__io-client.js?v=6db5e85d:851
+(index):1 Error while trying to use the following icon from the Manifest: http://localhost:5173/icon-192x192.png (Download error or resource isn't a valid image)
+(index):1 Error while trying to use the following icon from the Manifest: http://localhost:5173/screenshot-wide.png (Download error or resource isn't a valid image)
+socketStore.js:41 Socket authenticated: {message: 'Connected to WebSocket server'}
+socketStore.js:36 Socket connected to: http://localhost:5000
+
