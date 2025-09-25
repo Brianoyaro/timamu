@@ -7,17 +7,20 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
 
   useEffect(() => {
     // check if user is already authenticated
-    if (useAuthStore.getState().isAuthenticated) {
+    if (isInitialized && isAuthenticated) {
       navigate('/dashboard');
     }
-  }, [navigate]);
+  }, [isInitialized, isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,7 +36,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      await login(formData.email, formData.password, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login. Please try again.');
@@ -103,6 +106,8 @@ const LoginPage = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">

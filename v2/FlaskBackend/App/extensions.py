@@ -14,6 +14,11 @@ from authlib.integrations.flask_client import OAuth
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
-socketio = SocketIO()
+socketio = SocketIO(
+    cors_allowed_origins="*",
+    async_mode='threading',  # Use threading for development
+    logger=True,
+    engineio_logger=True
+)
 mail = Mail()
 oauth = OAuth()

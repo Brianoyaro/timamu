@@ -23,13 +23,14 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     
-    # Run with SocketIO support
+    # Run with SocketIO support - use threading for development
     socketio.run(
         app,
         host='0.0.0.0',
         port=port,
         debug=debug,
-        allow_unsafe_werkzeug=True  # Needed for socketio in development
+        allow_unsafe_werkzeug=True,  # Needed for socketio in development
+        async_mode='threading'  # Use threading instead of gevent for development
     )
 else:
     # For production deployment (Gunicorn, etc.)

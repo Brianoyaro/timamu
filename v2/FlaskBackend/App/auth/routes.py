@@ -123,6 +123,8 @@ def register():
         
         hashed_pw = bcrypt.generate_password_hash(data['password']).decode('utf-8')
         user = User(email=data['email'], password=hashed_pw, first_name=data.get('firstName'), last_name=data.get('lastName'), role=data.get('role', 'PATIENT'))
+        db.session.add(user)
+        db.session.commit()
         
         # handle role-specific profile creation
         if 'role' in data and data['role'] not in ['PATIENT', 'THERAPIST', 'ADMIN']:
@@ -142,12 +144,11 @@ def register():
             therapist_profile = TherapistProfile(user_id=user.id, license_number=data.get('licenseNumber', ''), specializations=data.get('specializations', []), languages=data.get('languages', []), experience=data.get('experience', 0), education=data.get('education', ''), bio=data.get('bio', ''), is_approved=False, availability=data.get('availability', {}), timezone=data.get('timezone', 'UTC'), accepts_emergency=data.get('acceptsEmergency', False))
             db.session.add(therapist_profile)
 
-        db.session.add(user)
         db.session.commit()
         logger.debug(f"User created successfully with ID: {user.id}")
         
         # Send welcome email
-        send_welcome_email(user.email, user.first_name or "")
+        # send_welcome_email(user.email, user.first_name or "") # UNCOMMENT THIS. I AM LEAVING IT HERE FOR DEBUGING PURPOSES ON LOCAL HOST
 
         # generate JWT
         access_token = generate_jwt(user) # 10 minutes expiration for access token
