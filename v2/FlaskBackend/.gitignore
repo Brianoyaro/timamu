@@ -1,2 +1,2 @@
-__pycache__
-*cpython*
+.env
+migrations
