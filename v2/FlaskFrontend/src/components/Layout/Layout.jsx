@@ -106,6 +106,24 @@ const Layout = () => {
                   </Link>
                 )}
                 
+                {isAuthenticated && user?.role?.toUpperCase() === 'PATIENT' && (
+                  <Link
+                    to="/sessions/schedule"
+                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Book Session
+                  </Link>
+                )}
+                
+                {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
+                  <Link
+                    to="/sessions/availability"
+                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    My Availability
+                  </Link>
+                )}
+                
                 {isAuthenticated && (
                   <Link
                     to="/test-socket"
@@ -215,6 +233,24 @@ const Layout = () => {
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
               >
                 Sessions
+              </Link>
+            )}
+            {isAuthenticated && user?.role?.toUpperCase() === 'PATIENT' && (
+              <Link
+                to="/sessions/schedule"
+                onClick={closeMobileMenu}
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              >
+                Book Session
+              </Link>
+            )}
+            {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
+              <Link
+                to="/sessions/availability"
+                onClick={closeMobileMenu}
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              >
+                My Availability
               </Link>
             )}
             {isAuthenticated && user?.role === 'admin' && (

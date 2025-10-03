@@ -352,7 +352,80 @@ def get_available_therapists():
             'experience': profile.experience,
             'bio': profile.bio,
             'timezone': profile.timezone,
-            'availability': profile.availability
+            'availability': profile.availability,
+            'accepts_emergency': profile.accepts_emergency
         })
     
     return jsonify(therapists_data)
+
+
+@sessions_bp.route('/check-availability', methods=['POST'])
+@jwt_required()
+def check_availability():
+    """Check if a therapist is available at a specific time"""
+    data = request.get_json()
+    
+    required_fields = ['therapist_id', 'date', 'time']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    therapist_id = data['therapist_id']
+    date = data['date']  # Format: YYYY-MM-DD
+    time = data['time']  # Format: HH:MM
+    
+    # Get therapist profile
+    therapist_profile = TherapistProfile.query.filter_by(user_id=therapist_id).first()
+    if not therapist_profile:
+        return jsonify({'error': 'Therapist not found'}), 404
+    
+    # Check if therapist has availability on this date/time
+    availability = therapist_profile.availability or {}
+    
+    # Check day of week availability (for recurring weekly slots)
+    try:
+        from datetime import datetime
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        day_name = date_obj.strftime('%A')
+        
+        day_slots = availability.get(day_name, [])
+        specific_date_slots = availability.get(date, [])
+        
+        # Combine both day-of-week and specific date slots
+        all_slots = day_slots + specific_date_slots
+        
+        is_available = False
+        for slot in all_slots:
+            if isinstance(slot, dict):
+                start_time = slot.get('start', '')
+                end_time = slot.get('end', '')
+                if start_time <= time < end_time:
+                    is_available = True
+                    break
+            elif isinstance(slot, str):
+                # Handle simple time format
+                if slot == time:
+                    is_available = True
+                    break
+        
+        # Check for existing bookings
+        if is_available:
+            scheduled_datetime = datetime.strptime(f"{date} {time}", '%Y-%m-%d %H:%M')
+            existing_session = Session.query.filter(
+                Session.therapist_id == therapist_id,
+                Session.scheduled_at == scheduled_datetime,
+                Session.status.in_(['scheduled', 'started'])
+            ).first()
+            
+            if existing_session:
+                is_available = False
+        
+        return jsonify({
+            'available': is_available,
+            'therapist_id': therapist_id,
+            'date': date,
+            'time': time
+        })
+        
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400

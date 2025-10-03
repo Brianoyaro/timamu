@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
 
@@ -15,6 +15,17 @@ const ScheduleSessionPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [currentView, setCurrentView] = useState('directory'); // directory, calendar
+  const [calendarView, setCalendarView] = useState('month'); // month, week
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchPreferences, setMatchPreferences] = useState({
+    specialization: '',
+    language: 'English',
+    gender: 'no_preference'
+  });
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   const user = useAuthStore((state) => state.user);
 
@@ -25,7 +36,23 @@ const ScheduleSessionPage = () => {
   const loadAvailableTherapists = async () => {
     try {
       const response = await api.get('/sessions/available-therapists');
-      setTherapists(response.data);
+      // Enhance therapist data with additional display properties
+      const enhancedTherapists = response.data.map(therapist => ({
+        ...therapist,
+        rating: therapist.rating || (4 + Math.random()).toFixed(1), // Default random rating if not provided
+        languages: therapist.languages || ['English'],
+        avatar: therapist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name)}&background=random`,
+        availability: therapist.availability || {
+          // Sample availability data structure that would come from the backend
+          // In a real scenario this would be fetched separately or included in the therapist data
+          dates: {
+            [`${new Date().toISOString().split('T')[0]}`]: ["09:00", "14:00"],
+            [`${new Date(Date.now() + 86400000).toISOString().split('T')[0]}`]: ["11:00"],
+            [`${new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0]}`]: ["09:00", "11:00", "16:00"]
+          }
+        }
+      }));
+      setTherapists(enhancedTherapists);
     } catch (error) {
       console.error('Error loading therapists:', error);
       setMessage('Error loading available therapists');
@@ -41,7 +68,7 @@ const ScheduleSessionPage = () => {
   };
 
   const handleScheduleSession = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     if (!selectedTherapist) {
       setMessage('Please select a therapist');
@@ -60,6 +87,7 @@ const ScheduleSessionPage = () => {
       const response = await api.post('/sessions/schedule', scheduleData);
 
       setMessage('Session scheduled successfully! Confirmation emails have been sent.');
+      setShowConfirmModal(false);
       
       // Reset form
       setSessionData({
@@ -71,6 +99,7 @@ const ScheduleSessionPage = () => {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       });
       setSelectedTherapist('');
+      setCurrentView('directory');
 
     } catch (error) {
       console.error('Error scheduling session:', error);
@@ -79,44 +108,279 @@ const ScheduleSessionPage = () => {
       setLoading(false);
     }
   };
-
-  // Generate time slots for the next 30 days (9 AM - 5 PM)
-  const generateTimeSlots = () => {
-    const slots = [];
-    const now = new Date();
-    
-    for (let day = 1; day <= 30; day++) {
-      const date = new Date(now);
-      date.setDate(now.getDate() + day);
-      
-      // Skip weekends for now (can be made configurable)
-      if (date.getDay() === 0 || date.getDay() === 6) continue;
-      
-      for (let hour = 9; hour <= 17; hour++) {
-        const slotDate = new Date(date);
-        slotDate.setHours(hour, 0, 0, 0);
-        
-        const dateTimeString = slotDate.toISOString().slice(0, 16);
-        const displayString = slotDate.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        slots.push({
-          value: dateTimeString,
-          label: displayString
-        });
-      }
+  
+  // Calendar navigation functions
+  const changePeriod = (offset) => {
+    const newDate = new Date(currentDate);
+    if (calendarView === 'month') {
+      newDate.setMonth(newDate.getMonth() + offset);
+    } else {
+      newDate.setDate(newDate.getDate() + offset * 7);
     }
-    
-    return slots;
+    setCurrentDate(newDate);
   };
 
-  const timeSlots = generateTimeSlots();
+  // Open therapist calendar
+  const viewTherapistAvailability = (therapist) => {
+    setSelectedTherapist(therapist.id);
+    setCurrentView('calendar');
+  };
+
+  // Handle time slot selection
+  const selectTimeSlot = (therapist, date, time) => {
+    const therapistObj = therapists.find(t => t.id === parseInt(therapist));
+    setSelectedSlot({
+      therapist: therapistObj,
+      date,
+      time
+    });
+    
+    setSessionData(prev => ({
+      ...prev,
+      scheduled_at: `${date}T${time}`,
+      title: `Session with ${therapistObj.name}`
+    }));
+    
+    setShowConfirmModal(true);
+  };
+  
+  // Handle auto-match
+  const handleAutoMatch = () => {
+    // In a real app, you would call an API to find a match based on preferences
+    // For now, we'll just simulate finding a match
+    
+    setMessage('Finding the perfect therapist match for you...');
+    
+    setTimeout(() => {
+      // Just pick a random therapist for demo purposes
+      if (therapists.length > 0) {
+        const matchedTherapist = therapists[Math.floor(Math.random() * therapists.length)];
+        setSelectedTherapist(matchedTherapist.id);
+        setCurrentView('calendar');
+        setMessage(`Matched with ${matchedTherapist.name} based on your preferences!`);
+      } else {
+        setMessage('No therapists available for matching. Please try again later.');
+      }
+      setShowMatchModal(false);
+    }, 1500);
+  };
+
+  // Calendar rendering functions
+  const renderCalendar = () => {
+    if (calendarView === 'month') {
+      return renderMonthView();
+    } else {
+      return renderWeekView();
+    }
+  };
+
+  const renderMonthView = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const today = new Date();
+    
+    const monthName = currentDate.toLocaleString('default', { month: 'long' });
+    const calendarLabel = `${monthName} ${year}`;
+    
+    // Calculate which day of the week the month starts on (0 = Sunday, 1 = Monday, etc.)
+    // Adjust to start week on Monday (0 = Monday, 1 = Tuesday, etc.)
+    let startDay = (firstDay.getDay() + 6) % 7;
+    
+    const days = [];
+    
+    // Add empty cells for days before the 1st of the month
+    for (let i = 0; i < startDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-24"></div>);
+    }
+    
+    // Get the selected therapist's availability
+    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
+    const availability = selectedTherapistObj?.availability?.dates || {};
+    
+    // Add days of the month
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const dateObj = new Date(year, month, d);
+      const dateStr = dateObj.toISOString().split("T")[0];
+      const slots = availability[dateStr] || [];
+      const isPast = dateObj < new Date(today.setHours(0,0,0,0));
+      
+      days.push(
+        <div 
+          key={`day-${d}`} 
+          className={`h-24 border rounded p-2 ${isPast ? 'bg-gray-100' : 'bg-gray-50'}`}
+        >
+          <div className="font-medium">{d}</div>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {!isPast && slots.map((time, idx) => (
+              <button 
+                key={`slot-${d}-${idx}`}
+                className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+                onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
+              >
+                {time}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <div className="space-x-2">
+            <button 
+              onClick={() => changePeriod(-1)}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              &lt; Prev
+            </button>
+            <button 
+              onClick={() => changePeriod(1)}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Next &gt;
+            </button>
+          </div>
+          <h3 className="font-semibold">{calendarLabel}</h3>
+          <div>
+            <button 
+              onClick={() => setCalendarView('month')}
+              className={`px-3 py-1 rounded ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            >
+              Month
+            </button>
+            <button 
+              onClick={() => setCalendarView('week')}
+              className={`px-3 py-1 rounded ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            >
+              Week
+            </button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium mb-2">
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+          <div>Sun</div>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-2">
+          {days}
+        </div>
+      </div>
+    );
+  };
+  
+  const renderWeekView = () => {
+    const today = new Date();
+    const startOfWeek = new Date(currentDate);
+    // Set to Monday of the current week
+    startOfWeek.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7));
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const options = { month: 'short', day: 'numeric' };
+    const calendarLabel = `${startOfWeek.toLocaleDateString(undefined, options)} - ${endOfWeek.toLocaleDateString(undefined, options)}`;
+    
+    // Standard available time slots
+    const times = ["09:00", "11:00", "14:00", "16:00"];
+    
+    // Get the selected therapist's availability
+    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
+    const availability = selectedTherapistObj?.availability?.dates || {};
+    
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <div className="space-x-2">
+            <button 
+              onClick={() => changePeriod(-1)}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              &lt; Prev
+            </button>
+            <button 
+              onClick={() => changePeriod(1)}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Next &gt;
+            </button>
+          </div>
+          <h3 className="font-semibold">{calendarLabel}</h3>
+          <div>
+            <button 
+              onClick={() => setCalendarView('month')}
+              className={`px-3 py-1 rounded ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            >
+              Month
+            </button>
+            <button 
+              onClick={() => setCalendarView('week')}
+              className={`px-3 py-1 rounded ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            >
+              Week
+            </button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-8 gap-2 text-sm font-medium text-center mb-2">
+          <div className="text-left">Time</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+          <div>Sun</div>
+        </div>
+        
+        <div className="grid grid-cols-8 gap-2">
+          {times.map(time => (
+            <React.Fragment key={`time-row-${time}`}>
+              <div className="p-2 border rounded text-left font-medium">
+                {time}
+              </div>
+              {Array.from({ length: 7 }, (_, i) => {
+                const slotDate = new Date(startOfWeek);
+                slotDate.setDate(slotDate.getDate() + i);
+                const dateStr = slotDate.toISOString().split("T")[0];
+                const slots = availability[dateStr] || [];
+                
+                const [h, m] = time.split(":");
+                slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
+                
+                const isPast = slotDate < today;
+                const isAvailable = slots.includes(time);
+                
+                return (
+                  <div key={`slot-${dateStr}-${time}`} className="p-2 border rounded text-center">
+                    {!isPast && isAvailable ? (
+                      <button 
+                        className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+                        onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
+                      >
+                        {time}
+                      </button>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   if (user?.role?.toUpperCase() !== 'PATIENT') {
     return (
@@ -128,10 +392,275 @@ const ScheduleSessionPage = () => {
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto mt-8 p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Schedule Therapy Session</h1>
+  // Therapist Directory View
+  const renderTherapistDirectory = () => (
+    <>
+      <header className="bg-white shadow-md p-4 flex justify-between items-center rounded-lg mb-6">
+        <h1 className="text-2xl font-bold text-indigo-600">Schedule a Meeting</h1>
+        <button 
+          onClick={() => setShowMatchModal(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+        >
+          Get Matched Automatically
+        </button>
+      </header>
 
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {therapists.map(therapist => (
+          <div key={therapist.id} className="bg-white shadow rounded-lg overflow-hidden">
+            <img 
+              src={therapist.avatar} 
+              className="w-full h-40 object-cover" 
+              alt={therapist.name}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
+              }}
+            />
+            <div className="p-4">
+              <h2 className="text-lg font-semibold">{therapist.name}</h2>
+              <p className="text-sm text-gray-600">
+                Specialty: {therapist.specializations?.join(', ') || 'General Therapy'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Language: {therapist.languages?.join(', ')}
+              </p>
+              <p className="text-sm text-gray-600">⭐ {therapist.rating} Rating</p>
+              <button
+                onClick={() => viewTherapistAvailability(therapist)}
+                className="mt-3 w-full bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600"
+              >
+                View Availability
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
+  // Calendar View
+  const renderCalendarView = () => {
+    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
+    
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <h2 className="text-xl font-bold text-indigo-600">
+            {selectedTherapistObj?.name}'s Availability
+          </h2>
+          <button 
+            onClick={() => setCurrentView('directory')}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            &times;
+          </button>
+        </div>
+        
+        {renderCalendar()}
+        
+        <div className="mt-4 border-t pt-4 flex justify-end">
+          <button 
+            onClick={() => setCurrentView('directory')}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Back to Therapists
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Confirmation Modal
+  const renderConfirmModal = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showConfirmModal ? '' : 'hidden'}`}>
+      <div className="bg-white rounded-lg shadow-lg w-96">
+        <div className="flex justify-between items-center border-b p-4">
+          <h2 className="text-xl font-bold text-indigo-600">Confirm Booking</h2>
+          <button 
+            onClick={() => setShowConfirmModal(false)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            &times;
+          </button>
+        </div>
+        
+        {selectedSlot && (
+          <div className="p-4 space-y-3">
+            <p>
+              <span className="font-semibold">Therapist:</span> {selectedSlot.therapist.name}
+            </p>
+            <p>
+              <span className="font-semibold">Date:</span> {new Date(selectedSlot.date).toLocaleDateString()}
+            </p>
+            <p>
+              <span className="font-semibold">Time:</span> {selectedSlot.time}
+            </p>
+            
+            <div className="mt-4">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Session Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={sessionData.title}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g., Weekly Check-in, Anxiety Management"
+                required
+              />
+            </div>
+            
+            <div className="mt-4">
+              <label htmlFor="session_type" className="block text-sm font-medium text-gray-700 mb-2">
+                Session Type
+              </label>
+              <select
+                id="session_type"
+                name="session_type"
+                value={sessionData.session_type}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="individual">Individual Therapy</option>
+                <option value="group">Group Therapy</option>
+                <option value="emergency">Emergency Session</option>
+              </select>
+            </div>
+            
+            <div className="mt-4">
+              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+                Duration
+              </label>
+              <select
+                id="duration"
+                name="duration"
+                value={sessionData.duration}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>60 minutes</option>
+                <option value={90}>90 minutes</option>
+              </select>
+            </div>
+            
+            <div className="mt-4">
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                Notes (Optional)
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                value={sessionData.notes}
+                onChange={handleInputChange}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Any specific topics or concerns..."
+              />
+            </div>
+          </div>
+        )}
+        
+        <div className="p-4 border-t flex justify-end">
+          <button 
+            onClick={() => setShowConfirmModal(false)}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleScheduleSession}
+            disabled={loading}
+            className={`ml-2 px-4 py-2 rounded text-white ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+          >
+            {loading ? 'Processing...' : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Match Modal
+  const renderMatchModal = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showMatchModal ? '' : 'hidden'}`}>
+      <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-1/2">
+        <div className="flex justify-between items-center border-b p-4">
+          <h2 className="text-xl font-bold text-indigo-600">Get Matched Automatically</h2>
+          <button 
+            onClick={() => setShowMatchModal(false)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">What do you need help with?</label>
+            <select 
+              className="w-full border rounded px-3 py-2"
+              value={matchPreferences.specialization}
+              onChange={(e) => setMatchPreferences({...matchPreferences, specialization: e.target.value})}
+            >
+              <option value="">Select a specialization</option>
+              <option value="family">Family Therapy</option>
+              <option value="trauma">Trauma</option>
+              <option value="addiction">Addiction</option>
+              <option value="depression">Depression</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Preferred Language</label>
+            <select 
+              className="w-full border rounded px-3 py-2"
+              value={matchPreferences.language}
+              onChange={(e) => setMatchPreferences({...matchPreferences, language: e.target.value})}
+            >
+              <option value="English">English</option>
+              <option value="Swahili">Swahili</option>
+              <option value="French">French</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Preferred Gender</label>
+            <select 
+              className="w-full border rounded px-3 py-2"
+              value={matchPreferences.gender}
+              onChange={(e) => setMatchPreferences({...matchPreferences, gender: e.target.value})}
+            >
+              <option value="no_preference">No Preference</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="p-4 border-t flex justify-end">
+          <button 
+            onClick={() => setShowMatchModal(false)}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleAutoMatch}
+            className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Find Match
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-6xl mx-auto mt-8 p-6 bg-gray-100 min-h-screen">
       {message && (
         <div className={`mb-6 p-4 rounded-md ${
           message.includes('Error') 
@@ -141,139 +670,17 @@ const ScheduleSessionPage = () => {
           {message}
         </div>
       )}
-
-      <form onSubmit={handleScheduleSession} className="space-y-6">
-        {/* Session Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Session Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={sessionData.title}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="e.g., Weekly Check-in, Anxiety Management"
-            required
-          />
-        </div>
-
-        {/* Therapist Selection */}
-        <div>
-          <label htmlFor="therapist" className="block text-sm font-medium text-gray-700 mb-2">
-            Select Therapist
-          </label>
-          <select
-            id="therapist"
-            value={selectedTherapist}
-            onChange={(e) => setSelectedTherapist(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          >
-            <option value="">Choose a therapist...</option>
-            {therapists.map((therapist) => (
-              <option key={therapist.id} value={therapist.id}>
-                {therapist.name} - {therapist.specializations?.join(', ') || 'General Therapy'}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Date and Time Selection */}
-        <div>
-          <label htmlFor="scheduled_at" className="block text-sm font-medium text-gray-700 mb-2">
-            Date & Time
-          </label>
-          <select
-            id="scheduled_at"
-            name="scheduled_at"
-            value={sessionData.scheduled_at}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          >
-            <option value="">Select date and time...</option>
-            {timeSlots.map((slot) => (
-              <option key={slot.value} value={slot.value}>
-                {slot.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Duration */}
-        <div>
-          <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-            Duration (minutes)
-          </label>
-          <select
-            id="duration"
-            name="duration"
-            value={sessionData.duration}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value={30}>30 minutes</option>
-            <option value={45}>45 minutes</option>
-            <option value={60}>60 minutes</option>
-            <option value={90}>90 minutes</option>
-          </select>
-        </div>
-
-        {/* Session Type */}
-        <div>
-          <label htmlFor="session_type" className="block text-sm font-medium text-gray-700 mb-2">
-            Session Type
-          </label>
-          <select
-            id="session_type"
-            name="session_type"
-            value={sessionData.session_type}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="individual">Individual Therapy</option>
-            <option value="group">Group Therapy</option>
-            <option value="emergency">Emergency Session</option>
-          </select>
-        </div>
-
-        {/* Notes */}
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-            Additional Notes (Optional)
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            value={sessionData.notes}
-            onChange={handleInputChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Any specific topics or concerns you'd like to discuss..."
-          />
-        </div>
-
-        {/* Timezone Display */}
-        <div className="text-sm text-gray-600">
-          <p>Times shown in your local timezone: {sessionData.timezone}</p>
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            loading
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-          }`}
-        >
-          {loading ? 'Scheduling...' : 'Schedule Session'}
-        </button>
-      </form>
+      
+      {currentView === 'directory' ? renderTherapistDirectory() : renderCalendarView()}
+      
+      {/* Modals */}
+      {renderConfirmModal()}
+      {renderMatchModal()}
+      
+      {/* Timezone Display */}
+      <div className="mt-6 text-sm text-gray-600">
+        <p>Times shown in your local timezone: {sessionData.timezone}</p>
+      </div>
     </div>
   );
 };
