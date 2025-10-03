@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import FlashMessage from '../../components/common/FlashMessage';
+import { useToastStore } from '../../stores/toastStore';
 import PasswordInput from '../../components/common/PasswordInput';
 
 const LoginPage = () => {
@@ -10,32 +10,47 @@ const LoginPage = () => {
     password: '',
   });
   const [rememberMe, setRememberMe] = useState(false);
-  const [flash, setFlash] = useState({ message: '', type: 'info' });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
+  const addToast = useToastStore((state) => state.addToast);
   
   // Check for any state messages (e.g., from registration)
   useEffect(() => {
+    console.log('LoginPage location state:', location.state);
+    
     if (location.state?.message) {
-      setFlash({
+      console.log('Setting toast message from location state:', location.state.message);
+      addToast({
         message: location.state.message,
-        type: location.state.type || 'success'
+        type: location.state.type || 'success',
+        duration: 7000,
+        dismissible: true
       });
       // Clear the location state
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, addToast]);
 
+  // We'll use a ref to track if a navigation has been scheduled
+  const [redirectScheduled, setRedirectScheduled] = useState(false);
+  
   useEffect(() => {
     // check if user is already authenticated
-    if (isInitialized && isAuthenticated) {
-      navigate('/dashboard');
+    if (isInitialized && isAuthenticated && !redirectScheduled) {
+      // Delay navigation to dashboard to allow toasts to be seen
+      setRedirectScheduled(true);
+      // Only navigate if this effect triggered the authentication, not the login button
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isInitialized, isAuthenticated, navigate]);
+  }, [isInitialized, isAuthenticated, navigate, redirectScheduled]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,20 +62,61 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFlash({ message: '', type: 'info' });
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password, rememberMe);
-      setFlash({
-        message: 'Login successful! Redirecting to dashboard...',
-        type: 'success'
+      // Before we try to login, set loading and clear any existing toasts
+      const toastId = addToast({
+        message: 'Logging in...',
+        type: 'info',
+        duration: 2000,
+        dismissible: true
       });
-      setTimeout(() => navigate('/dashboard'), 1000);
+      
+      await login(formData.email, formData.password, rememberMe);
+      
+      // Add a success toast message
+      addToast({
+        message: 'Login successful! Redirecting to dashboard...',
+        type: 'success',
+        duration: 5000,
+        dismissible: true
+      });
+      
+      // Use a timeout to ensure the toast message is displayed before redirecting
+      // This sets a flag so that our useEffect doesn't also try to navigate
+      setRedirectScheduled(true);
+      setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
-      setFlash({
-        message: err.response?.data?.message || 'Failed to login. Please try again.',
-        type: 'error'
+      console.error('Login error:', err);
+      
+      // Extract the most specific error message available
+      let errorMessage;
+      if (err.response?.data?.error) {
+        // If API returns an error object with an error property
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        // If API returns an error object with a message property
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 401) {
+        // Specific message for unauthorized (invalid credentials)
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (err.response?.status === 404) {
+        // Specific message for not found
+        errorMessage = 'User not found. Please check your email address.';
+      } else if (err.message) {
+        // Use error message property if available
+        errorMessage = err.message;
+      } else {
+        // Generic fallback
+        errorMessage = 'Failed to login. Please check your credentials and try again.';
+      }
+      
+      addToast({
+        message: errorMessage,
+        type: 'error',
+        duration: 10000, // Longer duration for error messages
+        dismissible: true // Ensure it's dismissible
       });
     } finally {
       setIsLoading(false);
@@ -76,14 +132,6 @@ const LoginPage = () => {
             Sign in to access your Timamu account
           </p>
         </div>
-        
-        {flash.message && (
-          <FlashMessage 
-            message={flash.message} 
-            type={flash.type} 
-            onClose={() => setFlash({ message: '', type: 'info' })} 
-          />
-        )}
         
         <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
