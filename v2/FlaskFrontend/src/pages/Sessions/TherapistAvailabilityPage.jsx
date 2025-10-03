@@ -36,9 +36,13 @@ const TherapistAvailabilityPage = () => {
 
   const loadAvailability = async () => {
     try {
+      console.log('[DEBUG] TherapistAvailabilityPage: Loading availability data');
       setLoading(true);
+      console.log('[DEBUG] TherapistAvailabilityPage: Making API request to /therapists/availability');
       const response = await api.get('/therapists/availability');
+      console.log('[DEBUG] TherapistAvailabilityPage: Received response', response);
       const loadedAvailability = response.data.availability || {};
+      console.log('[DEBUG] TherapistAvailabilityPage: Received availability data', loadedAvailability);
       
       // Ensure all weekdays are initialized
       const initialAvailability = {};
@@ -53,9 +57,13 @@ const TherapistAvailabilityPage = () => {
         }
       });
       
+      console.log('[DEBUG] TherapistAvailabilityPage: Setting availability state', initialAvailability);
       setAvailability(initialAvailability);
     } catch (error) {
-      console.error('Error loading availability:', error);
+      console.error('[DEBUG] TherapistAvailabilityPage: Error loading availability:', error);
+      console.error('[DEBUG] TherapistAvailabilityPage: Response data:', error.response?.data);
+      console.error('[DEBUG] TherapistAvailabilityPage: Status code:', error.response?.status);
+      
       // Initialize with empty availability if no data exists
       const initialAvailability = {};
       weekDays.forEach(day => {
@@ -69,12 +77,22 @@ const TherapistAvailabilityPage = () => {
 
   const saveAvailability = async () => {
     try {
+      console.log('[DEBUG] TherapistAvailabilityPage: Saving availability data');
       setLoading(true);
-      await api.post('/therapists/availability', { availability });
+      
+      console.log('[DEBUG] TherapistAvailabilityPage: Current availability data to save', availability);
+      console.log('[DEBUG] TherapistAvailabilityPage: Making API POST request to /therapists/availability');
+      
+      const response = await api.post('/therapists/availability', { availability });
+      console.log('[DEBUG] TherapistAvailabilityPage: Save response', response);
+      
       setMessage('Availability saved successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Error saving availability:', error);
+      console.error('[DEBUG] TherapistAvailabilityPage: Error saving availability:', error);
+      console.error('[DEBUG] TherapistAvailabilityPage: Response data:', error.response?.data);
+      console.error('[DEBUG] TherapistAvailabilityPage: Status code:', error.response?.status);
+      
       setMessage(`Error: ${error.response?.data?.error || 'Failed to save availability'}`);
     } finally {
       setLoading(false);

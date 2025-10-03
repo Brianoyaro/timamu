@@ -24,7 +24,6 @@ import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
 
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
-import TestMessage from './components/TestMessage.jsx'; // Temporary for testing purposes
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -44,7 +43,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
             <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
             <Route path="video-call/:roomId" element={<VideoCallPage />} />
-            <Route path="test-socket" element={<TestMessage />} />
           </Route>
 
           {/* Admin routes */}

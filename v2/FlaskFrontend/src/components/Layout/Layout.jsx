@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useSocketStore } from '../../stores/socketStore';
 import SocketStatus from './SocketStatus';
+import ToastContainer from '../common/ToastContainer';
 
 const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -76,17 +77,19 @@ const Layout = () => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" className="text-xl font-bold text-indigo-600">
+                <Link to={isAuthenticated ? "/dashboard" : "/"} className="text-xl font-bold text-indigo-600">
                   Timamu
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  to="/"
-                  className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Home
-                </Link>
+                {!isAuthenticated && (
+                  <Link
+                    to="/"
+                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Home
+                  </Link>
+                )}
                 
                 {isAuthenticated && (
                   <Link
@@ -106,30 +109,12 @@ const Layout = () => {
                   </Link>
                 )}
                 
-                {isAuthenticated && user?.role?.toUpperCase() === 'PATIENT' && (
-                  <Link
-                    to="/sessions/schedule"
-                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Book Session
-                  </Link>
-                )}
-                
                 {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
                   <Link
                     to="/sessions/availability"
                     className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
                     My Availability
-                  </Link>
-                )}
-                
-                {isAuthenticated && (
-                  <Link
-                    to="/test-socket"
-                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Test Socket
                   </Link>
                 )}
                 
@@ -210,13 +195,15 @@ const Layout = () => {
         {/* Mobile menu, show/hide based on menu state */}
         <div className={`sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
           <div className="pt-2 pb-3 space-y-1">
-            <Link
-              to="/"
-              onClick={closeMobileMenu}
-              className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-            >
-              Home
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/"
+                onClick={closeMobileMenu}
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              >
+                Home
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 to="/dashboard"
@@ -233,15 +220,6 @@ const Layout = () => {
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
               >
                 Sessions
-              </Link>
-            )}
-            {isAuthenticated && user?.role?.toUpperCase() === 'PATIENT' && (
-              <Link
-                to="/sessions/schedule"
-                onClick={closeMobileMenu}
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-              >
-                Book Session
               </Link>
             )}
             {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
@@ -317,6 +295,9 @@ const Layout = () => {
       
       {/* Socket connection status indicator */}
       {isAuthenticated && <SocketStatus />}
+      
+      {/* Global toast notifications */}
+      <ToastContainer />
     </div>
   );
 };
