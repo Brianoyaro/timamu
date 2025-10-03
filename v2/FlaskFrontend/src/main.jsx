@@ -19,6 +19,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
 // Session Pages  
 import SessionsPage from './pages/Sessions/SessionsPage.jsx';
 import ScheduleSessionPage from './pages/Sessions/ScheduleSessionPage.jsx';
+import TherapistAvailabilityPage from './pages/Sessions/TherapistAvailabilityPage.jsx';
 import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
 
 // Protected Route
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
             <Route path="sessions" element={<SessionsPage />} />
             <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
+            <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
             <Route path="video-call/:roomId" element={<VideoCallPage />} />
             <Route path="test-socket" element={<TestMessage />} />
           </Route>

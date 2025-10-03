@@ -1,0 +1,24 @@
+In flaskbackend/app/sessions/routes.py, we are using get_jwt_identity which causes a 422 error in the sessionspage [flaskfrontend]. I think this is so because we maybe ought to create a toen using create_access_token instead of manually creating it as I do. How about we switch to flask_jwt_extended to handle all token related things i.e user loader, token creation, token verification e.t.c.
+
+
+If token is invalid/expired, whenever we try accessing a route requiring login, we should be redirected to login. This is a major flaw.
+
+Let us add notifications to users for events. I propose using a toaststore.
+
+Add the icons for reveal/hide password in login and register forms under the passwords. Also, style the forms and make them more professional.
+
+Work on the profile section, make it professional.
+
+I have a suggestion, what if during registrtaion, after successfull registering, we provide the users with a modal where we receive further information from them e.g for patients, we request their emergency information, preferred language [default to english], timezone [default to utc]. for therapists, we can ask for licensce number [if logical], specialisations, lanuages that they know/are proficient in, years  of experience, education[ we may ask them to provide images of their certificates which admins will manually verify beore marking them as verified in the system], their bio, their timezone[fefault|auto select utc], whether they accept emergencies. This information will be crucial in updating/creating their patient/therapit_profiles. They may have an option to 'skip' the modal. 
+
+
+'Select a therapist' isn't showing any therapists even when they are both approved and active.
+
+For the session type, they should either pick between remote or in-person sessions where remote sessions warrant an email with the meeting link while a physical one warrants an email with meeting location. What if we use a datatime input field in the select date and time?
+
+How do we approve a therapist as the admin? When we approve a therapist, we should email them a successfull approval email. 
+
+
+
+
+ack/et/pet4-1.html represent how I'd like the user booking to take place and ack/et/tet1-1-pro.html represents how I'd like therapist availability setting to look like. I'd like to implement these in the FlaskFrontend of the application by ovveriding therapist avaiaility setting and patient session scheduling/booking to use these. Use them[pet4-1.html and tet1-1-pro.htm as pointers]. Remember, we are working on flaskfrontend and flaskbackend..

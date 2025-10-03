@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Telehealth Booking - Slot Confirmation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white shadow-md p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-indigo-600">Schedule a Meeting</h1>
+    <button id="openMatchModal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+      Get Matched Automatically
+    </button>
+  </header>
+
+  <!-- Therapist Directory -->
+  <main class="p-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <img src="https://via.placeholder.com/300x200" class="w-full h-40 object-cover" alt="Therapist">
+      <div class="p-4">
+        <h2 class="text-lg font-semibold">Dr. Jane Doe</h2>
+        <p class="text-sm text-gray-600">Specialty: Family Therapy</p>
+        <p class="text-sm text-gray-600">Language: English</p>
+        <p class="text-sm text-gray-600">⭐ 4.8 Rating</p>
+        <button onclick="openAvailabilityModal('Dr. Jane Doe')" 
+          class="mt-3 w-full bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600">
+          View Availability
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Availability Modal -->
+  <div id="availabilityModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 lg:w-3/4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b p-4">
+        <h2 id="availabilityTitle" class="text-xl font-bold text-indigo-600"></h2>
+        <button onclick="closeAvailabilityModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+      </div>
+      <div class="p-4">
+        <!-- Calendar Controls -->
+        <div class="flex justify-between mb-4 items-center">
+          <div class="space-x-2">
+            <button onclick="changePeriod(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">&lt; Prev</button>
+            <button onclick="changePeriod(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next &gt;</button>
+          </div>
+          <h3 id="calendarLabel" class="font-semibold"></h3>
+          <div>
+            <button onclick="toggleView('month')" id="monthBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Month</button>
+            <button onclick="toggleView('week')" id="weekBtn" class="px-3 py-1 bg-gray-200 rounded">Week</button>
+          </div>
+        </div>
+        
+        <!-- Month View -->
+        <div id="monthView">
+          <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium">
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+          </div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-2 mt-2"></div>
+        </div>
+
+        <!-- Week View -->
+        <div id="weekView" class="hidden">
+          <div class="grid grid-cols-8 gap-2 text-sm font-medium text-center">
+            <div class="text-left">Time</div>
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+          </div>
+          <div id="weekGrid" class="grid grid-cols-8 gap-2 mt-2"></div>
+        </div>
+      </div>
+      <div class="p-4 border-t flex justify-end">
+        <button onclick="closeAvailabilityModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white rounded-lg shadow-lg w-96">
+      <div class="flex justify-between items-center border-b p-4">
+        <h2 class="text-xl font-bold text-indigo-600">Confirm Booking</h2>
+        <button onclick="closeConfirmModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+      </div>
+      <div class="p-4 space-y-2">
+        <p><span class="font-semibold">Therapist:</span> <span id="confirmTherapist"></span></p>
+        <p><span class="font-semibold">Date:</span> <span id="confirmDate"></span></p>
+        <p><span class="font-semibold">Time:</span> <span id="confirmTime"></span></p>
+      </div>
+      <div class="p-4 border-t flex justify-end">
+        <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button onclick="finalizeBooking()" class="ml-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match Modal -->
+  <div id="matchModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-1/2">
+      <div class="flex justify-between items-center border-b p-4">
+        <h2 class="text-xl font-bold text-indigo-600">Get Matched Automatically</h2>
+        <button onclick="closeMatchModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium">What do you need help with?</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>Family Therapy</option>
+            <option>Trauma</option>
+            <option>Addiction</option>
+            <option>Depression</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Preferred Language</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>English</option>
+            <option>Swahili</option>
+            <option>French</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Preferred Gender</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>No Preference</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="p-4 border-t flex justify-end">
+        <button onclick="closeMatchModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button class="ml-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Find Match</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const availabilityModal = document.getElementById('availabilityModal');
+    const availabilityTitle = document.getElementById('availabilityTitle');
+    const calendarLabel = document.getElementById('calendarLabel');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const weekGrid = document.getElementById('weekGrid');
+    const matchModal = document.getElementById('matchModal');
+
+    // Confirmation modal refs
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmTherapist = document.getElementById("confirmTherapist");
+    const confirmDate = document.getElementById("confirmDate");
+    const confirmTime = document.getElementById("confirmTime");
+
+    let selectedSlot = null;
+
+    // 🔹 Example therapist availability
+    const therapistAvailability = {
+      "Dr. Jane Doe": {
+        "2025-10-01": ["09:00", "14:00"],
+        "2025-10-02": ["11:00"],
+        "2025-10-05": ["09:00", "11:00", "16:00"]
+      }
+    };
+
+    let currentDate = new Date();
+    let currentView = "month";
+    let activeTherapist = null;
+
+    function openAvailabilityModal(name) {
+      activeTherapist = name;
+      availabilityTitle.textContent = `${name}'s Availability`;
+      renderCalendar();
+      availabilityModal.classList.remove('hidden');
+    }
+    function closeAvailabilityModal() {
+      availabilityModal.classList.add('hidden');
+    }
+
+    function changePeriod(offset) {
+      if (currentView === "month") {
+        currentDate.setMonth(currentDate.getMonth() + offset);
+      } else {
+        currentDate.setDate(currentDate.getDate() + offset * 7);
+      }
+      renderCalendar();
+    }
+
+    function toggleView(view) {
+      currentView = view;
+      document.getElementById("monthView").classList.toggle("hidden", view !== "month");
+      document.getElementById("weekView").classList.toggle("hidden", view !== "week");
+      document.getElementById("monthBtn").classList.toggle("bg-indigo-600", view === "month");
+      document.getElementById("monthBtn").classList.toggle("text-white", view === "month");
+      document.getElementById("weekBtn").classList.toggle("bg-indigo-600", view === "week");
+      document.getElementById("weekBtn").classList.toggle("text-white", view === "week");
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      if (currentView === "month") renderMonth();
+      else renderWeek();
+    }
+
+    // 🔹 Month View
+    function renderMonth() {
+      const today = new Date();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+      calendarLabel.textContent = `${monthName} ${year}`;
+      calendarGrid.innerHTML = '';
+
+      let startDay = (firstDay.getDay() + 6) % 7; 
+      for (let i = 0; i < startDay; i++) calendarGrid.innerHTML += `<div></div>`;
+
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        let dateObj = new Date(year, month, d);
+        let dateStr = dateObj.toISOString().split("T")[0];
+        let slots = therapistAvailability[activeTherapist]?.[dateStr] || [];
+        let isPast = dateObj < today.setHours(0,0,0,0);
+
+        let classes = "p-2 border rounded text-center";
+        if (isPast) classes += " bg-gray-100 text-gray-400";
+        else classes += " bg-gray-50";
+
+        let slotButtons = slots.map(t => 
+          `<button class="mt-1 px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+            onclick="openConfirmModal('${activeTherapist}', '${dateStr}', '${t}')">${t}</button>`).join(" ");
+
+        calendarGrid.innerHTML += `
+          <div class="${classes}">
+            <div>${d}</div>
+            <div class="flex flex-wrap justify-center gap-1">${!isPast ? slotButtons : ""}</div>
+          </div>`;
+      }
+    }
+
+    // 🔹 Week View
+    function renderWeek() {
+      const today = new Date();
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7));
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+      const options = { month: 'short', day: 'numeric' };
+      calendarLabel.textContent = `${startOfWeek.toLocaleDateString(undefined, options)} - ${endOfWeek.toLocaleDateString(undefined, options)}`;
+
+      weekGrid.innerHTML = '';
+
+      const times = ["09:00", "11:00", "14:00", "16:00"];
+      for (let t of times) {
+        weekGrid.innerHTML += `<div class="p-2 border rounded text-left font-medium">${t}</div>`;
+        for (let i = 0; i < 7; i++) {
+          let slotDate = new Date(startOfWeek);
+          slotDate.setDate(slotDate.getDate() + i);
+          let dateStr = slotDate.toISOString().split("T")[0];
+          let slots = therapistAvailability[activeTherapist]?.[dateStr] || [];
+
+          let slotTime = new Date(slotDate);
+          let [h, m] = t.split(":");
+          slotTime.setHours(h, m, 0, 0);
+
+          let isPast = slotTime < today;
+          let isAvailable = slots.includes(t);
+
+          let content = "-";
+          if (!isPast && isAvailable) {
+            content = `<button class="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+              onclick="openConfirmModal('${activeTherapist}', '${dateStr}', '${t}')">${t}</button>`;
+          }
+
+          weekGrid.innerHTML += `<div class="p-2 border rounded text-center">${content}</div>`;
+        }
+      }
+    }
+
+    // 🔹 Confirmation Modal Functions
+    function openConfirmModal(therapist, date, time) {
+      selectedSlot = { therapist, date, time };
+      confirmTherapist.textContent = therapist;
+      confirmDate.textContent = date;
+      confirmTime.textContent = time;
+      confirmModal.classList.remove("hidden");
+    }
+    function closeConfirmModal() {
+      confirmModal.classList.add("hidden");
+      selectedSlot = null;
+    }
+    function finalizeBooking() {
+      alert(`✅ Booking confirmed for ${selectedSlot.therapist} on ${selectedSlot.date} at ${selectedSlot.time}`);
+      closeConfirmModal();
+      // TODO: send booking to backend
+    }
+
+    // Match Modal
+    document.getElementById('openMatchModal').onclick = () => {
+      matchModal.classList.remove('hidden');
+    }
+    function closeMatchModal() { matchModal.classList.add('hidden'); }
+  </script>
+
+</body>
+</html>
+
