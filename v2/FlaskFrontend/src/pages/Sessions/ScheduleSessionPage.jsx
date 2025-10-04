@@ -189,7 +189,7 @@ const ScheduleSessionPage = () => {
     
     // Add empty cells for days before the 1st of the month
     for (let i = 0; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24"></div>);
+      days.push(<div key={`empty-${i}`} className="hidden sm:block h-16 sm:h-24"></div>);
     }
     
     // Get the selected therapist's availability
@@ -204,18 +204,30 @@ const ScheduleSessionPage = () => {
       const dateStr = dateObj.toISOString().split("T")[0];
       const slots = availability[dateStr] || [];
       const isPast = dateObj < new Date(today.setHours(0,0,0,0));
+      const isToday = dateObj.toDateString() === today.toDateString();
+      
+      // For mobile view - add day of week label
+      const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      // Check if this is the first day of the week (Monday) for mobile layout
+      const dayOfWeekNum = (startDay + d - 1) % 7;
+      const isFirstDayOfWeek = dayOfWeekNum === 0;
       
       days.push(
         <div 
           key={`day-${d}`} 
-          className={`h-24 border rounded p-2 ${isPast ? 'bg-gray-100' : 'bg-gray-50'}`}
+          className={`h-16 sm:h-24 border rounded p-2 ${isPast ? 'bg-gray-100' : isToday ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}
+            ${d === 1 ? 'col-start-auto sm:col-start-' + (startDay + 1) : ''}`}
         >
-          <div className="font-medium">{d}</div>
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex justify-between">
+            <div className="font-medium">{d}</div>
+            <div className="text-xs text-gray-500 sm:hidden">{dayOfWeek}</div>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-1 overflow-y-auto max-h-8 sm:max-h-16">
             {!isPast && slots.map((slot, idx) => (
               <button 
                 key={`slot-${d}-${idx}`}
-                className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+                className="px-1 sm:px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
                 onClick={() => selectTimeSlot(selectedTherapist, dateStr, slot.start)}
               >
                 {slot.start}
@@ -227,9 +239,9 @@ const ScheduleSessionPage = () => {
     }
     
     return (
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <div className="space-x-2">
+      <div className="overflow-x-auto pb-2">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+          <div className="space-x-2 flex">
             <button 
               onClick={() => changePeriod(-1)}
               className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
@@ -244,7 +256,7 @@ const ScheduleSessionPage = () => {
             </button>
           </div>
           <h3 className="font-semibold">{calendarLabel}</h3>
-          <div>
+          <div className="flex">
             <button 
               onClick={() => setCalendarView('month')}
               className={`px-3 py-1 rounded ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
@@ -260,18 +272,20 @@ const ScheduleSessionPage = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium mb-2">
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-          <div>Sun</div>
-        </div>
-        
-        <div className="grid grid-cols-7 gap-2">
-          {days}
+        <div className="min-w-[340px]">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm font-medium mb-2">
+            <div className="hidden sm:block">Mon</div>
+            <div className="hidden sm:block">Tue</div>
+            <div className="hidden sm:block">Wed</div>
+            <div className="hidden sm:block">Thu</div>
+            <div className="hidden sm:block">Fri</div>
+            <div className="hidden sm:block">Sat</div>
+            <div className="hidden sm:block">Sun</div>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            {days}
+          </div>
         </div>
       </div>
     );
@@ -298,10 +312,22 @@ const ScheduleSessionPage = () => {
     // { "2025-10-04": [{ "start": "09:00", "end": "17:00" }] }
     const availability = selectedTherapistObj?.availability || {};
     
+    // Create array of week dates for mobile display
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      return {
+        date,
+        dayShort: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayNumber: date.getDate(),
+        dateStr: date.toISOString().split('T')[0]
+      };
+    });
+    
     return (
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <div className="space-x-2">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+          <div className="space-x-2 flex">
             <button 
               onClick={() => changePeriod(-1)}
               className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
@@ -315,69 +341,123 @@ const ScheduleSessionPage = () => {
               Next &gt;
             </button>
           </div>
-          <h3 className="font-semibold">{calendarLabel}</h3>
-          <div>
+          <h3 className="font-semibold text-sm sm:text-base">{calendarLabel}</h3>
+          <div className="flex">
             <button 
               onClick={() => setCalendarView('month')}
-              className={`px-3 py-1 rounded ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+              className={`px-3 py-1 rounded text-sm ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
             >
               Month
             </button>
             <button 
               onClick={() => setCalendarView('week')}
-              className={`px-3 py-1 rounded ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+              className={`px-3 py-1 rounded text-sm ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
             >
               Week
             </button>
           </div>
         </div>
         
-        <div className="grid grid-cols-8 gap-2 text-sm font-medium text-center mb-2">
-          <div className="text-left">Time</div>
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-          <div>Sun</div>
+        {/* Desktop Week View */}
+        <div className="hidden sm:block overflow-x-auto pb-3">
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-8 gap-2 text-sm font-medium text-center mb-2">
+              <div className="text-left">Time</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+              <div>Sun</div>
+            </div>
+            
+            <div className="grid grid-cols-8 gap-2">
+              {times.map(time => (
+                <React.Fragment key={`time-row-${time}`}>
+                  <div className="p-2 border rounded text-left font-medium">
+                    {time}
+                  </div>
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const slotDate = new Date(startOfWeek);
+                    slotDate.setDate(slotDate.getDate() + i);
+                    const dateStr = slotDate.toISOString().split("T")[0];
+                    const slots = availability[dateStr] || [];
+                    
+                    const [h, m] = time.split(":");
+                    slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
+                    
+                    const isPast = slotDate < today;
+                    const isAvailable = slots.some(slot => slot.start === time);
+                    const isToday = slotDate.toDateString() === today.toDateString();
+                    
+                    return (
+                      <div 
+                        key={`slot-${dateStr}-${time}`} 
+                        className={`p-2 border rounded text-center ${isToday ? 'bg-blue-50 border-blue-300' : ''}`}
+                      >
+                        {!isPast && isAvailable ? (
+                          <button 
+                            className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+                            onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
+                          >
+                            {time}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         </div>
         
-        <div className="grid grid-cols-8 gap-2">
-          {times.map(time => (
-            <React.Fragment key={`time-row-${time}`}>
-              <div className="p-2 border rounded text-left font-medium">
-                {time}
+        {/* Mobile Week View - Day by day with columns of times */}
+        <div className="sm:hidden">
+          {weekDates.map((dateInfo) => {
+            const isToday = dateInfo.date.toDateString() === today.toDateString();
+            const slots = availability[dateInfo.dateStr] || [];
+            
+            return (
+              <div 
+                key={dateInfo.dateStr} 
+                className={`mb-4 border rounded-lg overflow-hidden ${isToday ? 'border-blue-400' : ''}`}
+              >
+                <div className={`px-3 py-2 ${isToday ? 'bg-blue-100' : 'bg-gray-100'} flex justify-between items-center`}>
+                  <span className="font-medium">{dateInfo.dayShort}</span>
+                  <span>{dateInfo.dayNumber}</span>
+                </div>
+                <div className="p-2 grid grid-cols-2 gap-2">
+                  {times.map(time => {
+                    const [h, m] = time.split(":");
+                    const slotDate = new Date(dateInfo.date);
+                    slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
+                    
+                    const isPast = slotDate < today;
+                    const isAvailable = slots.some(slot => slot.start === time);
+                    
+                    return (
+                      <div key={`${dateInfo.dateStr}-${time}`} className="text-center py-1">
+                        {!isPast && isAvailable ? (
+                          <button 
+                            className="w-full px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
+                            onClick={() => selectTimeSlot(selectedTherapist, dateInfo.dateStr, time)}
+                          >
+                            {time}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">{time} -</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              {Array.from({ length: 7 }, (_, i) => {
-                const slotDate = new Date(startOfWeek);
-                slotDate.setDate(slotDate.getDate() + i);
-                const dateStr = slotDate.toISOString().split("T")[0];
-                const slots = availability[dateStr] || [];
-                
-                const [h, m] = time.split(":");
-                slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
-                
-                const isPast = slotDate < today;
-                const isAvailable = slots.some(slot => slot.start === time);
-                
-                return (
-                  <div key={`slot-${dateStr}-${time}`} className="p-2 border rounded text-center">
-                    {!isPast && isAvailable ? (
-                      <button 
-                        className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
-                        onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
-                      >
-                        {time}
-                      </button>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -396,43 +476,45 @@ const ScheduleSessionPage = () => {
   // Therapist Directory View
   const renderTherapistDirectory = () => (
     <>
-      <header className="bg-white shadow-md p-4 flex justify-between items-center rounded-lg mb-6">
-        <h1 className="text-2xl font-bold text-indigo-600">Schedule a Meeting</h1>
+      <header className="bg-white shadow-md p-4 flex flex-col sm:flex-row justify-between items-center rounded-lg mb-6 gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">Schedule a Meeting</h1>
         <button 
           onClick={() => setShowMatchModal(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          className="bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm sm:text-base w-full sm:w-auto"
         >
           Get Matched Automatically
         </button>
       </header>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {therapists.map(therapist => (
           <div key={therapist.id} className="bg-white shadow rounded-lg overflow-hidden">
-            <img 
-              src={therapist.avatar} 
-              className="w-full h-40 object-cover" 
-              alt={therapist.name}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
-              }}
-            />
-            <div className="p-4">
-              <h2 className="text-lg font-semibold">{therapist.name}</h2>
-              <p className="text-sm text-gray-600">
-                Specialty: {therapist.specializations?.join(', ') || 'General Therapy'}
-              </p>
-              <p className="text-sm text-gray-600">
-                Language: {therapist.languages?.join(', ')}
-              </p>
-              <p className="text-sm text-gray-600">⭐ {therapist.rating} Rating</p>
-              <button
-                onClick={() => viewTherapistAvailability(therapist)}
-                className="mt-3 w-full bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600"
-              >
-                View Availability
-              </button>
+            <div className="flex sm:block">
+              <img 
+                src={therapist.avatar} 
+                className="w-24 sm:w-full h-24 sm:h-40 object-cover" 
+                alt={therapist.name}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
+                }}
+              />
+              <div className="p-2 sm:p-4 flex-grow">
+                <h2 className="text-base sm:text-lg font-semibold">{therapist.name}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Specialty: {therapist.specializations?.join(', ') || 'General Therapy'}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Language: {therapist.languages?.join(', ')}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">⭐ {therapist.rating} Rating</p>
+                <button
+                  onClick={() => viewTherapistAvailability(therapist)}
+                  className="mt-2 sm:mt-3 w-full bg-indigo-500 text-white px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-600 text-xs sm:text-sm"
+                >
+                  View Availability
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -445,14 +527,15 @@ const ScheduleSessionPage = () => {
     const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
     
     return (
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
         <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h2 className="text-xl font-bold text-indigo-600">
+          <h2 className="text-lg sm:text-xl font-bold text-indigo-600 truncate pr-2">
             {selectedTherapistObj?.name}'s Availability
           </h2>
           <button 
             onClick={() => setCurrentView('directory')}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 text-2xl flex-shrink-0"
+            aria-label="Close"
           >
             &times;
           </button>
@@ -460,10 +543,10 @@ const ScheduleSessionPage = () => {
         
         {renderCalendar()}
         
-        <div className="mt-4 border-t pt-4 flex justify-end">
+        <div className="mt-4 border-t pt-4 flex justify-center sm:justify-end">
           <button 
             onClick={() => setCurrentView('directory')}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
           >
             Back to Therapists
           </button>
@@ -474,13 +557,14 @@ const ScheduleSessionPage = () => {
 
   // Render Confirmation Modal
   const renderConfirmModal = () => (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showConfirmModal ? '' : 'hidden'}`}>
-      <div className="bg-white rounded-lg shadow-lg w-96">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showConfirmModal ? '' : 'hidden'} p-4`}>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-y-auto max-h-[90vh]">
         <div className="flex justify-between items-center border-b p-4">
-          <h2 className="text-xl font-bold text-indigo-600">Confirm Booking</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-indigo-600">Confirm Booking</h2>
           <button 
             onClick={() => setShowConfirmModal(false)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+            aria-label="Close"
           >
             &times;
           </button>
@@ -566,17 +650,17 @@ const ScheduleSessionPage = () => {
           </div>
         )}
         
-        <div className="p-4 border-t flex justify-end">
+        <div className="p-4 border-t flex justify-end gap-2">
           <button 
             onClick={() => setShowConfirmModal(false)}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            className="px-3 sm:px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
           >
             Cancel
           </button>
           <button 
             onClick={handleScheduleSession}
             disabled={loading}
-            className={`ml-2 px-4 py-2 rounded text-white ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+            className={`px-3 sm:px-4 py-2 rounded text-white text-sm ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
           >
             {loading ? 'Processing...' : 'Confirm'}
           </button>
@@ -587,13 +671,14 @@ const ScheduleSessionPage = () => {
 
   // Render Match Modal
   const renderMatchModal = () => (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showMatchModal ? '' : 'hidden'}`}>
-      <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-1/2">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showMatchModal ? '' : 'hidden'} p-4`}>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
         <div className="flex justify-between items-center border-b p-4">
-          <h2 className="text-xl font-bold text-indigo-600">Get Matched Automatically</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-indigo-600">Get Matched Automatically</h2>
           <button 
             onClick={() => setShowMatchModal(false)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+            aria-label="Close"
           >
             &times;
           </button>
@@ -603,7 +688,7 @@ const ScheduleSessionPage = () => {
           <div>
             <label className="block text-sm font-medium mb-1">What do you need help with?</label>
             <select 
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 text-sm"
               value={matchPreferences.specialization}
               onChange={(e) => setMatchPreferences({...matchPreferences, specialization: e.target.value})}
             >
@@ -618,7 +703,7 @@ const ScheduleSessionPage = () => {
           <div>
             <label className="block text-sm font-medium mb-1">Preferred Language</label>
             <select 
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 text-sm"
               value={matchPreferences.language}
               onChange={(e) => setMatchPreferences({...matchPreferences, language: e.target.value})}
             >
@@ -631,7 +716,7 @@ const ScheduleSessionPage = () => {
           <div>
             <label className="block text-sm font-medium mb-1">Preferred Gender</label>
             <select 
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 text-sm"
               value={matchPreferences.gender}
               onChange={(e) => setMatchPreferences({...matchPreferences, gender: e.target.value})}
             >
@@ -642,16 +727,16 @@ const ScheduleSessionPage = () => {
           </div>
         </div>
         
-        <div className="p-4 border-t flex justify-end">
+        <div className="p-4 border-t flex justify-end gap-2">
           <button 
             onClick={() => setShowMatchModal(false)}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            className="px-3 sm:px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
           >
             Cancel
           </button>
           <button 
             onClick={handleAutoMatch}
-            className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
           >
             Find Match
           </button>
@@ -661,9 +746,9 @@ const ScheduleSessionPage = () => {
   );
 
   return (
-    <div className="max-w-6xl mx-auto mt-8 p-6 bg-gray-100 min-h-screen">
+    <div className="max-w-6xl mx-auto mt-4 sm:mt-8 p-3 sm:p-6 bg-gray-100 min-h-screen">
       {message && (
-        <div className={`mb-6 p-4 rounded-md ${
+        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-md text-sm ${
           message.includes('Error') 
             ? 'bg-red-50 border border-red-200 text-red-800' 
             : 'bg-green-50 border border-green-200 text-green-800'
@@ -679,7 +764,7 @@ const ScheduleSessionPage = () => {
       {renderMatchModal()}
       
       {/* Timezone Display */}
-      <div className="mt-6 text-sm text-gray-600">
+      <div className="mt-4 sm:mt-6 text-xs sm:text-sm text-gray-600 text-center sm:text-left">
         <p>Times shown in your local timezone: {sessionData.timezone}</p>
       </div>
     </div>
