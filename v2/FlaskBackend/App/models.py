@@ -211,6 +211,6 @@ class AuditLog(db.Model):
 class RefreshToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    refresh_token = db.Column(db.String(256), unique=True, nullable=False)
+    refresh_token = db.Column(db.String(512), unique=True, nullable=False)  # Increased to 512 for long JWT tokens
     revoked = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='refresh_tokens')

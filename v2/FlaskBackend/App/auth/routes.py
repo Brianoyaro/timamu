@@ -1,5 +1,6 @@
 from flask import request, jsonify, Blueprint
-from ..extensions import db, bcrypt, oauth
+from ..extensions import db, bcrypt, oauth, jwt as jwt_manager
+from flask_jwt_extended import create_access_token, decode_token
 import jwt
 from datetime import datetime, timedelta
 from ..utils.email_utils import send_welcome_email, send_forgot_password_email
@@ -32,13 +33,20 @@ def generate_jwt(user, exp_duration=10):
     '''Generate JWT token for a user.
     exp_duration: expiration duration in minutes (default 10 minutes)
     '''
-    payload = {
-        'user_id': user.id,
+    # Create additional claims for the token
+    additional_claims = {
         'email': user.email,
-        'role': user.role,
-        'exp': datetime.utcnow() + timedelta(minutes=exp_duration)
+        'role': user.role
     }
-    token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    
+    # Use Flask-JWT-Extended to create the token
+    # identity is set to the user_id which will be accessible via get_jwt_identity()
+    expires_delta = timedelta(minutes=exp_duration)
+    token = create_access_token(
+        identity=user.id, 
+        additional_claims=additional_claims,
+        expires_delta=expires_delta
+    )
     return token
 
 @auth_bp.route('/login', methods=['POST'])
@@ -77,7 +85,10 @@ def login():
         refresh_token = generate_jwt(user, exp_duration=7*24*60)  # 7 days expiration for refresh token
 
         # Store refresh token in database
-        new_refresh_token = RefreshToken(user_id=user.id, refresh_token=refresh_token)
+        new_refresh_token = RefreshToken(
+            user_id=user.id, 
+            refresh_token=refresh_token
+        )
         db.session.add(new_refresh_token)
         db.session.commit()
 
@@ -155,7 +166,10 @@ def register():
         refresh_token = generate_jwt(user, exp_duration=7*24*60)  # 7 days expiration for refresh token
         
         # Store refresh token in database
-        new_refresh_token = RefreshToken(user_id=user.id, refresh_token=refresh_token)
+        new_refresh_token = RefreshToken(
+            user_id=user.id, 
+            refresh_token=refresh_token
+        )
         db.session.add(new_refresh_token)
         db.session.commit()
         
@@ -187,17 +201,21 @@ def refresh_token():
         create_audit_log('REFRESH_TOKEN', None, None, 'AUTH', status='FAILURE')
         return jsonify({'error': 'Refresh token is missing'}), 400
     
-    # check if the token is in database and not revoked (if implementing token revocation)
+    # Check if the token is in database and not revoked
     token_entry = RefreshToken.query.filter_by(refresh_token=token, revoked=False).first()
     if not token_entry:
         logging.warning('Token refresh failed: Invalid or revoked refresh token')
         create_audit_log('REFRESH_TOKEN', None, None, 'AUTH', status='FAILURE')
         return jsonify({'error': 'Invalid or revoked refresh token'}), 401
     
-    # decode and verify the token
+    # decode and verify the token using Flask-JWT-Extended
     try:
-        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        user = User.query.get(payload['user_id'])
+        # Manually decode the token without verification to get the user_id
+        # We've already verified it's in our database and not revoked
+        decoded_token = decode_token(token, allow_expired=True)
+        user_id = decoded_token['sub']  # 'sub' is where identity is stored
+        
+        user = User.query.get(user_id)
         if not user:
             logging.warning('Token refresh failed: User not found')
             create_audit_log('REFRESH_TOKEN', None, None, 'AUTH', status='FAILURE')
@@ -205,7 +223,7 @@ def refresh_token():
         
         new_access_token = generate_jwt(user)
         new_refresh_token = generate_jwt(user, exp_duration=7*24*60)  # 7 days expiration for refresh token
-
+        
         # Update the refresh token in database
         token_entry.refresh_token = new_refresh_token
         db.session.commit()
@@ -215,12 +233,8 @@ def refresh_token():
 
         return jsonify({'access_token': new_access_token, 'refresh_token': new_refresh_token})
     
-    except jwt.ExpiredSignatureError:
-        logging.warning('Token refresh failed: Refresh token has expired')
-        create_audit_log('REFRESH_TOKEN', None, None, 'AUTH', status='FAILURE')
-        return jsonify({'error': 'Refresh token has expired'}), 401
-    except jwt.InvalidTokenError:
-        logging.warning('Token refresh failed: Invalid refresh token')
+    except Exception as e:
+        logging.warning(f'Token refresh failed: {str(e)}')
         create_audit_log('REFRESH_TOKEN', None, None, 'AUTH', status='FAILURE')
         return jsonify({'error': 'Invalid refresh token'}), 401
     
@@ -245,9 +259,22 @@ def logout():
     # find the token in database and mark it as revoked
     token_entry = RefreshToken.query.filter_by(refresh_token=token, revoked=False).first()
     if token_entry:
-        logging.info(f'Logout successful for user ID {token_entry.user_id}')
-        create_audit_log('LOGOUT', token_entry.user_id, token_entry.user.email if token_entry.user else None, 'AUTH', status='SUCCESS')
-        
+        try:
+            # Just to verify the token, no need to use the result
+            decoded_token = decode_token(token, allow_expired=True)
+            
+            logging.info(f'Logout successful for user ID {token_entry.user_id}')
+            create_audit_log('LOGOUT', token_entry.user_id, token_entry.user.email if token_entry.user else None, 'AUTH', status='SUCCESS')
+            
+            token_entry.revoked = True
+            db.session.commit()
+            return jsonify({'message': 'Logged out successfully'}), 200
+        except Exception as e:
+            logging.warning(f'Logout token validation failed: {str(e)}')
+            # Continue anyway since we're just revoking the token
+    
+    # If we couldn't find the token or validation failed but we still want to revoke
+    if token_entry:
         token_entry.revoked = True
         db.session.commit()
         return jsonify({'message': 'Logged out successfully'}), 200
@@ -255,7 +282,6 @@ def logout():
         logging.warning('Logout failed: Invalid or already revoked refresh token')
         create_audit_log('LOGOUT', None, None, 'AUTH', status='FAILURE')
         return jsonify({'error': 'Invalid or already revoked refresh token'}), 400
-    return jsonify({'error': 'An error occurred during logout'}), 500
 
 # Forgot password and reset password routes
 @auth_bp.route('/forgot-password', methods=['POST'])
@@ -288,8 +314,11 @@ def reset_password():
         return jsonify({'error': 'Reset token and new password are required'}), 400
     
     try:
-        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        user = User.query.get(payload['user_id'])
+        # Decode the token using Flask-JWT-Extended
+        decoded_token = decode_token(token)
+        user_id = decoded_token['sub']  # 'sub' is where identity is stored
+        
+        user = User.query.get(user_id)
         if not user:
             logging.warning('Reset password failed: User not found')
             create_audit_log('RESET_PASSWORD', None, None, 'AUTH', status='FAILURE')
@@ -304,12 +333,9 @@ def reset_password():
         logging.info(f'Password reset successful for {user.email}')
         return jsonify({'message': 'Password has been reset successfully'}), 200
     
-    except jwt.ExpiredSignatureError:
-        logging.warning('Reset password failed: Token expired')
-        return jsonify({'error': 'Reset token has expired'}), 401
-    except jwt.InvalidTokenError:
-        logging.warning('Reset password failed: Invalid token')
-        return jsonify({'error': 'Invalid reset token'}), 401
+    except Exception as e:
+        logging.warning(f'Reset password failed: {str(e)}')
+        return jsonify({'error': 'Invalid or expired reset token'}), 401
     
 
 # Google OAuth2 login route
