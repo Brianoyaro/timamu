@@ -1,40 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import api from '../../utils/api';
-
 const AdminDashboard = ({ stats, user }) => {
   const navigate = useNavigate();
-  const [userStats, setUserStats] = useState({
+  const userStats = stats.userStats || {
     totalUsers: 0,
     totalPatients: 0,
     totalTherapists: 0,
     newUsersThisWeek: 0
-  });
-  const [sessionStats, setSessionStats] = useState({
+  };
+  const sessionStats = stats.sessionStats || {
     totalSessions: 0,
     completedSessions: 0,
     upcomingSessions: 0
-  });
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const loadAdminStats = async () => {
-      setIsLoading(true);
-      try {
-        const response = await api.get('/admin/stats');
-        const { users, sessions } = response.data;
-        
-        setUserStats(users);
-        setSessionStats(sessions);
-      } catch (error) {
-        console.error('Failed to load admin statistics:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAdminStats();
-  }, []);
+  };
+  const isLoading = !stats;
 
   return (
     <div className="container mx-auto px-4 py-6">

@@ -13,9 +13,9 @@ const PatientDashboard = ({ stats, user }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold mb-4">Upcoming Sessions</h2>
-          {stats.upcomingSessions && stats.upcomingSessions.length > 0 ? (
+          {stats.sessions?.upcoming && stats.sessions.upcoming.length > 0 ? (
             <ul className="divide-y divide-gray-200">
-              {stats.upcomingSessions.map((session) => (
+              {stats.sessions.upcoming.map((session) => (
                 <li key={session.id} className="py-4">
                   <div className="flex justify-between">
                     <div>
@@ -30,7 +30,7 @@ const PatientDashboard = ({ stats, user }) => {
                     </button>
                   </div>
                   <p className="text-sm text-gray-600">
-                    with Dr. {session.therapistName}
+                    with Dr. {session.therapist_name}
                   </p>
                 </li>
               ))}
@@ -55,7 +55,7 @@ const PatientDashboard = ({ stats, user }) => {
                 <li key={notification.id} className="py-2">
                   <p className="text-sm">{notification.message}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(notification.createdAt).toLocaleDateString()}
+                    {new Date(notification.created_at).toLocaleDateString()}
                   </p>
                 </li>
               ))}

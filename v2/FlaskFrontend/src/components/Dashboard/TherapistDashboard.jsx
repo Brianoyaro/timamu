@@ -13,14 +13,14 @@ const TherapistDashboard = ({ stats, user }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold mb-4">Today's Schedule</h2>
-          {stats.todaySessions && stats.todaySessions.length > 0 ? (
+          {stats.sessions?.today && stats.sessions.today.length > 0 ? (
             <ul className="divide-y divide-gray-200">
-              {stats.todaySessions.map((session) => (
+              {stats.sessions.today.map((session) => (
                 <li key={session.id} className="py-4">
                   <div className="flex justify-between">
                     <div>
                       <p className="font-medium">{session.time}</p>
-                      <p className="text-sm text-gray-600">{session.patientName}</p>
+                      <p className="text-sm text-gray-600">{session.patient_name}</p>
                     </div>
                     <button
                       onClick={() => navigate(`/sessions/${session.id}`)}
@@ -39,14 +39,14 @@ const TherapistDashboard = ({ stats, user }) => {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold mb-4">Patient Updates</h2>
-          {stats.patientUpdates && stats.patientUpdates.length > 0 ? (
+          {stats.patient_updates && stats.patient_updates.length > 0 ? (
             <ul className="divide-y divide-gray-200">
-              {stats.patientUpdates.map((update) => (
+              {stats.patient_updates.map((update) => (
                 <li key={update.id} className="py-2">
-                  <p className="font-medium">{update.patientName}</p>
+                  <p className="font-medium">{update.patient_name}</p>
                   <p className="text-sm">{update.message}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(update.createdAt).toLocaleDateString()}
+                    {new Date(update.created_at).toLocaleDateString()}
                   </p>
                 </li>
               ))}
@@ -64,7 +64,7 @@ const TherapistDashboard = ({ stats, user }) => {
                 <li key={notification.id} className="py-2">
                   <p className="text-sm">{notification.message}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(notification.createdAt).toLocaleDateString()}
+                    {new Date(notification.created_at).toLocaleDateString()}
                   </p>
                 </li>
               ))}

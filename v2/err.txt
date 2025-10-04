@@ -1,3 +1,5 @@
+DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE........
+
 THERAPIST SENDING THEIR AVAILABILITY
 +++++++++++++++++++++++++++++++++++++++++++
 DEBUG:App.therapists.routes:[GET /availability] Endpoint accessed

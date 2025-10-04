@@ -40,6 +40,7 @@ def create_app():
     from .sessions import sessions_bp
     from .files import files_bp
     from .messages import messages_bp
+    from .dashboard import dashboard_bp
     from .test_routes import test_bp
     
     import logging
@@ -57,6 +58,7 @@ def create_app():
     app.register_blueprint(sessions_bp, url_prefix='/api/sessions')
     app.register_blueprint(files_bp, url_prefix='/api/files')
     app.register_blueprint(messages_bp, url_prefix='/api/messages')
+    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(test_bp)  # Test routes at root level
     
     logger.info("All blueprints registered successfully")
