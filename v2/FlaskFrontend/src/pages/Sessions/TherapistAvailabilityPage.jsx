@@ -204,19 +204,21 @@ const TherapistAvailabilityPage = () => {
         dateObj: date,
         dateKey: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
         dayName: weekDays[i], // Monday, Tuesday, etc.
-        dayOfMonth: date.getDate() // 1-31
+        dayOfMonth: date.getDate(), // 1-31
+        shortDayName: weekDays[i].substring(0, 3) // Mon, Tue, etc.
       };
     });
     
     return (
-      <div className="grid grid-cols-7 gap-2 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
         {weekDates.map(dateInfo => (
           <div key={dateInfo.dateKey} className="bg-white border rounded-lg shadow p-2 flex flex-col">
             <div className="font-semibold text-center mb-2">
-              <div>{dateInfo.dayName}</div>
+              <div className="hidden sm:block">{dateInfo.dayName}</div>
+              <div className="sm:hidden">{dateInfo.shortDayName}</div>
               <div className="text-sm text-gray-600">{dateInfo.dayOfMonth}</div>
             </div>
-            <div className="flex flex-col gap-1 mb-2 min-h-[120px]">
+            <div className="flex flex-col gap-1 mb-2 min-h-[80px] sm:min-h-[120px] overflow-y-auto">
               {(availability[dateInfo.dateKey] || []).map((slot, index) => (
                 <div
                   key={index}
@@ -225,7 +227,8 @@ const TherapistAvailabilityPage = () => {
                   <span>{slot.start} - {slot.end}</span>
                   <button
                     onClick={() => deleteSlot(dateInfo.dateKey, index)}
-                    className="text-red-600 text-xs hover:text-red-800"
+                    className="text-red-600 text-xs hover:text-red-800 ml-1"
+                    aria-label="Delete slot"
                   >
                     ✕
                   </button>
@@ -234,7 +237,7 @@ const TherapistAvailabilityPage = () => {
             </div>
             <button
               onClick={() => openModal(dateInfo.dateKey)}
-              className="bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-sm"
+              className="bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-xs sm:text-sm w-full"
             >
               + Add Slot
             </button>
@@ -254,7 +257,7 @@ const TherapistAvailabilityPage = () => {
 
     // Empty cells for days before the first day of the month
     for (let i = 0; i < adjustedFirstDay; i++) {
-      days.push(<div key={`empty-${i}`}></div>);
+      days.push(<div key={`empty-${i}`} className="hidden sm:block"></div>);
     }
 
     // Days of the month
@@ -262,23 +265,41 @@ const TherapistAvailabilityPage = () => {
       const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const thisDate = new Date(currentYear, currentMonth, d);
       const isPast = thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
+      const isToday = thisDate.toDateString() === today.toDateString();
+      
+      // Check if this is a new week row for mobile view
+      const dayOfWeek = (adjustedFirstDay + d - 1) % 7;
+      const isFirstDayOfWeek = dayOfWeek === 0;
+      const isLastDayOfWeek = dayOfWeek === 6;
+      
       days.push(
         <div
           key={d}
-          className="bg-white border rounded-lg shadow p-2 flex flex-col relative min-h-[120px]"
+          className={`
+            bg-white border ${isToday ? 'border-blue-500' : ''}
+            rounded-lg shadow p-2 flex flex-col relative
+            sm:min-h-[100px] md:min-h-[120px]
+            ${isFirstDayOfWeek ? 'sm:clear-left' : ''}
+            ${d === 1 ? 'col-start-auto sm:col-start-' + (adjustedFirstDay + 1) : ''}
+          `}
         >
-          <div className="font-semibold text-sm mb-1">{d}</div>
-          <div className="flex flex-col gap-1 mb-2 flex-grow">
+          <div className="font-semibold text-sm mb-1 flex justify-between items-center">
+            <span className={isToday ? 'text-blue-600 font-bold' : ''}>{d}</span>
+            <span className="text-xs text-gray-500 sm:hidden">
+              {new Date(currentYear, currentMonth, d).toLocaleDateString(undefined, {weekday: 'short'})}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 mb-2 flex-grow overflow-y-auto max-h-[80px]">
             {(availability[dateKey] || []).map((slot, index) => (
               <div
                 key={index}
                 className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex justify-between items-center text-xs"
               >
-                <span>{slot.start} - {slot.end}</span>
+                <span className="truncate">{slot.start} - {slot.end}</span>
                 <button
                   onClick={() => deleteSlot(dateKey, index)}
-                  className="text-red-600 text-xs hover:text-red-800"
+                  className="text-red-600 text-xs hover:text-red-800 ml-1 flex-shrink-0"
+                  aria-label="Delete slot"
                 >
                   ✕
                 </button>
@@ -288,9 +309,9 @@ const TherapistAvailabilityPage = () => {
           {!isPast && (
             <button
               onClick={() => openModal(dateKey)}
-              className="bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-xs"
+              className="bg-green-500 hover:bg-green-600 text-white rounded px-1 sm:px-2 py-1 text-xs w-full"
             >
-              + Add Slot
+              +
             </button>
           )}
         </div>
@@ -298,17 +319,17 @@ const TherapistAvailabilityPage = () => {
     }
 
     return (
-      <div>
-        <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium mb-2">
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-          <div>Sun</div>
+      <div className="overflow-x-auto">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm font-medium mb-2 min-w-[320px]">
+          <div className="hidden sm:block">Mon</div>
+          <div className="hidden sm:block">Tue</div>
+          <div className="hidden sm:block">Wed</div>
+          <div className="hidden sm:block">Thu</div>
+          <div className="hidden sm:block">Fri</div>
+          <div className="hidden sm:block">Sat</div>
+          <div className="hidden sm:block">Sun</div>
         </div>
-        <div className="grid grid-cols-7 gap-2">{days}</div>
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 min-w-[320px]">{days}</div>
       </div>
     );
   };
@@ -324,44 +345,48 @@ const TherapistAvailabilityPage = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
+    <div className="bg-gray-50 min-h-screen p-4 md:p-6">
       {/* Header */}
-      <header className="flex justify-between items-center mb-6">
+      <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
         <h1 className="text-2xl font-bold text-gray-800">My Availability</h1>
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => navigateMonth(-1)}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-          >
-            ◀
-          </button>
-          <span className="font-semibold px-4">{getMonthLabel()}</span>
-          <button
-            onClick={() => navigateMonth(1)}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-          >
-            ▶
-          </button>
-          <button
-            onClick={() => setCurrentView('week')}
-            className={`px-3 py-1 rounded ${
-              currentView === 'week' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setCurrentView('month')}
-            className={`px-3 py-1 rounded ${
-              currentView === 'month' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Month
-          </button>
+        <div className="flex flex-wrap gap-2 items-center justify-center w-full sm:w-auto">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigateMonth(-1)}
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            >
+              ◀
+            </button>
+            <span className="font-semibold px-2 sm:px-4 text-sm sm:text-base">{getMonthLabel()}</span>
+            <button
+              onClick={() => navigateMonth(1)}
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            >
+              ▶
+            </button>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentView('week')}
+              className={`px-2 sm:px-3 py-1 rounded text-sm ${
+                currentView === 'week' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setCurrentView('month')}
+              className={`px-2 sm:px-3 py-1 rounded text-sm ${
+                currentView === 'month' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Month
+            </button>
+          </div>
           <button
             onClick={saveAvailability}
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow disabled:bg-gray-400"
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg shadow disabled:bg-gray-400 text-sm"
           >
             {loading ? 'Saving...' : 'Save'}
           </button>
@@ -403,10 +428,11 @@ const TherapistAvailabilityPage = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-80">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg w-full max-w-xs">
             <h2 className="text-lg font-semibold mb-4">
-              Add Availability - {activeDay}
+              Add Availability
+              <div className="text-sm font-normal text-gray-600 mt-1">{activeDay}</div>
             </h2>
             <form onSubmit={addTimeSlot} className="space-y-4">
               <div>
@@ -418,7 +444,7 @@ const TherapistAvailabilityPage = () => {
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   required
-                  className="mt-1 w-full border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full border rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -430,20 +456,20 @@ const TherapistAvailabilityPage = () => {
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                   required
-                  className="mt-1 w-full border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full border rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                  className="px-3 sm:px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  className="px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
                 >
                   Add
                 </button>
