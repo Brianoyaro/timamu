@@ -13,63 +13,31 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({
     upcomingSessions: [],
     notifications: [],
+    sessions: {
+      today: [],
+      upcoming: [],
+      this_week: []
+    },
+    stats: {},
+    patient_updates: [],
+    todaySessions: []
   });
 
   useEffect(() => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
-        let dashboardData = {
-          upcomingSessions: [],
-          notifications: [],
-          stats: {}
-        };
-
-        // Load data based on user role
-        if (user?.role === 'PATIENT') {
-          // Load sessions for patient
-          const sessionsResponse = await api.get('/sessions');
-          dashboardData.upcomingSessions = sessionsResponse.data.slice(0, 5); // Get first 5
-          dashboardData.stats = {
-            total_sessions: sessionsResponse.data.length,
-            upcoming_sessions: dashboardData.upcomingSessions.length
-          };
-        } else if (user?.role === 'THERAPIST') {
-          // Load sessions and patients for therapist
-          const [sessionsResponse, patientsResponse] = await Promise.all([
-            api.get('/sessions'),
-            api.get('/patients')
-          ]);
-          dashboardData.upcomingSessions = sessionsResponse.data.slice(0, 5);
-          dashboardData.stats = {
-            total_patients: patientsResponse.data.length,
-            total_sessions: sessionsResponse.data.length,
-            upcoming_sessions: dashboardData.upcomingSessions.length
-          };
-        } else if (user?.role === 'ADMIN') {
-          // Load comprehensive data for admin
-          const [usersResponse, sessionsResponse, patientsResponse, therapistsResponse] = await Promise.all([
-            api.get('/admin/users'),
-            api.get('/sessions'),
-            api.get('/patients'),
-            api.get('/therapists')
-          ]);
-          dashboardData.stats = {
-            total_users: usersResponse.data.length,
-            total_patients: patientsResponse.data.length,
-            total_therapists: therapistsResponse.data.length,
-            total_sessions: sessionsResponse.data.length
-          };
-          dashboardData.upcomingSessions = sessionsResponse.data.slice(0, 5);
-        }
-
-        setStats(dashboardData);
+        // Use the new unified dashboard endpoint
+        const dashboardResponse = await api.get('/dashboard/stats');
+        setStats(dashboardResponse.data);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
         // Set empty data on error to prevent crashes
         setStats({
           upcomingSessions: [],
           notifications: [],
+          patientUpdates: [],
+          todaySessions: [],
           stats: {}
         });
       } finally {

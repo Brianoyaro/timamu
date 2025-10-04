@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
 
+
 const TherapistAvailabilityPage = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -15,24 +16,15 @@ const TherapistAvailabilityPage = () => {
   const [message, setMessage] = useState('');
 
   const user = useAuthStore((state) => state.user);
+  // Weekday names used for display purposes only
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   useEffect(() => {
     loadAvailability();
   }, []);
 
-  useEffect(() => {
-    // Initialize week days in availability if they don't exist
-    const initialAvailability = { ...availability };
-    weekDays.forEach(day => {
-      if (!initialAvailability[day]) {
-        initialAvailability[day] = [];
-      }
-    });
-    if (Object.keys(initialAvailability).length !== Object.keys(availability).length) {
-      setAvailability(initialAvailability);
-    }
-  }, [availability, weekDays]);
+  // We no longer need to initialize weekdays as we'll use date-based format
+  // All availability will be stored with specific dates
 
   const loadAvailability = async () => {
     try {
@@ -44,32 +36,28 @@ const TherapistAvailabilityPage = () => {
       const loadedAvailability = response.data.availability || {};
       console.log('[DEBUG] TherapistAvailabilityPage: Received availability data', loadedAvailability);
       
-      // Ensure all weekdays are initialized
-      const initialAvailability = {};
-      weekDays.forEach(day => {
-        initialAvailability[day] = loadedAvailability[day] || [];
-      });
+      // Convert any weekday-based availability to date-based format
+      const convertedAvailability = {};
       
-      // Copy any specific dates
+      // Keep all date-specific availability (format: YYYY-MM-DD)
       Object.keys(loadedAvailability).forEach(key => {
-        if (!weekDays.includes(key)) {
-          initialAvailability[key] = loadedAvailability[key];
+        if (key.includes('-')) {
+          convertedAvailability[key] = loadedAvailability[key];
         }
       });
       
-      console.log('[DEBUG] TherapistAvailabilityPage: Setting availability state', initialAvailability);
-      setAvailability(initialAvailability);
+      // We're no longer using weekday-based availability, so we don't need to
+      // convert from weekdays to dates. All availability will use specific dates.
+      
+      console.log('[DEBUG] TherapistAvailabilityPage: Setting availability state', convertedAvailability);
+      setAvailability(convertedAvailability);
     } catch (error) {
       console.error('[DEBUG] TherapistAvailabilityPage: Error loading availability:', error);
       console.error('[DEBUG] TherapistAvailabilityPage: Response data:', error.response?.data);
       console.error('[DEBUG] TherapistAvailabilityPage: Status code:', error.response?.status);
       
-      // Initialize with empty availability if no data exists
-      const initialAvailability = {};
-      weekDays.forEach(day => {
-        initialAvailability[day] = [];
-      });
-      setAvailability(initialAvailability);
+      // Initialize with empty availability
+      setAvailability({});
     } finally {
       setLoading(false);
     }
@@ -199,20 +187,44 @@ const TherapistAvailabilityPage = () => {
   };
 
   const renderWeekView = () => {
+    // Get dates for the current week
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Calculate days to subtract to get to Monday
+    
+    // Start with Monday of the current week
+    const mondayDate = new Date(today);
+    mondayDate.setDate(today.getDate() + mondayOffset);
+    
+    // Create array of week dates
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(mondayDate);
+      date.setDate(mondayDate.getDate() + i);
+      return {
+        dateObj: date,
+        dateKey: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        dayName: weekDays[i], // Monday, Tuesday, etc.
+        dayOfMonth: date.getDate() // 1-31
+      };
+    });
+    
     return (
       <div className="grid grid-cols-7 gap-2 mb-6">
-        {weekDays.map(day => (
-          <div key={day} className="bg-white border rounded-lg shadow p-2 flex flex-col">
-            <div className="font-semibold text-center mb-2">{day}</div>
+        {weekDates.map(dateInfo => (
+          <div key={dateInfo.dateKey} className="bg-white border rounded-lg shadow p-2 flex flex-col">
+            <div className="font-semibold text-center mb-2">
+              <div>{dateInfo.dayName}</div>
+              <div className="text-sm text-gray-600">{dateInfo.dayOfMonth}</div>
+            </div>
             <div className="flex flex-col gap-1 mb-2 min-h-[120px]">
-              {(availability[day] || []).map((slot, index) => (
+              {(availability[dateInfo.dateKey] || []).map((slot, index) => (
                 <div
                   key={index}
                   className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex justify-between items-center text-xs"
                 >
                   <span>{slot.start} - {slot.end}</span>
                   <button
-                    onClick={() => deleteSlot(day, index)}
+                    onClick={() => deleteSlot(dateInfo.dateKey, index)}
                     className="text-red-600 text-xs hover:text-red-800"
                   >
                     ✕
@@ -221,7 +233,7 @@ const TherapistAvailabilityPage = () => {
               ))}
             </div>
             <button
-              onClick={() => openModal(day)}
+              onClick={() => openModal(dateInfo.dateKey)}
               className="bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-sm"
             >
               + Add Slot

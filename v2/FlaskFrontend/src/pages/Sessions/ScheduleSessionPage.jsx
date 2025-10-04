@@ -42,15 +42,12 @@ const ScheduleSessionPage = () => {
         rating: therapist.rating || (4 + Math.random()).toFixed(1), // Default random rating if not provided
         languages: therapist.languages || ['English'],
         avatar: therapist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name)}&background=random`,
-        availability: therapist.availability || {
-          // Sample availability data structure that would come from the backend
-          // In a real scenario this would be fetched separately or included in the therapist data
-          dates: {
-            [`${new Date().toISOString().split('T')[0]}`]: ["09:00", "14:00"],
-            [`${new Date(Date.now() + 86400000).toISOString().split('T')[0]}`]: ["11:00"],
-            [`${new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0]}`]: ["09:00", "11:00", "16:00"]
-          }
-        }
+        // The availability data should now be in the format:
+        // {
+        //   "2025-10-04": [{ "start": "09:00", "end": "17:00" }],
+        //   "2025-10-05": [{ "start": "10:00", "end": "15:00" }]
+        // }
+        availability: therapist.availability || {}
       }));
       setTherapists(enhancedTherapists);
     } catch (error) {
@@ -197,7 +194,9 @@ const ScheduleSessionPage = () => {
     
     // Get the selected therapist's availability
     const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
-    const availability = selectedTherapistObj?.availability?.dates || {};
+    // Availability should now be in the format:
+    // { "2025-10-04": [{ "start": "09:00", "end": "17:00" }] }
+    const availability = selectedTherapistObj?.availability || {};
     
     // Add days of the month
     for (let d = 1; d <= lastDay.getDate(); d++) {
@@ -213,13 +212,13 @@ const ScheduleSessionPage = () => {
         >
           <div className="font-medium">{d}</div>
           <div className="flex flex-wrap gap-1 mt-1">
-            {!isPast && slots.map((time, idx) => (
+            {!isPast && slots.map((slot, idx) => (
               <button 
                 key={`slot-${d}-${idx}`}
                 className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
-                onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
+                onClick={() => selectTimeSlot(selectedTherapist, dateStr, slot.start)}
               >
-                {time}
+                {slot.start}
               </button>
             ))}
           </div>
@@ -295,7 +294,9 @@ const ScheduleSessionPage = () => {
     
     // Get the selected therapist's availability
     const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
-    const availability = selectedTherapistObj?.availability?.dates || {};
+    // Availability should now be in the format:
+    // { "2025-10-04": [{ "start": "09:00", "end": "17:00" }] }
+    const availability = selectedTherapistObj?.availability || {};
     
     return (
       <div>
@@ -358,7 +359,7 @@ const ScheduleSessionPage = () => {
                 slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
                 
                 const isPast = slotDate < today;
-                const isAvailable = slots.includes(time);
+                const isAvailable = slots.some(slot => slot.start === time);
                 
                 return (
                   <div key={`slot-${dateStr}-${time}`} className="p-2 border rounded text-center">
