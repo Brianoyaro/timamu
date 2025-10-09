@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useTokenValidator } from '../../hooks/useTokenValidator';
 import api from '../../utils/api';
 
 const SessionsPage = () => {
@@ -10,6 +11,9 @@ const SessionsPage = () => {
   const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
 
   const user = useAuthStore((state) => state.user);
+
+  // Validate token every 2 minutes
+  useTokenValidator(120000);
 
   useEffect(() => {
     loadSessions();

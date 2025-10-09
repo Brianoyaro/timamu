@@ -69,29 +69,80 @@ export const useAuthStore = create((set, get) => ({
     set({ user: null, token: null, isAuthenticated: false });
   },
 
-  // Load user profile
+    // Load user profile - use this when you need full user data
   loadUser: async () => {
     const currentState = get();
     const token = currentState.token || getStoredToken();
     
     if (!token) {
       set({ isAuthenticated: false, user: null });
-      return;
+      return null;
     }
 
-    // If we already have a user, don't make another API call
+    // If we already have user data, return it
     if (currentState.user) {
-      return;
+      return currentState.user;
     }
 
     set({ isLoading: true });
     try {
-      // Since /auth/me doesn't exist, we'll skip loading user profile
-      // The user data should come from the login response
-      set({ isLoading: false });
+      const response = await api.get('/auth/me');
+      const { user } = response.data;
+      set({ user, isLoading: false, isAuthenticated: true });
+      return user;
     } catch (error) {
+      console.error('Failed to load user:', error);
       localStorage.removeItem('token');
       set({ user: null, token: null, isAuthenticated: false, isLoading: false, error: error.message });
+      throw error;
+    }
+  },
+
+    // Check if current token is valid
+  validateToken: async () => {
+    const currentState = get();
+    const token = currentState.token || getStoredToken();
+    
+    if (!token) {
+      set({ isAuthenticated: false, user: null });
+      return false;
+    }
+
+    try {
+      const response = await api.get('/auth/verify');
+      // Only update basic auth status, don't overwrite user data
+      set({ isAuthenticated: true });
+      return true;
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      localStorage.removeItem('token');
+      set({ user: null, token: null, isAuthenticated: false });
+      return false;
+    }
+  },
+
+  // Refresh token (if refresh functionality is needed)
+  refreshToken: async () => {
+    const currentState = get();
+    const token = currentState.token || getStoredToken();
+    
+    if (!token) {
+      return false;
+    }
+
+    try {
+      // Attempt to refresh the token using the refresh endpoint
+      const response = await api.post('/auth/refresh', { refresh_token: token });
+      const { access_token } = response.data;
+      
+      localStorage.setItem('token', access_token);
+      set({ token: access_token, isAuthenticated: true });
+      return true;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      localStorage.removeItem('token');
+      set({ user: null, token: null, isAuthenticated: false });
+      return false;
     }
   }
 }));
