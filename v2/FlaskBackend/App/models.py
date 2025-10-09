@@ -28,6 +28,7 @@ class TherapistProfile(db.Model):
     experience = db.Column(db.Integer)
     education = db.Column(db.String(200))
     bio = db.Column(db.Text)
+    #hourly_rate = db.Column(db.Numeric(10, 2))
     is_approved = db.Column(db.Boolean, default=False)
     approved_at = db.Column(db.DateTime) # requires admin approval
     availability = db.Column(db.JSON)
@@ -38,8 +39,11 @@ class TherapistProfile(db.Model):
 class PatientProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    date_of_birth = db.Column(db.Date)
     medical_history = db.Column(db.Text)
     emergency_contact = db.Column(db.String(100))
+    #emergency_phone = db.Column(db.String(20))
+    address = db.Column(db.Text)
     preferred_language = db.Column(db.String(20))
     timezone = db.Column(db.String(50), default='UTC')
 

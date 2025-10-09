@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import App from './App.jsx';
 import './index.css';
+
+// Auth Store
+import { useAuthStore } from './stores/authStore.js';
+import { useSocketStore } from './stores/socketStore.js';
 
 // Layout
 import Layout from './components/Layout/Layout.jsx';
@@ -25,8 +28,35 @@ import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// Main App Component
+import ProfilePage from './pages/Profile/ProfilePage';
+
+const App = () => {
+  const { initialize, isAuthenticated, token } = useAuthStore();
+  const { connect, disconnect } = useSocketStore();
+
+  useEffect(() => {
+    // Initialize auth store on app start
+    initialize();
+  }, []);
+
+  // Connect to socket when authenticated
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      console.log('Connecting to socket server...');
+      connect(token);
+    } else {
+      console.log('Disconnecting from socket server...');
+      disconnect();
+    }
+    
+    return () => {
+      console.log('Cleanup: Disconnecting from socket server...');
+      disconnect();
+    };
+  }, [isAuthenticated, token]);
+
+  return (
     <Router>
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -38,7 +68,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="sessions" element={<SessionsPage />} />
             <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
             <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
@@ -55,5 +85,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </Route>
       </Routes>
     </Router>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
   </React.StrictMode>
 )

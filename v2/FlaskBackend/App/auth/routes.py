@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from ..extensions import db, bcrypt, oauth, jwt as jwt_manager
-from flask_jwt_extended import create_access_token, decode_token
+from flask_jwt_extended import create_access_token, decode_token, jwt_required, get_jwt_identity
 import jwt
 from datetime import datetime, timedelta
 from ..utils.email_utils import send_welcome_email, send_forgot_password_email
@@ -359,3 +359,257 @@ def google_callback():
     session['access_token'] = access_token
     session['refresh_token'] = refresh_token
     return redirect('/dashboard')  # Change to your frontend route
+
+@auth_bp.route('/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    '''
+    Get current user information based on JWT token.
+    This endpoint validates the token and returns user data.
+    '''
+    logging.debug('Get current user attempt')
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.is_active:
+            logging.warning(f'Get current user failed: User not found or inactive (ID: {current_user_id})')
+            return jsonify({'error': 'User not found or inactive'}), 404
+        
+        # Get user profile data based on role
+        profile_data = None
+        if user.role == 'PATIENT':
+            profile = PatientProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                profile_data = {
+                    'date_of_birth': profile.date_of_birth.isoformat() if profile.date_of_birth else None,
+                    'phone': profile.phone,
+                    'address': profile.address,
+                    'emergency_contact': profile.emergency_contact,
+                    #'emergency_phone': profile.emergency_phone
+                }
+        elif user.role == 'THERAPIST':
+            profile = TherapistProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                profile_data = {
+                    'license_number': profile.license_number,
+                    'specializations': profile.specializations,
+                    'bio': profile.bio,
+                    'hourly_rate': float(profile.hourly_rate) if profile.hourly_rate else None,
+                    'is_approved': profile.is_approved,
+                    'accepts_emergency': profile.accepts_emergency
+                }
+        
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role,
+            'is_active': user.is_active,
+            'is_verified': user.is_verified,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'profile': profile_data
+        }
+        
+        logging.info(f'Get current user successful for {user.email}')
+        return jsonify({
+            'success': True,
+            'user': user_data
+        }), 200
+        
+    except Exception as e:
+        logging.error(f'Get current user failed with exception: {str(e)}')
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+@auth_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    '''
+    Get current user's complete profile information
+    '''
+    logging.debug('Get profile attempt')
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.is_active:
+            logging.warning(f'Get profile failed: User not found or inactive (ID: {current_user_id})')
+            return jsonify({'error': 'User not found or inactive'}), 404
+        
+        # Get detailed profile data based on role
+        profile_data = None
+        if user.role == 'PATIENT':
+            profile = PatientProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                profile_data = {
+                    'date_of_birth': profile.date_of_birth.isoformat() if profile.date_of_birth else None,
+                    'medical_history': profile.medical_history,
+                    'emergency_contact': profile.emergency_contact,
+                    #'emergency_phone': profile.emergency_phone,
+                    'address': profile.address,
+                    'preferred_language': profile.preferred_language,
+                    'timezone': profile.timezone
+                }
+        elif user.role == 'THERAPIST':
+            profile = TherapistProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                profile_data = {
+                    'license_number': profile.license_number,
+                    'specializations': profile.specializations,
+                    'languages': profile.languages,
+                    'experience': profile.experience,
+                    'education': profile.education,
+                    'bio': profile.bio,
+                    'hourly_rate': float(profile.hourly_rate) if profile.hourly_rate else None,
+                    'is_approved': profile.is_approved,
+                    'approved_at': profile.approved_at.isoformat() if profile.approved_at else None,
+                    'availability': profile.availability,
+                    'timezone': profile.timezone,
+                    'accepts_emergency': profile.accepts_emergency
+                }
+        
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone': user.phone,
+            'gender': user.gender,
+            'role': user.role,
+            'is_active': user.is_active,
+            'is_verified': user.is_verified,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'profile': profile_data
+        }
+        
+        logging.info(f'Get profile successful for {user.email}')
+        return jsonify({
+            'success': True,
+            'user': user_data
+        }), 200
+        
+    except Exception as e:
+        logging.error(f'Get profile failed with exception: {str(e)}')
+        return jsonify({'error': 'Failed to retrieve profile'}), 500
+
+@auth_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    '''
+    Update current user's profile information
+    '''
+    logging.debug('Update profile attempt')
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.is_active:
+            logging.warning(f'Update profile failed: User not found or inactive (ID: {current_user_id})')
+            return jsonify({'error': 'User not found or inactive'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update basic user information
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        if 'gender' in data:
+            user.gender = data['gender']
+        
+        # Update role-specific profile
+        if user.role == 'PATIENT':
+            profile = PatientProfile.query.filter_by(user_id=user.id).first()
+            if not profile:
+                profile = PatientProfile(user_id=user.id)
+                db.session.add(profile)
+            
+            if 'date_of_birth' in data:
+                from datetime import datetime
+                if data['date_of_birth']:
+                    profile.date_of_birth = datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
+            if 'medical_history' in data:
+                profile.medical_history = data['medical_history']
+            if 'emergency_contact' in data:
+                profile.emergency_contact = data['emergency_contact']
+            if 'emergency_phone' in data:
+                profile.emergency_phone = data['emergency_phone']
+            if 'address' in data:
+                profile.address = data['address']
+            if 'preferred_language' in data:
+                profile.preferred_language = data['preferred_language']
+            if 'timezone' in data:
+                profile.timezone = data['timezone']
+                
+        elif user.role == 'THERAPIST':
+            profile = TherapistProfile.query.filter_by(user_id=user.id).first()
+            if not profile:
+                profile = TherapistProfile(user_id=user.id)
+                db.session.add(profile)
+            
+            if 'license_number' in data:
+                profile.license_number = data['license_number']
+            if 'specializations' in data:
+                profile.specializations = data['specializations']
+            if 'languages' in data:
+                profile.languages = data['languages']
+            if 'experience' in data:
+                profile.experience = data['experience']
+            if 'education' in data:
+                profile.education = data['education']
+            if 'bio' in data:
+                profile.bio = data['bio']
+            if 'hourly_rate' in data:
+                profile.hourly_rate = data['hourly_rate']
+            if 'timezone' in data:
+                profile.timezone = data['timezone']
+            if 'accepts_emergency' in data:
+                profile.accepts_emergency = data['accepts_emergency']
+        
+        db.session.commit()
+        
+        logging.info(f'Profile updated successfully for {user.email}')
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f'Update profile failed with exception: {str(e)}')
+        return jsonify({'error': 'Failed to update profile'}), 500
+
+@auth_bp.route('/verify', methods=['GET'])
+@jwt_required()
+def verify_token():
+    '''
+    Verify JWT token validity without fetching full user data.
+    This is a lightweight endpoint for token validation.
+    '''
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Just check if user exists and is active without fetching full profile
+        user = User.query.filter_by(id=current_user_id, is_active=True).first()
+        
+        if not user:
+            logging.warning(f'Token verification failed: User not found or inactive (ID: {current_user_id})')
+            return jsonify({'error': 'User not found or inactive'}), 404
+        
+        logging.debug(f'Token verification successful for user ID: {current_user_id}')
+        return jsonify({
+            'success': True,
+            'message': 'Token is valid',
+            'user_id': user.id,
+            'email': user.email,
+            'role': user.role
+        }), 200
+        
+    except Exception as e:
+        logging.error(f'Token verification failed with exception: {str(e)}')
+        return jsonify({'error': 'Invalid or expired token'}), 401

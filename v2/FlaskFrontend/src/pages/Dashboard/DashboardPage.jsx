@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
+import { useTokenValidator } from '../../hooks/useTokenValidator';
 import api from '../../utils/api';
 
 // Dashboard Components
@@ -23,8 +24,13 @@ const DashboardPage = () => {
     todaySessions: []
   });
 
+  // Validate token every 5 minutes instead of every minute to reduce API calls
+  useTokenValidator(300000); // 5 minutes
+
   useEffect(() => {
     const loadDashboardData = async () => {
+      if (!user?.role) return;
+      
       setIsLoading(true);
       try {
         // Use the new unified dashboard endpoint
@@ -45,9 +51,7 @@ const DashboardPage = () => {
       }
     };
 
-    if (user?.role) {
-      loadDashboardData();
-    }
+    loadDashboardData();
   }, [user?.role]);
 
   if (isLoading) {

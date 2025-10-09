@@ -57,10 +57,36 @@ api.interceptors.response.use(
       console.warn(`[DEBUG API] 401 Unauthorized error detected for ${originalRequest.url}`);
       originalRequest._retry = true;
       
-      // Clear token and redirect to login
-      console.log(`[DEBUG API] Clearing token and redirecting to login page`);
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Try to refresh the token first
+      const currentToken = localStorage.getItem('token');
+      if (currentToken && !originalRequest.url.includes('/auth/verify') && !originalRequest.url.includes('/auth/me')) {
+        try {
+          console.log(`[DEBUG API] Attempting to refresh token...`);
+          const refreshResponse = await api.post('/auth/refresh', { refresh_token: currentToken });
+          const { access_token } = refreshResponse.data;
+          
+          // Update token in localStorage
+          localStorage.setItem('token', access_token);
+          
+          // Update the original request with new token
+          originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+          
+          // Retry the original request
+          console.log(`[DEBUG API] Token refreshed successfully, retrying original request...`);
+          return api(originalRequest);
+        } catch (refreshError) {
+          console.error(`[DEBUG API] Token refresh failed:`, refreshError);
+          // If refresh fails, clear token and redirect to login
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No token or this is already a verify/me request failing, redirect to login
+        console.log(`[DEBUG API] No token available or auth request failed, redirecting to login page`);
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
       
       return Promise.reject(error);
     }
