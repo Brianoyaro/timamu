@@ -90,13 +90,20 @@ const SessionDetailPage = () => {
   };
 
   const canJoinSession = () => {
-    if (!session || session.status !== 'scheduled') return false;
+    if (!session || !['scheduled', 'started'].includes(session.status)) return false;
     
+    // Use the backend's can_join field if available
+    if (session.hasOwnProperty('can_join')) {
+      return session.can_join;
+    }
+    
+    // Fallback client-side logic - allow joining 15 minutes before and up to 1 hour after
     const now = new Date();
-    const scheduledTime = new Date(session.scheduled_at);
-    const thirtyMinutesLater = new Date(scheduledTime.getTime() + 30 * 60 * 1000);
+    const sessionTime = new Date(session.scheduled_at);
+    const joinWindowStart = sessionTime.getTime() - (15 * 60 * 1000); // 15 minutes before
+    const maxDelay = sessionTime.getTime() + (60 * 60 * 1000); // 1 hour after
     
-    return now >= scheduledTime && now <= thirtyMinutesLater;
+    return now.getTime() >= joinWindowStart && now.getTime() <= maxDelay;
   };
 
   const canCancelSession = () => {
@@ -106,14 +113,11 @@ const SessionDetailPage = () => {
 
   const handleJoinSession = async () => {
     try {
-      const response = await api.post(`/sessions/${sessionId}/join`);
-      if (response.data.success) {
-        // Navigate to video call page
-        navigate(`/video-call/${session.room_id}`);
-      }
+      // Navigate directly to video call like the dashboard and sessions page
+      navigate(`/video-call/${session.room_id}`);
     } catch (error) {
       console.error('Error joining session:', error);
-      alert(error.response?.data?.error || 'Error joining session');
+      alert(error.message || 'Error joining session');
     }
   };
 
@@ -140,33 +144,42 @@ const SessionDetailPage = () => {
     if (!session || !session.scheduled_at) return null;
     
     const now = new Date();
-    const scheduledTime = new Date(session.scheduled_at);
-    const timeDiff = scheduledTime.getTime() - now.getTime();
-    const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+    const sessionTime = new Date(session.scheduled_at);
+    const diffMs = sessionTime.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
     
     if (session.status === 'scheduled') {
-      if (minutesDiff > 60) {
-        const hoursDiff = Math.floor(minutesDiff / 60);
+      if (diffMins > 15) {
         return {
-          text: `Starts in ${hoursDiff}h ${minutesDiff % 60}m`,
+          text: `Starts in ${Math.floor(diffMins / 60)}h ${diffMins % 60}m`,
+          color: 'text-gray-600'
+        };
+      } else if (diffMins > 0) {
+        return {
+          text: `Starts in ${diffMins} minutes`,
           color: 'text-blue-600'
         };
-      } else if (minutesDiff > 0) {
+      } else if (diffMins >= -15) {
         return {
-          text: `Starts in ${minutesDiff} minutes`,
+          text: `Started ${Math.abs(diffMins)} minutes ago`,
           color: 'text-orange-600'
         };
-      } else if (minutesDiff >= -30) {
+      } else if (diffMins >= -60) {
         return {
-          text: `Started ${Math.abs(minutesDiff)} minutes ago - Can still join!`,
-          color: 'text-green-600'
+          text: `Started ${Math.abs(diffMins)} minutes ago - Late join available`,
+          color: 'text-red-600'
         };
       } else {
         return {
-          text: 'Session time has passed',
+          text: 'Session window expired',
           color: 'text-red-600'
         };
       }
+    } else if (session.status === 'started') {
+      return {
+        text: 'Session in progress',
+        color: 'text-green-600'
+      };
     }
     
     return null;
@@ -411,20 +424,30 @@ const SessionDetailPage = () => {
           </div>
 
           {/* Meeting Link */}
-          {session.join_url && session.status === 'scheduled' && (
+          {session.room_id && ['scheduled', 'started'].includes(session.status) && (
             <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">Meeting Link</h3>
+              <h3 className="font-medium text-blue-900 mb-2">Video Session</h3>
               <p className="text-blue-700 text-sm mb-3">
-                Use this link to join the session when it's time.
+                {canJoinSession() 
+                  ? "Ready to join the video session" 
+                  : "Video session will be available 15 minutes before start time"
+                }
               </p>
-              <a
-                href={session.join_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full text-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Open Meeting Link
-              </a>
+              {canJoinSession() ? (
+                <button
+                  onClick={handleJoinSession}
+                  className="block w-full text-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Join Video Session
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="block w-full text-center bg-gray-400 text-white px-4 py-2 rounded-md cursor-not-allowed"
+                >
+                  Join Available Soon
+                </button>
+              )}
             </div>
           )}
         </div>
