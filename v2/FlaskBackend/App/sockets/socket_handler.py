@@ -1,5 +1,6 @@
 from flask_socketio import emit, join_room, leave_room
 from flask import current_app, request as flask_request
+from flask_jwt_extended import decode_token, verify_jwt_in_request
 import jwt
 from functools import wraps
 from ..models import User, Session, Message
@@ -16,17 +17,34 @@ def init_socketio():
     def handle_connect():
         '''Handle new socket connections.
         '''
-        # JWT authentication should be handled here
+        # JWT authentication using Flask-JWT-Extended
         try:
             jwt_token = flask_request.args.get('token')
             if not jwt_token:
+                # Also check in auth header
+                auth_header = flask_request.headers.get('Authorization')
+                if auth_header and auth_header.startswith('Bearer '):
+                    jwt_token = auth_header.split(' ')[1]
+                    
+            if not jwt_token:
                 emit('error', {'message': 'Authentication token required'})
-                return
-            decoded = jwt.decode(jwt_token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-            user = User.query.get(decoded['user_id'])
-            if not user or not user.is_active:
-                emit('error', {'message': 'User not found or inactive'})
-                return
+                return False
+                
+            # Use Flask-JWT-Extended to decode the token
+            try:
+                decoded = decode_token(jwt_token)
+                user_id = decoded['sub']  # Flask-JWT-Extended uses 'sub' for identity
+                user = User.query.get(user_id)
+                
+                if not user or not user.is_active:
+                    emit('error', {'message': 'User not found or inactive'})
+                    return False
+                    
+            except Exception as decode_error:
+                print(f"Token decode error: {decode_error}")
+                emit('error', {'message': 'Invalid authentication token'})
+                return False
+                
             # Store user ID in active connections
             active_connections[flask_request.sid] = user.id
 
@@ -34,13 +52,18 @@ def init_socketio():
             join_room(f'user_{user.id}') # Join personal room
             join_room(f'role_{user.role}') # Join role-based room
 
-            emit('connected', {'message': 'Connected to WebSocket server'})
+            emit('connected', {'message': 'Connected to WebSocket server', 'userId': user.id})
             
             # emit online status to friends or contacts if needed
-            emit('online_status', {'userId': user.id, 'status': 'online'})
+            emit('online_status', {'userId': user.id, 'status': 'online'}, broadcast=True)
+            
+            print(f"User {user.id} ({user.email}) connected via socket")
+            return True
+            
         except Exception as e:
-            emit('error', {'message': 'Invalid authentication token'})
-            return
+            print(f"Socket connection error: {e}")
+            emit('error', {'message': f'Socket connection failed: {str(e)}'})
+            return False
 
     @socketio.on('join_session')
     def join_session(data):

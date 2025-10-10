@@ -7,7 +7,7 @@ Work on the profile page. [DONEEEEEEEEEEE]
 
 When the user successfully logs in, the socket authentication fails because we are using the flask_jwt_extended yet here we are manually handling the tokens i.e
         Socket environment: {socketUrl: 'http://localhost:5000'}
-        socketStore.js:104 Socket error: {message: 'Invalid authentication token'}
+        socketStore.js:104 Socket error: {message: 'Invalid authentication token'} [DONEEEEEEEEEEE]
 
 
 Let's revamp the patient dashboard. Let's add a today's session card, quick actions card with links[and icons] to quick actions, emmergency details icon which opens a modal with emergency information.
