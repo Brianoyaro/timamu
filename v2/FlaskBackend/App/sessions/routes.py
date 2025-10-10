@@ -18,36 +18,100 @@ def list_sessions():
     if not user:
         return jsonify({'error': 'User not found'}), 404
     
-    # Get sessions based on user role
+    # Get query parameters for filtering
+    status_filter = request.args.get('status', 'all')  # all, active, completed, cancelled
+    include_old = request.args.get('include_old', 'false').lower() == 'true'
+    
+    # Base query based on user role
     if user.role.upper() == 'PATIENT':
-        sessions = Session.query.filter_by(patient_id=current_user_id).all()
+        query = Session.query.filter_by(patient_id=current_user_id)
     elif user.role.upper() == 'THERAPIST':
-        sessions = Session.query.filter_by(therapist_id=current_user_id).all()
+        query = Session.query.filter_by(therapist_id=current_user_id)
     else:
         # Admin can see all sessions
-        sessions = Session.query.all()
+        query = Session.query
+    
+    # Apply status filters
+    if status_filter == 'active':
+        query = query.filter(Session.status.in_(['scheduled', 'started']))
+    elif status_filter == 'completed':
+        query = query.filter(Session.status.in_(['completed']))
+    elif status_filter == 'cancelled':
+        query = query.filter(Session.status.in_(['cancelled', 'no_show', 'forfeited']))
+    
+    # Filter out old sessions unless explicitly requested
+    if not include_old:
+        cutoff_date = datetime.utcnow() - timedelta(days=30)  # Only show sessions from last 30 days
+        query = query.filter(Session.scheduled_at >= cutoff_date)
+    
+    # Order by scheduled date (newest first)
+    sessions = query.order_by(Session.scheduled_at.desc()).all()
     
     sessions_data = []
     for session in sessions:
         patient = User.query.get(session.patient_id)
         therapist = User.query.get(session.therapist_id)
         
+        # Check if session is overdue and should be marked as no-show/forfeited
+        now = datetime.utcnow()
+        grace_period_end = session.scheduled_at + timedelta(minutes=30)
+        absolute_deadline = session.scheduled_at + timedelta(hours=1)
+        
+        # Auto-update overdue sessions status
+        if session.status == 'scheduled' and now > grace_period_end:
+            participants = SessionParticipant.query.filter_by(session_id=session.id).count()
+            if participants == 0:
+                if now > absolute_deadline:
+                    session.status = 'forfeited'
+                else:
+                    session.status = 'no_show'
+                session.updated_at = now
+                # Note: We'll commit this change at the end
+        
+        # Determine join eligibility for active sessions
+        can_join = False
+        join_window_start = session.scheduled_at - timedelta(minutes=15)
+        
+        if session.status in ['scheduled', 'started'] and join_window_start <= now <= absolute_deadline:
+            can_join = True
+        
         sessions_data.append({
             'id': session.id,
             'title': session.title,
             'status': session.status,
             'scheduled_at': session.scheduled_at.isoformat() if session.scheduled_at else None,
+            'started_at': session.started_at.isoformat() if session.started_at else None,
+            'ended_at': session.ended_at.isoformat() if session.ended_at else None,
             'duration': session.duration,
+            'actual_duration': session.actual_duration,
             'session_type': session.session_type,
             'patient_name': f"{patient.first_name} {patient.last_name}" if patient else 'Unknown',
             'therapist_name': f"{therapist.first_name} {therapist.last_name}" if therapist else 'Unknown',
             'room_id': session.room_id,
             'join_url': session.join_url,
             'timezone': session.timezone,
-            'created_at': session.created_at.isoformat() if session.created_at else None
+            'can_join': can_join,
+            'is_emergency': session.is_emergency,
+            'created_at': session.created_at.isoformat() if session.created_at else None,
+            'updated_at': session.updated_at.isoformat() if session.updated_at else None,
+            'cancelled_at': session.cancelled_at.isoformat() if session.cancelled_at else None,
+            'cancellation_reason': session.cancellation_reason
         })
     
-    return jsonify(sessions_data)
+    # Commit any status updates we made
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    
+    return jsonify({
+        'sessions': sessions_data,
+        'total_count': len(sessions_data),
+        'filters_applied': {
+            'status': status_filter,
+            'include_old': include_old
+        }
+    })
 
 
 @sessions_bp.route('/schedule', methods=['POST'])
@@ -276,16 +340,65 @@ def join_session(session_id):
     if current_user_id not in [session.patient_id, session.therapist_id]:
         return jsonify({'error': 'Access denied'}), 403
     
-    # Check if session is ready to join (within 15 minutes of start time)
+    # Check session status - cannot join cancelled or completed sessions
+    if session.status in ['cancelled', 'completed', 'no_show', 'forfeited']:
+        return jsonify({'error': f'Cannot join session with status: {session.status}'}), 400
+    
+    # Check timing and enforce attendance window
     now = datetime.utcnow()
-    join_window_start = session.scheduled_at - timedelta(minutes=15)
-    join_window_end = session.scheduled_at + timedelta(hours=2)  # 2 hour max session length
+    join_window_start = session.scheduled_at - timedelta(minutes=15)  # 15 minutes before
+    grace_period_end = session.scheduled_at + timedelta(minutes=30)   # 30 minutes after start
+    absolute_deadline = session.scheduled_at + timedelta(hours=1)     # 1 hour max (for emergencies)
     
+    # If trying to join before the window opens
     if now < join_window_start:
-        return jsonify({'error': 'Session is not yet available to join'}), 400
+        minutes_until_available = int((join_window_start - now).total_seconds() / 60)
+        return jsonify({
+            'error': 'Session is not yet available to join',
+            'details': f'Session will be available in {minutes_until_available} minutes'
+        }), 400
     
-    if now > join_window_end:
-        return jsonify({'error': 'Session join window has expired'}), 400
+    # If session is past the grace period, mark as forfeited/no-show
+    if now > grace_period_end and session.status == 'scheduled':
+        # Check if anyone has joined yet
+        existing_participants = SessionParticipant.query.filter_by(session_id=session_id).count()
+        
+        if existing_participants == 0:
+            # No one has joined within grace period - mark as no-show
+            session.status = 'no_show'
+            session.updated_at = now
+            
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            
+            return jsonify({
+                'error': 'Session has been marked as no-show due to late attendance',
+                'details': f'Sessions must be joined within 30 minutes of scheduled time'
+            }), 410  # HTTP 410 Gone
+    
+    # If way past deadline (more than 1 hour), absolutely refuse
+    if now > absolute_deadline:
+        if session.status == 'scheduled':
+            session.status = 'forfeited'
+            session.updated_at = now
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        
+        hours_late = int((now - session.scheduled_at).total_seconds() / 3600)
+        return jsonify({
+            'error': 'Session has been forfeited due to excessive delay',
+            'details': f'Cannot join session {hours_late} hours after scheduled time'
+        }), 410  # HTTP 410 Gone
+    
+    # Check if user is joining late (after grace period but within absolute deadline)
+    late_join_warning = None
+    if now > grace_period_end:
+        minutes_late = int((now - session.scheduled_at).total_seconds() / 60)
+        late_join_warning = f'You are joining {minutes_late} minutes late. Future late attendance may result in session forfeiture.'
     
     # Create or update participant record
     participant = SessionParticipant.query.filter_by(
@@ -303,6 +416,7 @@ def join_session(session_id):
         )
         db.session.add(participant)
     else:
+        # User rejoining session
         participant.joined_at = now
         participant.left_at = None
     
@@ -313,7 +427,8 @@ def join_session(session_id):
     
     try:
         db.session.commit()
-        return jsonify({
+        
+        response_data = {
             'message': 'Successfully joined session',
             'session': {
                 'id': session.id,
@@ -322,7 +437,14 @@ def join_session(session_id):
                 'meeting_password': session.meeting_password,
                 'status': session.status
             }
-        })
+        }
+        
+        # Add late join warning if applicable
+        if late_join_warning:
+            response_data['warning'] = late_join_warning
+        
+        return jsonify(response_data)
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to join session: {str(e)}'}), 500
@@ -429,3 +551,120 @@ def check_availability():
         
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+
+
+@sessions_bp.route('/cleanup-overdue', methods=['POST'])
+@jwt_required()
+def cleanup_overdue_sessions():
+    """Mark overdue sessions as no-show or forfeited"""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    # Only admins or system can run cleanup
+    if user.role.upper() != 'ADMIN':
+        return jsonify({'error': 'Access denied. Admin access required.'}), 403
+    
+    now = datetime.utcnow()
+    grace_period = timedelta(minutes=30)  # 30 minutes grace period
+    absolute_deadline = timedelta(hours=1)  # 1 hour absolute deadline
+    
+    # Find scheduled sessions that are overdue
+    overdue_sessions = Session.query.filter(
+        Session.status == 'scheduled',
+        Session.scheduled_at < now - grace_period
+    ).all()
+    
+    marked_no_show = 0
+    marked_forfeited = 0
+    
+    for session in overdue_sessions:
+        # Check if anyone has joined this session
+        participants = SessionParticipant.query.filter_by(session_id=session.id).count()
+        
+        if session.scheduled_at < now - absolute_deadline:
+            # Past absolute deadline - mark as forfeited
+            session.status = 'forfeited'
+            session.updated_at = now
+            marked_forfeited += 1
+        elif participants == 0:
+            # Past grace period with no participants - mark as no-show
+            session.status = 'no_show'
+            session.updated_at = now
+            marked_no_show += 1
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'message': 'Cleanup completed successfully',
+            'marked_no_show': marked_no_show,
+            'marked_forfeited': marked_forfeited,
+            'total_processed': marked_no_show + marked_forfeited
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Cleanup failed: {str(e)}'}), 500
+
+
+@sessions_bp.route('/<int:session_id>/status', methods=['GET'])
+@jwt_required()
+def get_session_status(session_id):
+    """Get current session status and join eligibility"""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    # Check permissions
+    if user.role.upper() not in ['ADMIN'] and current_user_id not in [session.patient_id, session.therapist_id]:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    now = datetime.utcnow()
+    join_window_start = session.scheduled_at - timedelta(minutes=15)
+    grace_period_end = session.scheduled_at + timedelta(minutes=30)
+    absolute_deadline = session.scheduled_at + timedelta(hours=1)
+    
+    # Determine join eligibility
+    can_join = False
+    join_status = "not_available"
+    join_message = ""
+    
+    if session.status in ['cancelled', 'completed', 'no_show', 'forfeited']:
+        join_status = "unavailable"
+        join_message = f"Session is {session.status}"
+    elif now < join_window_start:
+        join_status = "too_early"
+        minutes_until = int((join_window_start - now).total_seconds() / 60)
+        join_message = f"Available in {minutes_until} minutes"
+    elif now > absolute_deadline:
+        join_status = "expired"
+        join_message = "Session window has expired"
+    elif now > grace_period_end:
+        join_status = "late_join_warning"
+        minutes_late = int((now - session.scheduled_at).total_seconds() / 60)
+        join_message = f"Late join ({minutes_late} minutes past scheduled time)"
+        can_join = True
+    else:
+        join_status = "available"
+        join_message = "Ready to join"
+        can_join = True
+    
+    # Get participant count
+    participant_count = SessionParticipant.query.filter_by(session_id=session_id).count()
+    
+    return jsonify({
+        'session_id': session.id,
+        'status': session.status,
+        'scheduled_at': session.scheduled_at.isoformat(),
+        'current_time': now.isoformat(),
+        'can_join': can_join,
+        'join_status': join_status,
+        'join_message': join_message,
+        'participant_count': participant_count,
+        'time_windows': {
+            'join_available_from': join_window_start.isoformat(),
+            'grace_period_ends': grace_period_end.isoformat(),
+            'absolute_deadline': absolute_deadline.isoformat()
+        }
+    })

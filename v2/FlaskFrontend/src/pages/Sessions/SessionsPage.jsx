@@ -17,30 +17,25 @@ const SessionsPage = () => {
 
   useEffect(() => {
     loadSessions();
-  }, []);
+  }, [filter]); // Reload when filter changes
 
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/sessions/');
-      setSessions(response.data);
+      const response = await api.get('/sessions/', {
+        params: { 
+          status: filter === 'all' ? 'all' : filter,
+          include_old: filter === 'all'
+        }
+      });
+      // Handle both old format (array) and new format (object with sessions array)
+      const sessionsData = Array.isArray(response.data) ? response.data : response.data.sessions || [];
+      setSessions(sessionsData);
     } catch (error) {
       console.error('Error loading sessions:', error);
       setMessage('Error loading sessions');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCancelSession = async (sessionId, reason) => {
-    try {
-      await api.post(`/sessions/${sessionId}/cancel`, { reason });
-      
-      setMessage('Session cancelled successfully');
-      loadSessions(); // Reload sessions
-    } catch (error) {
-      console.error('Error cancelling session:', error);
-      setMessage(`Error: ${error.response?.data?.message || error.message || 'Failed to cancel session'}`);
     }
   };
 
@@ -69,21 +64,125 @@ const SessionsPage = () => {
         return 'bg-gray-100 text-gray-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'no_show':
+        return 'bg-orange-100 text-orange-800';
+      case 'forfeited':
+        return 'bg-red-200 text-red-900';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getStatusDisplayText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'no_show':
+        return 'NO SHOW';
+      case 'forfeited':
+        return 'FORFEITED';
+      default:
+        return status?.toUpperCase() || 'UNKNOWN';
+    }
+  };
+
+  const handleCancelSession = async (sessionId, reason) => {
+    try {
+      await api.post(`/sessions/${sessionId}/cancel`, { reason });
+      setMessage('Session cancelled successfully');
+      loadSessions(); // Reload sessions
+    } catch (error) {
+      console.error('Error cancelling session:', error);
+      setMessage(`Error: ${error.response?.data?.message || error.message || 'Failed to cancel session'}`);
+    }
+  };
+
+  const handleJoinSession = async (session) => {
+    try {
+      // Check session status before joining
+      const statusResponse = await api.get(`/sessions/${session.id}/status`);
+      const statusInfo = statusResponse.data;
+      if (!statusInfo.can_join) {
+        setMessage(`Cannot join session: ${statusInfo.join_message}`);
+        return;
+      }
+      // Show warning for late joins
+      if (statusInfo.join_status === 'late_join_warning') {
+        const proceed = window.confirm(
+          `${statusInfo.join_message}\n\nFuture late attendance may result in session forfeiture. Do you want to continue?`
+        );
+        if (!proceed) return;
+      }
+      // Attempt to join the session
+      const joinResponse = await api.post(`/sessions/${session.id}/join`);
+      if (joinResponse.data.warning) {
+        alert(`Warning: ${joinResponse.data.warning}`);
+      }
+      // Navigate to video call
+      window.location.href = `/video-call/${session.room_id}`;
+    } catch (error) {
+      console.error('Error joining session:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to join session';
+      setMessage(`Error: ${errorMessage}`);
+      // If it's a forfeit error, reload sessions to update status
+      if (error.response?.status === 410) {
+        loadSessions();
+      }
+    }
+  };
+
+  const getTimingInfo = (session) => {
+    const now = new Date();
+    const sessionTime = new Date(session.scheduled_at);
+    const diffMs = sessionTime.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (session.status === 'scheduled') {
+      if (diffMins > 15) {
+        return { 
+          text: `Starts in ${Math.floor(diffMins / 60)}h ${diffMins % 60}m`, 
+          color: 'text-gray-600',
+          canJoin: false
+        };
+      } else if (diffMins > 0) {
+        return { 
+          text: `Starts in ${diffMins} minutes`, 
+          color: 'text-blue-600',
+          canJoin: true
+        };
+      } else if (diffMins > -30) {
+        return { 
+          text: `Started ${Math.abs(diffMins)} minutes ago`, 
+          color: 'text-orange-600',
+          canJoin: true,
+          warning: diffMins < -15 ? 'Late join may result in session forfeiture' : null
+        };
+      } else {
+        return { 
+          text: 'Session window expired', 
+          color: 'text-red-600',
+          canJoin: false
+        };
+      }
+    }
+    return null;
+  };
+
   const canJoinSession = (session) => {
-    if (session.status !== 'scheduled' && session.status !== 'started') {
+    // Use the backend's can_join field if available, otherwise fall back to client-side logic
+    if (session.hasOwnProperty('can_join')) {
+      return session.can_join && (session.status === 'scheduled' || session.status === 'started');
+    }
+    
+    // Fallback client-side logic
+    if (!['scheduled', 'started'].includes(session.status)) {
       return false;
     }
     
     const now = new Date();
     const sessionTime = new Date(session.scheduled_at);
     const joinWindow = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const maxDelay = 60 * 60 * 1000; // 1 hour max delay
     
-    return now >= (sessionTime.getTime() - joinWindow);
+    return now >= (sessionTime.getTime() - joinWindow) && 
+           now <= (sessionTime.getTime() + maxDelay);
   };
 
   const canCancelSession = (session) => {
@@ -94,7 +193,7 @@ const SessionsPage = () => {
     if (filter === 'all') return true;
     if (filter === 'upcoming') return ['scheduled', 'started'].includes(session.status);
     if (filter === 'completed') return session.status === 'completed';
-    if (filter === 'cancelled') return session.status === 'cancelled';
+    if (filter === 'cancelled') return ['cancelled', 'no_show', 'forfeited'].includes(session.status);
     return true;
   });
 
@@ -157,7 +256,7 @@ const SessionsPage = () => {
                   if (filterOption === 'all') return true;
                   if (filterOption === 'upcoming') return ['scheduled', 'started'].includes(s.status);
                   if (filterOption === 'completed') return s.status === 'completed';
-                  if (filterOption === 'cancelled') return s.status === 'cancelled';
+                  if (filterOption === 'cancelled') return ['cancelled', 'no_show', 'forfeited'].includes(s.status);
                   return true;
                 }).length})
               </span>
@@ -205,17 +304,34 @@ const SessionsPage = () => {
                 
                 <div className="flex flex-col items-end space-y-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                    {session.status?.toUpperCase()}
+                    {getStatusDisplayText(session.status)}
                   </span>
+                  
+                  {/* Show timing info for scheduled sessions */}
+                  {session.status === 'scheduled' && (() => {
+                    const timingInfo = getTimingInfo(session);
+                    return timingInfo ? (
+                      <div className="text-xs text-center">
+                        <div className={timingInfo.color}>
+                          {timingInfo.text}
+                        </div>
+                        {timingInfo.warning && (
+                          <div className="text-red-500 mt-1">
+                            ⚠️ {timingInfo.warning}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
                   
                   <div className="flex space-x-2">
                     {canJoinSession(session) && (
-                      <Link
-                        to={`/video-call/${session.room_id}`}
+                      <button
+                        onClick={() => handleJoinSession(session)}
                         className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
                       >
                         Join Session
-                      </Link>
+                      </button>
                     )}
                     
                     {canCancelSession(session) && (
