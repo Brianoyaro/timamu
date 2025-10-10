@@ -461,7 +461,7 @@ def get_profile():
                     'experience': profile.experience,
                     'education': profile.education,
                     'bio': profile.bio,
-                    'hourly_rate': float(profile.hourly_rate) if profile.hourly_rate else None,
+                    #'hourly_rate': float(profile.hourly_rate) if profile.hourly_rate else None,
                     'is_approved': profile.is_approved,
                     'approved_at': profile.approved_at.isoformat() if profile.approved_at else None,
                     'availability': profile.availability,

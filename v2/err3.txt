@@ -1,8 +1,8 @@
 when a token expires, accessing dashboard just shows a spinning circle endlessly. How about checking if a token is valid before each request and if it is invalid, take them to login. [DONEEEEEE]
 
-For a schedules session, what if a user failed to attend the session on time e.g booked a meeting on 11th april 2020 but instead joins on a later date say 23rd august 2020. The meeting should be cancelled/forfeited in the patient/therapist dashboard under /session however, the current implementation marks it as valid.
+For a schedules session, what if a user failed to attend the session on time e.g booked a meeting on 11th april 2020 but instead joins on a later date say 23rd august 2020. The meeting should be cancelled/forfeited in the patient/therapist dashboard under /session however, the current implementation marks it as valid. [DONEEEEEE]
 
-Work on the profile page.
+Work on the profile page. [DONEEEEEEEEEEE]
 
 When the user successfully logs in, the socket authentication fails because we are using the flask_jwt_extended yet here we are manually handling the tokens i.e
 	Socket environment: {socketUrl: 'http://localhost:5000'}
@@ -15,3 +15,10 @@ When a session is successfully booked, how about we send an email to the patient
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++
 What other features might we add in the patients?
+
+
+Add a session detail page e.g when a patient clicks view details of a particular session.
+
+Revamp the 404 error page to take the use to '/dashboard' instead of '/'
+
+When a patient clicks schedule new session, they're shon a page of therapists. I want the card for each therapist to be clickale and takes patient to that therapist's detail view where the patient sees lots of information about the therapist such as their bio e.t.c.
