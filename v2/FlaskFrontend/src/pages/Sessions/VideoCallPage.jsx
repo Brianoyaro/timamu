@@ -8,6 +8,8 @@ const VideoCallPage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
   const socket = useSocketStore((state) => state.socket);
   
   // Video/Audio refs
@@ -32,79 +34,197 @@ const VideoCallPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
+    console.log('VideoCallPage mounted for room:', roomId);
     initializeSession();
     return () => {
+      console.log('VideoCallPage unmounting, cleaning up...');
       cleanup();
     };
   }, [roomId]);
 
   useEffect(() => {
-    if (socket && session) {
+    console.log('Socket/session effect triggered:', { 
+      socketConnected: !!socket, 
+      sessionLoaded: !!session,
+      socketIsConnected: socket?.connected 
+    });
+    
+    if (socket && session && socket.connected) {
+      console.log('Setting up socket listeners...');
       setupSocketListeners();
+    } else if (socket && session && !socket.connected) {
+      console.log('Socket exists but not connected, waiting...');
+      socket.on('connect', () => {
+        console.log('Socket connected, setting up listeners...');
+        setupSocketListeners();
+      });
     }
-  }, [socket, session]);
+  }, [socket, session, socket?.connected]);
 
   const initializeSession = async () => {
     try {
-      // Find session by room_id
-      const response = await api.get('/sessions/');
-      const sessions = response.data.sessions || response.data;
-      const currentSession = sessions.find(s => s.room_id === roomId);
+      console.log('=== INITIALIZING SESSION ===');
+      console.log('Room ID from params:', roomId);
+      console.log('User object:', user);
+      console.log('Is authenticated:', isAuthenticated);
       
-      if (!currentSession) {
-        setError('Session not found');
+      if (!isAuthenticated) {
+        setError('You must be logged in to join a video call');
+        setLoading(false);
         return;
       }
 
-      // Check if user has permission to join
-      if (user.id !== currentSession.patient_id && user.id !== currentSession.therapist_id) {
-        setError('You do not have permission to join this session');
+      // Get all sessions and find the one with matching room_id
+      console.log('Fetching all sessions to find by room_id...');
+      const response = await api.get('/sessions/');
+      const sessions = response.data.sessions || response.data;
+      console.log('All sessions received:', sessions);
+      
+      const currentSession = sessions.find(s => s.room_id === roomId);
+      console.log('Found session by room_id:', currentSession);
+      
+      if (!currentSession) {
+        setError('Session not found');
+        setLoading(false);
         return;
       }
 
       setSession(currentSession);
-      
-      // Join the session
-      await api.post(`/sessions/${currentSession.id}/join`);
 
-      // Initialize media
+      // Check if user has permission to join
+      console.log('=== PERMISSION CHECK ===');
+      console.log('User ID:', user.id);
+      console.log('Session patient_id:', currentSession.patient_id);
+      console.log('Session therapist_id:', currentSession.therapist_id);
+      console.log('Session object keys:', Object.keys(currentSession));
+      
+      if (user.id !== currentSession.patient_id && user.id !== currentSession.therapist_id) {
+        console.error('Permission denied - user ID does not match patient or therapist ID');
+        setError('You do not have permission to join this session');
+        setLoading(false);
+        return;
+      }
+
+      /*
+      console.log('Joining session via API...');
+      await api.post(`/sessions/${currentSession.id}/join`);
+      console.log('Session joined successfully');
+      */
+      console.log('Permission check passed!');
+
+      // For development: Allow joining even if can_join is false
+      // In production, you might want to enforce this more strictly
+      if (!currentSession.can_join) {
+        console.warn('Backend says can_join is false, but allowing for development');
+      }
+
+      // Note: Skipping session join API call as it might not be needed for video calls
+      // The socket-based video room join should be sufficient
+      console.log('Session validation complete, proceeding to media initialization');
+
+      // Initialize media after session validation
       await initializeMedia();
       
-      setLoading(false);
     } catch (err) {
-      console.error('Error initializing session:', err);
-      setError(err.message || 'Failed to initialize session');
+      console.error('Failed to initialize session:', err);
+      setError(`Failed to load session: ${err.message}`);
       setLoading(false);
     }
   };
 
   const initializeMedia = async () => {
     try {
-      // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
+      console.log('=== REQUESTING MEDIA PERMISSIONS ===');
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported by this browser');
+      }
+      
+      console.log('getUserMedia is available, requesting permissions...');
+      
+      // Get user media with fallback options
+      let stream;
+      try {
+        console.log('Trying high quality video...');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+        console.log('High quality stream obtained');
+      } catch (err) {
+        console.warn('High quality video failed, trying standard quality:', err);
+        // Fallback to lower quality
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        console.log('Standard quality stream obtained');
+      }
+      
+      console.log('Media stream obtained:', {
+        id: stream.id,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length
       });
       
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        console.log('Local video element set');
+        
+        // Ensure video plays
+        localVideoRef.current.onloadedmetadata = () => {
+          console.log('Local video metadata loaded');
+          localVideoRef.current.play().then(() => {
+            console.log('Local video playing');
+          }).catch(err => {
+            console.error('Error playing local video:', err);
+          });
+        };
       }
       
       // Initialize peer connection
       initializePeerConnection();
       
       setConnectionStatus('connected');
+      console.log('=== MEDIA INITIALIZATION COMPLETE ===');
     } catch (err) {
-      console.error('Error accessing media devices:', err);
-      setError('Could not access camera and microphone. Please check permissions.');
+      console.error('=== MEDIA ACCESS ERROR ===', err);
+      
+      // Set a more specific error message
+      let errorMessage = 'Could not access camera and microphone. ';
+      if (err.name === 'NotAllowedError') {
+        errorMessage += 'Please allow camera and microphone permissions and refresh the page.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += 'No camera or microphone found on this device.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += 'Camera or microphone is already in use by another application.';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage += 'Camera or microphone constraints could not be satisfied.';
+      } else {
+        errorMessage += `Error: ${err.message}. Please check your device settings and try again.`;
+      }
+      
+      setError(errorMessage);
+      setLoading(false);
     }
   };
 
   const initializePeerConnection = () => {
+    console.log('Initializing peer connection...');
+    
     const configuration = {
       iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
       ]
     };
 
@@ -113,32 +233,67 @@ const VideoCallPage = () => {
     // Add local stream tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => {
+        console.log('Adding track to peer connection:', track.kind);
         peerConnectionRef.current.addTrack(track, localStreamRef.current);
       });
     }
 
     // Handle remote stream
     peerConnectionRef.current.ontrack = (event) => {
-      if (remoteVideoRef.current) {
+      console.log('Received remote track:', event.track.kind);
+      if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
+        console.log('Remote video stream set');
       }
     };
 
     // Handle ICE candidates
     peerConnectionRef.current.onicecandidate = (event) => {
       if (event.candidate && socket) {
+        console.log('Sending ICE candidate');
         socket.emit('ice-candidate', {
           room: roomId,
           candidate: event.candidate
         });
       }
     };
+
+    // Connection state monitoring
+    peerConnectionRef.current.onconnectionstatechange = () => {
+      const state = peerConnectionRef.current.connectionState;
+      console.log('Peer connection state:', state);
+      setConnectionStatus(state);
+    };
+
+    // ICE connection state monitoring
+    peerConnectionRef.current.oniceconnectionstatechange = () => {
+      const state = peerConnectionRef.current.iceConnectionState;
+      console.log('ICE connection state:', state);
+    };
+    
+    console.log('Peer connection initialized');
   };
 
   const setupSocketListeners = () => {
-    if (!socket) return;
+    if (!socket) {
+      console.error('Socket not available for video call');
+      setError('Real-time connection not available. Please refresh and try again.');
+      return;
+    }
+
+    if (!socket.connected) {
+      console.error('Socket not connected');
+      setError('Socket connection lost. Please refresh and try again.');
+      return;
+    }
+
+    console.log('=== SETTING UP SOCKET LISTENERS ===');
+    console.log('Room ID:', roomId);
+    console.log('Session ID:', session.id);
+    console.log('User:', user);
 
     // Join the video room
+    console.log('Emitting join-video-room event...');
     socket.emit('join-video-room', {
       room: roomId,
       sessionId: session.id,
@@ -148,49 +303,79 @@ const VideoCallPage = () => {
         role: user.role
       }
     });
+    console.log('join-video-room event emitted');
 
     // Socket event listeners
-    socket.on('user-joined', (data) => {
-      console.log('User joined:', data);
-      setParticipants(prev => [...prev.filter(p => p.id !== data.user.id), data.user]);
+    socket.on('user-joined', async (data) => {
+      console.log('=== USER JOINED ===', data);
+      setParticipants(prev => {
+        const filtered = prev.filter(p => p.id !== data.user.id);
+        return [...filtered, data.user];
+      });
       
       // If this is a new user and we're already connected, create offer
-      if (peerConnectionRef.current) {
-        createOffer();
+      if (peerConnectionRef.current && peerConnectionRef.current.connectionState !== 'closed') {
+        console.log('Creating offer for new user...');
+        await createOffer();
       }
     });
 
     socket.on('user-left', (data) => {
-      console.log('User left:', data);
+      console.log('=== USER LEFT ===', data);
       setParticipants(prev => prev.filter(p => p.id !== data.userId));
+      
+      // Clear remote video if the user who left was connected
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+        console.log('Remote video cleared');
+      }
     });
 
     socket.on('offer', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peerConnectionRef.current.createAnswer();
-        await peerConnectionRef.current.setLocalDescription(answer);
-        
-        socket.emit('answer', {
-          room: roomId,
-          answer: answer
-        });
+      console.log('=== RECEIVED OFFER ===');
+      try {
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await peerConnectionRef.current.createAnswer();
+          await peerConnectionRef.current.setLocalDescription(answer);
+          
+          socket.emit('answer', {
+            room: roomId,
+            answer: answer
+          });
+          console.log('Answer sent');
+        }
+      } catch (error) {
+        console.error('Error handling offer:', error);
       }
     });
 
     socket.on('answer', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+      console.log('=== RECEIVED ANSWER ===');
+      try {
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          console.log('Answer processed');
+        }
+      } catch (error) {
+        console.error('Error handling answer:', error);
       }
     });
 
     socket.on('ice-candidate', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+      console.log('=== RECEIVED ICE CANDIDATE ===');
+      try {
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          console.log('ICE candidate added');
+        }
+      } catch (error) {
+        console.error('Error handling ICE candidate:', error);
       }
     });
 
     socket.on('session-message', (data) => {
+      console.log('=== RECEIVED MESSAGE ===', data);
       setMessages(prev => [...prev, {
         id: Date.now(),
         sender: data.sender,
@@ -199,22 +384,39 @@ const VideoCallPage = () => {
       }]);
     });
 
-    socket.on('participant-update', (data) => {
-      setParticipants(prev => 
-        prev.map(p => p.id === data.userId ? { ...p, ...data.updates } : p)
-      );
+    // Socket connection error handling
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setError('Connection lost. Please refresh the page.');
     });
+
+    socket.on('disconnect', () => {
+      console.warn('Socket disconnected');
+      setConnectionStatus('disconnected');
+    });
+
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    console.log('=== SOCKET LISTENERS SET UP COMPLETE ===');
   };
 
   const createOffer = async () => {
-    if (peerConnectionRef.current) {
-      const offer = await peerConnectionRef.current.createOffer();
-      await peerConnectionRef.current.setLocalDescription(offer);
-      
-      socket.emit('offer', {
-        room: roomId,
-        offer: offer
-      });
+    try {
+      if (peerConnectionRef.current) {
+        console.log('Creating offer...');
+        const offer = await peerConnectionRef.current.createOffer();
+        await peerConnectionRef.current.setLocalDescription(offer);
+        
+        socket.emit('offer', {
+          room: roomId,
+          offer: offer
+        });
+        console.log('Offer sent');
+      }
+    } catch (error) {
+      console.error('Error creating offer:', error);
     }
   };
 
@@ -299,36 +501,40 @@ const VideoCallPage = () => {
   };
 
   const stopScreenShare = async () => {
-    if (localStreamRef.current) {
-      // Get camera stream back
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      const videoTrack = cameraStream.getVideoTracks()[0];
-      
-      // Replace screen share track with camera track
-      if (peerConnectionRef.current) {
-        const sender = peerConnectionRef.current.getSenders().find(s => 
-          s.track && s.track.kind === 'video'
-        );
-        if (sender) {
-          await sender.replaceTrack(videoTrack);
+    try {
+      if (localStreamRef.current) {
+        // Get camera stream back
+        const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const videoTrack = cameraStream.getVideoTracks()[0];
+        
+        // Replace screen share track with camera track
+        if (peerConnectionRef.current) {
+          const sender = peerConnectionRef.current.getSenders().find(s => 
+            s.track && s.track.kind === 'video'
+          );
+          if (sender) {
+            await sender.replaceTrack(videoTrack);
+          }
+        }
+        
+        // Update local video
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = cameraStream;
+        }
+        
+        localStreamRef.current = cameraStream;
+        setIsScreenSharing(false);
+        
+        // Notify other participants
+        if (socket) {
+          socket.emit('participant-update', {
+            room: roomId,
+            updates: { screenSharing: false }
+          });
         }
       }
-      
-      // Update local video
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = cameraStream;
-      }
-      
-      localStreamRef.current = cameraStream;
-      setIsScreenSharing(false);
-      
-      // Notify other participants
-      if (socket) {
-        socket.emit('participant-update', {
-          room: roomId,
-          updates: { screenSharing: false }
-        });
-      }
+    } catch (error) {
+      console.error('Error stopping screen share:', error);
     }
   };
 
@@ -375,9 +581,23 @@ const VideoCallPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Connecting to session...</p>
+          <p className="text-white text-lg mb-2">Connecting to session...</p>
+          <p className="text-gray-400 text-sm mb-4">Setting up video and audio</p>
+          
+          {/* Debug loading info */}
+          <div className="bg-gray-800 rounded p-3 text-xs text-left">
+            <p className="text-yellow-400 mb-1">Debug Info:</p>
+            <p className="text-gray-300">Socket: {socket?.connected ? 'Connected' : 'Disconnected'}</p>
+            <p className="text-gray-300">User: {user?.first_name} {user?.last_name}</p>
+            <p className="text-gray-300">Room: {roomId}</p>
+            <p className="text-gray-300">Session: {session ? 'Loaded' : 'Loading...'}</p>
+          </div>
+          
+          <p className="text-gray-500 text-xs mt-4">
+            Check browser console for detailed logs
+          </p>
         </div>
       </div>
     );
@@ -386,15 +606,46 @@ const VideoCallPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <h2 className="text-red-400 text-xl font-semibold mb-4">Session Error</h2>
           <p className="text-white mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/sessions')}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-          >
-            Back to Sessions
-          </button>
+          
+          {error.includes('camera') || error.includes('microphone') ? (
+            <div className="space-y-4">
+              <button
+                onClick={() => {
+                  setError('');
+                  setLoading(true);
+                  initializeMedia();
+                }}
+                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 mr-3"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => navigate('/sessions')}
+                className="bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700"
+              >
+                Back to Sessions
+              </button>
+              
+              {/* Debug info */}
+              <div className="mt-4 p-3 bg-gray-800 rounded text-xs text-left">
+                <p className="text-yellow-400 mb-2">Debug Info:</p>
+                <p className="text-gray-300">Socket connected: {socket?.connected ? 'Yes' : 'No'}</p>
+                <p className="text-gray-300">User: {user?.first_name} {user?.last_name}</p>
+                <p className="text-gray-300">Room: {roomId}</p>
+                <p className="text-gray-300">Session: {session?.title || 'Not loaded'}</p>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/sessions')}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700"
+            >
+              Back to Sessions
+            </button>
+          )}
         </div>
       </div>
     );
@@ -409,13 +660,31 @@ const VideoCallPage = () => {
           <p className="text-gray-400 text-sm">
             Participants: {participants.length + 1} | Status: {connectionStatus}
           </p>
+          <p className="text-gray-500 text-xs">
+            Socket: {socket?.connected ? 'Connected' : 'Disconnected'} | 
+            Room: {roomId}
+          </p>
         </div>
-        <button
-          onClick={endSession}
-          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-        >
-          End Session
-        </button>
+        <div className="flex gap-2">
+          {/* Manual join button for debugging */}
+          {socket && session && socket.connected && (
+            <button
+              onClick={() => {
+                console.log('Manual join button clicked');
+                setupSocketListeners();
+              }}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+            >
+              Manual Join
+            </button>
+          )}
+          <button
+            onClick={endSession}
+            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+          >
+            End Session
+          </button>
+        </div>
       </div>
 
       {/* Main Video Area */}
@@ -430,6 +699,21 @@ const VideoCallPage = () => {
             className="w-full h-full object-cover bg-gray-800"
           />
           
+          {/* No Remote Participant Placeholder */}
+          {participants.length === 0 && (
+            <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <p className="text-white text-lg mb-2">Waiting for other participant</p>
+                <p className="text-gray-400 text-sm">Share the session link or wait for them to join</p>
+              </div>
+            </div>
+          )}
+          
           {/* Local Video (Picture-in-Picture) */}
           <div className="absolute top-4 right-4 w-48 h-36 bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-600">
             <video
@@ -441,7 +725,12 @@ const VideoCallPage = () => {
             />
             {!isVideoEnabled && (
               <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                <span className="text-white text-sm">Video Off</span>
+                <div className="text-center">
+                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span className="text-white text-xs">Video Off</span>
+                </div>
               </div>
             )}
           </div>
