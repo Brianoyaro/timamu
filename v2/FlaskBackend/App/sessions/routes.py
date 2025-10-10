@@ -72,8 +72,17 @@ def list_sessions():
         can_join = False
         join_window_start = session.scheduled_at - timedelta(minutes=15)
         
-        if session.status in ['scheduled', 'started'] and join_window_start <= now <= absolute_deadline:
-            can_join = True
+        # For development/testing: Allow joining immediately after booking
+        # In production, you might want to be more restrictive
+        if session.status in ['scheduled', 'started']:
+            # Allow joining if:
+            # 1. Within normal window (15 min before to 1 hour after)
+            # 2. OR session was created recently (within last 10 minutes) - for immediate testing
+            recent_booking = session.created_at and (now - session.created_at) <= timedelta(minutes=10)
+            normal_window = join_window_start <= now <= absolute_deadline
+            
+            if normal_window or recent_booking:
+                can_join = True
         
         sessions_data.append({
             'id': session.id,
@@ -87,6 +96,8 @@ def list_sessions():
             'session_type': session.session_type,
             'patient_name': f"{patient.first_name} {patient.last_name}" if patient else 'Unknown',
             'therapist_name': f"{therapist.first_name} {therapist.last_name}" if therapist else 'Unknown',
+            'patient_id': session.patient_id,
+            'therapist_id': session.therapist_id,
             'room_id': session.room_id,
             'join_url': session.join_url,
             'timezone': session.timezone,
