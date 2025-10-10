@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import User, TherapistProfile
+from ..models import User, TherapistProfile, Session
 from ..extensions import db
 from datetime import datetime
 from . import therapists_bp
@@ -17,6 +17,53 @@ logger = logging.getLogger(__name__)
 def list_therapists():
     therapists = TherapistProfile.query.all()
     return jsonify([{'id': t.id, 'user_id': t.user_id, 'license_number': t.license_number} for t in therapists])
+
+
+@therapists_bp.route('/<int:therapist_id>', methods=['GET'])
+@jwt_required()
+def get_therapist_detail(therapist_id):
+    """Get detailed information about a specific therapist"""
+    # Get therapist user and profile
+    user = User.query.get(therapist_id)
+    if not user or user.role.upper() != 'THERAPIST':
+        return jsonify({'error': 'Therapist not found'}), 404
+        
+    therapist_profile = TherapistProfile.query.filter_by(user_id=therapist_id).first()
+    if not therapist_profile:
+        return jsonify({'error': 'Therapist profile not found'}), 404
+        
+    # Only return approved therapists to patients
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if current_user.role.upper() == 'PATIENT' and not therapist_profile.is_approved:
+        return jsonify({'error': 'Therapist not available'}), 404
+    
+    # Get session statistics
+    total_sessions = Session.query.filter(
+        Session.therapist_id == therapist_id,
+        Session.status.in_(['completed', 'started'])
+    ).count()
+    
+    return jsonify({
+        'id': user.id,
+        'name': f"{user.first_name} {user.last_name}",
+        'email': user.email,
+        'phone': user.phone,
+        'specializations': therapist_profile.specializations or [],
+        'languages': therapist_profile.languages or ['English'],
+        'experience': therapist_profile.experience,
+        'education': therapist_profile.education,
+        'bio': therapist_profile.bio,
+        'license_number': therapist_profile.license_number,
+        'timezone': therapist_profile.timezone,
+        'availability': therapist_profile.availability,
+        'accepts_emergency': therapist_profile.accepts_emergency,
+        'is_approved': therapist_profile.is_approved,
+        'approved_at': therapist_profile.approved_at.isoformat() if therapist_profile.approved_at else None,
+        'total_sessions': total_sessions,
+        'created_at': user.created_at.isoformat()
+    })
 
 
 @therapists_bp.route('/availability', methods=['GET'])
