@@ -35,14 +35,16 @@ export const useAuthStore = create((set, get) => ({
       const response = await api.post('/auth/login', { email, password });
       const { access_token, refresh_token, user } = response.data;
       
-      // Choose which token to store based on remember me
-      const tokenToStore = rememberMe ? refresh_token : access_token;
+      // Always store access token for API requests and socket connections
+      localStorage.setItem('token', access_token);
       
-      // Always store token in localStorage for API requests
-      localStorage.setItem('token', tokenToStore);
+      // If remember me is checked, also store refresh token separately
+      if (rememberMe && refresh_token) {
+        localStorage.setItem('refresh_token', refresh_token);
+      }
 
-      // Update state
-      set({ token: tokenToStore, user, isAuthenticated: true, isLoading: false });
+      // Update state with access token (always use access token for active session)
+      set({ token: access_token, user, isAuthenticated: true, isLoading: false });
       return user;
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -66,6 +68,7 @@ export const useAuthStore = create((set, get) => ({
   // Logout function
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     set({ user: null, token: null, isAuthenticated: false });
   },
 
@@ -123,24 +126,29 @@ export const useAuthStore = create((set, get) => ({
 
   // Refresh token (if refresh functionality is needed)
   refreshToken: async () => {
-    const currentState = get();
-    const token = currentState.token || getStoredToken();
-    
-    if (!token) {
-      return false;
-    }
-
     try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      
+      if (!refreshToken) {
+        console.log('No refresh token available');
+        return false;
+      }
+
       // Attempt to refresh the token using the refresh endpoint
-      const response = await api.post('/auth/refresh', { refresh_token: token });
+      const response = await api.post('/auth/refresh', { refresh_token: refreshToken });
       const { access_token } = response.data;
       
+      // Update stored token and state
       localStorage.setItem('token', access_token);
       set({ token: access_token, isAuthenticated: true });
+      
+      console.log('Token refreshed successfully');
       return true;
     } catch (error) {
       console.error('Token refresh failed:', error);
+      // Clear all tokens and logout
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       set({ user: null, token: null, isAuthenticated: false });
       return false;
     }
