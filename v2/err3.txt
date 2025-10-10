@@ -18,7 +18,7 @@ When a session is successfully booked, how about we send an email to the patient
 What other features might we add in the patients?
 
 
-Add a session detail page e.g when a patient clicks view details of a particular session.
+Add a session detail page e.g when a patient clicks view details of a particular session e.g in the dashboard or in the sessions page. [DONEEEEEE]
 
 Revamp the 404 error page to take the use to '/dashboard' instead of '/' [DONEEEEEE]
 
