@@ -1,4 +1,0 @@
-the ui of therapist-setting-availability and patient vieing therapist's availability are not responsive on mobile. The calender bit.
-
-
-Let us handle the dahboard[therapist and patient] i.e how they fetch data from the backend.
