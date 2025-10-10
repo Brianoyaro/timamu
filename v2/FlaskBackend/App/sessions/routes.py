@@ -178,12 +178,17 @@ def schedule_session():
         db.session.add(session)
         db.session.commit()
         
-        # Send confirmation emails
+        # Send confirmation emails with calendar attachments
         patient_user = User.query.get(session.patient_id)
         therapist_user = User.query.get(session.therapist_id)
         
-        # Send emails asynchronously (implement this later)
-        # send_session_confirmation(session, patient_user, therapist_user)
+        # Send emails asynchronously to avoid blocking the response
+        try:
+            send_session_confirmation(session, patient_user, therapist_user)
+            current_app.logger.info(f"Session confirmation emails sent for session {session.id}")
+        except Exception as e:
+            current_app.logger.error(f"Failed to send confirmation emails for session {session.id}: {str(e)}")
+            # Don't fail the request if email sending fails
         
         return jsonify({
             'message': 'Session scheduled successfully',

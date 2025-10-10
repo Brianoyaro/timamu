@@ -12,7 +12,7 @@ When the user successfully logs in, the socket authentication fails because we a
 
 Let's revamp the patient dashboard. Let's add a today's session card, quick actions card with links[and icons] to quick actions, emmergency details icon which opens a modal with emergency information.
 
-When a session is successfully booked, how about we send an email to the patient and therapist containing the meetiing details, meeting link, .ics file i.e zoom-style
+When a session is successfully booked, how about we send an email to the patient and therapist containing the meetiing details, meeting link, .ics file i.e zoom-style [DONEEEEEEEEEEE]
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++
 What other features might we add in the patients?
