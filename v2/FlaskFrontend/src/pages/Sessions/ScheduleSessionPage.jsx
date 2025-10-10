@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
 
@@ -28,10 +29,25 @@ const ScheduleSessionPage = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const user = useAuthStore((state) => state.user);
+  const location = useLocation();
 
   useEffect(() => {
     loadAvailableTherapists();
   }, []);
+
+  // Handle URL parameters for pre-selecting therapist and view
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const therapistParam = searchParams.get('therapist');
+    const viewParam = searchParams.get('view');
+    
+    if (therapistParam) {
+      setSelectedTherapist(parseInt(therapistParam));
+      if (viewParam === 'calendar') {
+        setCurrentView('calendar');
+      }
+    }
+  }, [location.search, therapists]);
 
   const loadAvailableTherapists = async () => {
     try {
@@ -488,32 +504,48 @@ const ScheduleSessionPage = () => {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {therapists.map(therapist => (
-          <div key={therapist.id} className="bg-white shadow rounded-lg overflow-hidden">
+          <div key={therapist.id} className="bg-white shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
             <div className="flex sm:block">
-              <img 
-                src={therapist.avatar} 
-                className="w-24 sm:w-full h-24 sm:h-40 object-cover" 
-                alt={therapist.name}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
-                }}
-              />
+              {/* Clickable image that goes to therapist detail */}
+              <Link to={`/therapists/${therapist.id}`} className="block w-24 sm:w-full">
+                <img 
+                  src={therapist.avatar} 
+                  className="w-24 sm:w-full h-24 sm:h-40 object-cover hover:opacity-90 transition-opacity" 
+                  alt={therapist.name}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
+                  }}
+                />
+              </Link>
               <div className="p-2 sm:p-4 flex-grow">
-                <h2 className="text-base sm:text-lg font-semibold">{therapist.name}</h2>
-                <p className="text-xs sm:text-sm text-gray-600">
+                {/* Clickable name that goes to therapist detail */}
+                <Link to={`/therapists/${therapist.id}`} className="block hover:text-indigo-600 transition-colors">
+                  <h2 className="text-base sm:text-lg font-semibold mb-1">{therapist.name}</h2>
+                </Link>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">
                   Specialty: {therapist.specializations?.join(', ') || 'General Therapy'}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">
                   Language: {therapist.languages?.join(', ')}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">⭐ {therapist.rating} Rating</p>
-                <button
-                  onClick={() => viewTherapistAvailability(therapist)}
-                  className="mt-2 sm:mt-3 w-full bg-indigo-500 text-white px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-600 text-xs sm:text-sm"
-                >
-                  View Availability
-                </button>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2">⭐ {therapist.rating} Rating</p>
+                
+                {/* Action buttons */}
+                <div className="space-y-1 sm:space-y-2">
+                  <Link
+                    to={`/therapists/${therapist.id}`}
+                    className="block w-full bg-indigo-100 text-indigo-700 px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-200 text-xs sm:text-sm text-center transition-colors"
+                  >
+                    View Profile
+                  </Link>
+                  <button
+                    onClick={() => viewTherapistAvailability(therapist)}
+                    className="w-full bg-indigo-500 text-white px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-600 text-xs sm:text-sm transition-colors"
+                  >
+                    Book Session
+                  </button>
+                </div>
               </div>
             </div>
           </div>

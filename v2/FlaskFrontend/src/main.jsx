@@ -25,6 +25,9 @@ import ScheduleSessionPage from './pages/Sessions/ScheduleSessionPage.jsx';
 import TherapistAvailabilityPage from './pages/Sessions/TherapistAvailabilityPage.jsx';
 import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
 
+// Therapist Pages
+import TherapistDetailPage from './pages/Therapists/TherapistDetailPage.jsx';
+
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 
@@ -72,6 +75,7 @@ const App = () => {
             <Route path="sessions" element={<SessionsPage />} />
             <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
             <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
+            <Route path="therapists/:therapistId" element={<TherapistDetailPage />} />
             <Route path="video-call/:roomId" element={<VideoCallPage />} />
           </Route>
 

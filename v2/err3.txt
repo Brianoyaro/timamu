@@ -22,4 +22,4 @@ Add a session detail page e.g when a patient clicks view details of a particular
 
 Revamp the 404 error page to take the use to '/dashboard' instead of '/' [DONEEEEEE]
 
-When a patient clicks schedule new session, they're shon a page of therapists. I want the card for each therapist to be clickale and takes patient to that therapist's detail view where the patient sees lots of information about the therapist such as their bio e.t.c.
+When a patient clicks schedule new session, they're shon a page of therapists. I want the card for each therapist to be clickale and takes patient to that therapist's detail view where the patient sees lots of information about the therapist such as their bio e.t.c. [DONEEEEEE]
