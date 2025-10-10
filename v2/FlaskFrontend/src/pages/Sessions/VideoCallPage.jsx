@@ -48,7 +48,7 @@ const VideoCallPage = () => {
     try {
       // Find session by room_id
       const response = await api.get('/sessions/');
-      const sessions = response.data;
+      const sessions = response.data.sessions || response.data;
       const currentSession = sessions.find(s => s.room_id === roomId);
       
       if (!currentSession) {
