@@ -30,6 +30,8 @@ const TherapistAvailabilityPage = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('create'); // 'create', 'edit', 'template', 'recurring'
+  const [view, setView] = useState('week'); // Add view state
+  const [date, setDate] = useState(new Date()); // Add date state for navigation
   const [formData, setFormData] = useState({
     title: 'Available',
     start: new Date(),
@@ -474,6 +476,10 @@ const TherapistAvailabilityPage = () => {
                 endAccessor="end"
                 onSelectSlot={handleSelectSlot}
                 onSelectEvent={handleSelectEvent}
+                onView={setView}
+                onNavigate={setDate}
+                view={view}
+                date={date}
                 selectable
                 popup
                 eventPropGetter={eventStyleGetter}
