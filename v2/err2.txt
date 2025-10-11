@@ -1,0 +1,149 @@
+VideoCallPage.jsx:866 Encountered two children with the same key, `1760179153630`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+overrideMethod @ hook.js:608
+(anonymous) @ react-dom_client.js?v=c90fdf56:4925
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+warnOnInvalidKey @ react-dom_client.js?v=c90fdf56:4924
+reconcileChildrenArray @ react-dom_client.js?v=c90fdf56:4965
+reconcileChildFibersImpl @ react-dom_client.js?v=c90fdf56:5171
+(anonymous) @ react-dom_client.js?v=c90fdf56:5237
+reconcileChildren @ react-dom_client.js?v=c90fdf56:7182
+beginWork @ react-dom_client.js?v=c90fdf56:8701
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36
+<div>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=c90fdf56:247
+(anonymous) @ VideoCallPage.jsx:866
+VideoCallPage @ VideoCallPage.jsx:865
+react_stack_bottom_frame @ react-dom_client.js?v=c90fdf56:18509
+renderWithHooksAgain @ react-dom_client.js?v=c90fdf56:5729
+renderWithHooks @ react-dom_client.js?v=c90fdf56:5665
+updateFunctionComponent @ react-dom_client.js?v=c90fdf56:7475
+beginWork @ react-dom_client.js?v=c90fdf56:8525
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36Understand this error
+11VideoCallPage.jsx:866 Encountered two children with the same key, `1760179153630`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+overrideMethod @ hook.js:608
+(anonymous) @ react-dom_client.js?v=c90fdf56:4925
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+warnOnInvalidKey @ react-dom_client.js?v=c90fdf56:4924
+reconcileChildrenArray @ react-dom_client.js?v=c90fdf56:4949
+reconcileChildFibersImpl @ react-dom_client.js?v=c90fdf56:5171
+(anonymous) @ react-dom_client.js?v=c90fdf56:5237
+reconcileChildren @ react-dom_client.js?v=c90fdf56:7182
+beginWork @ react-dom_client.js?v=c90fdf56:8701
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=c90fdf56:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=c90fdf56:13414
+flushSyncWork$1 @ react-dom_client.js?v=c90fdf56:12076
+batchedUpdates$1 @ react-dom_client.js?v=c90fdf56:2630
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=c90fdf56:13763
+dispatchEvent @ react-dom_client.js?v=c90fdf56:16784
+dispatchDiscreteEvent @ react-dom_client.js?v=c90fdf56:16765
+<div>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=c90fdf56:247
+(anonymous) @ VideoCallPage.jsx:866
+VideoCallPage @ VideoCallPage.jsx:865
+react_stack_bottom_frame @ react-dom_client.js?v=c90fdf56:18509
+renderWithHooksAgain @ react-dom_client.js?v=c90fdf56:5729
+renderWithHooks @ react-dom_client.js?v=c90fdf56:5665
+updateFunctionComponent @ react-dom_client.js?v=c90fdf56:7475
+beginWork @ react-dom_client.js?v=c90fdf56:8525
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36Understand this error
+VideoCallPage.jsx:866 Encountered two children with the same key, `1760179153630`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+overrideMethod @ hook.js:608
+(anonymous) @ react-dom_client.js?v=c90fdf56:4925
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+warnOnInvalidKey @ react-dom_client.js?v=c90fdf56:4924
+reconcileChildrenArray @ react-dom_client.js?v=c90fdf56:4949
+reconcileChildFibersImpl @ react-dom_client.js?v=c90fdf56:5171
+(anonymous) @ react-dom_client.js?v=c90fdf56:5237
+reconcileChildren @ react-dom_client.js?v=c90fdf56:7182
+beginWork @ react-dom_client.js?v=c90fdf56:8701
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=c90fdf56:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=c90fdf56:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=c90fdf56:13437
+(anonymous) @ react-dom_client.js?v=c90fdf56:13531
+<div>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=c90fdf56:247
+(anonymous) @ VideoCallPage.jsx:866
+VideoCallPage @ VideoCallPage.jsx:865
+react_stack_bottom_frame @ react-dom_client.js?v=c90fdf56:18509
+renderWithHooksAgain @ react-dom_client.js?v=c90fdf56:5729
+renderWithHooks @ react-dom_client.js?v=c90fdf56:5665
+updateFunctionComponent @ react-dom_client.js?v=c90fdf56:7475
+beginWork @ react-dom_client.js?v=c90fdf56:8525
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36Understand this error
+VideoCallPage.jsx:379 === RECEIVED MESSAGE === {id: 2, message: 'nlncslsncsc', sender: {…}, timestamp: '2025-10-11T10:39:21.165706'}
+VideoCallPage.jsx:379 === RECEIVED MESSAGE === {id: 2, message: 'nlncslsncsc', sender: {…}, timestamp: '2025-10-11T10:39:21.165706'}
+VideoCallPage.jsx:866 Encountered two children with the same key, `1760179153630`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+overrideMethod @ hook.js:608
+(anonymous) @ react-dom_client.js?v=c90fdf56:4925
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+warnOnInvalidKey @ react-dom_client.js?v=c90fdf56:4924
+reconcileChildrenArray @ react-dom_client.js?v=c90fdf56:4949
+reconcileChildFibersImpl @ react-dom_client.js?v=c90fdf56:5171
+(anonymous) @ react-dom_client.js?v=c90fdf56:5237
+reconcileChildren @ react-dom_client.js?v=c90fdf56:7182
+beginWork @ react-dom_client.js?v=c90fdf56:8701
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36
+<div>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=c90fdf56:247
+(anonymous) @ VideoCallPage.jsx:866
+VideoCallPage @ VideoCallPage.jsx:865
+react_stack_bottom_frame @ react-dom_client.js?v=c90fdf56:18509
+renderWithHooksAgain @ react-dom_client.js?v=c90fdf56:5729
+renderWithHooks @ react-dom_client.js?v=c90fdf56:5665
+updateFunctionComponent @ react-dom_client.js?v=c90fdf56:7475
+beginWork @ react-dom_client.js?v=c90fdf56:8525
+runWithFiberInDEV @ react-dom_client.js?v=c90fdf56:997
+performUnitOfWork @ react-dom_client.js?v=c90fdf56:12561
+workLoopSync @ react-dom_client.js?v=c90fdf56:12424
+renderRootSync @ react-dom_client.js?v=c90fdf56:12408
+performWorkOnRoot @ react-dom_client.js?v=c90fdf56:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=c90fdf56:13505
+performWorkUntilDeadline @ react-dom_client.js?v=c90fdf56:36Understand this error
+VideoCallPage.jsx:866 Encountered two children with the same key, `1760179161460`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+
+
+
+
+
+ADD A FUNCTIONAL LOGOUT BUTTON.
