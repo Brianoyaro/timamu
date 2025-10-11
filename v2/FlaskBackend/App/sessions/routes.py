@@ -481,6 +481,28 @@ def get_available_therapists():
     
     therapists_data = []
     for user, profile in therapists:
+        # Get availability data for this therapist
+        from ..models import TherapistAvailability
+        from datetime import datetime, timedelta
+        
+        availability_slots = TherapistAvailability.query.filter_by(
+            therapist_profile_id=profile.id
+        ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
+        
+        # Convert to date-based format for frontend calendar compatibility
+        availability_data = {}
+        
+        for slot in availability_slots:
+            date_str = slot.date.strftime('%Y-%m-%d')
+            if date_str not in availability_data:
+                availability_data[date_str] = []
+            
+            availability_data[date_str].append({
+                'start': slot.start_time.strftime('%H:%M'),
+                'end': slot.end_time.strftime('%H:%M'),
+                'available': slot.is_available
+            })
+        
         therapists_data.append({
             'id': user.id,
             'name': f"{user.first_name} {user.last_name}",
@@ -490,8 +512,8 @@ def get_available_therapists():
             'experience': profile.experience,
             'bio': profile.bio,
             'timezone': profile.timezone,
-            'availability': profile.availability,
-            'accepts_emergency': profile.accepts_emergency
+            'accepts_emergency': profile.accepts_emergency,
+            'availability': availability_data
         })
     
     return jsonify(therapists_data)
@@ -517,34 +539,27 @@ def check_availability():
     if not therapist_profile:
         return jsonify({'error': 'Therapist not found'}), 404
     
-    # Check if therapist has availability on this date/time
-    availability = therapist_profile.availability or {}
+    # Check if therapist has availability on this date/time using new availability model
+    from ..models import TherapistAvailability
     
-    # Check day of week availability (for recurring weekly slots)
+    # Check specific date availability
     try:
-        from datetime import datetime
-        date_obj = datetime.strptime(date, '%Y-%m-%d')
-        day_name = date_obj.strftime('%A')
+        from datetime import datetime, time as time_class
+        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        time_obj = datetime.strptime(time, '%H:%M').time()
         
-        day_slots = availability.get(day_name, [])
-        specific_date_slots = availability.get(date, [])
-        
-        # Combine both day-of-week and specific date slots
-        all_slots = day_slots + specific_date_slots
+        # Get availability slots for this specific date
+        availability_slots = TherapistAvailability.query.filter_by(
+            therapist_profile_id=therapist_profile.id,
+            date=date_obj,
+            is_available=True
+        ).all()
         
         is_available = False
-        for slot in all_slots:
-            if isinstance(slot, dict):
-                start_time = slot.get('start', '')
-                end_time = slot.get('end', '')
-                if start_time <= time < end_time:
-                    is_available = True
-                    break
-            elif isinstance(slot, str):
-                # Handle simple time format
-                if slot == time:
-                    is_available = True
-                    break
+        for slot in availability_slots:
+            if slot.start_time <= time_obj < slot.end_time:
+                is_available = True
+                break
         
         # Check for existing bookings
         if is_available:

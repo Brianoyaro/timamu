@@ -57,7 +57,6 @@ def get_therapist_detail(therapist_id):
         'bio': therapist_profile.bio,
         'license_number': therapist_profile.license_number,
         'timezone': therapist_profile.timezone,
-        'availability': therapist_profile.availability,
         'accepts_emergency': therapist_profile.accepts_emergency,
         'is_approved': therapist_profile.is_approved,
         'approved_at': therapist_profile.approved_at.isoformat() if therapist_profile.approved_at else None,
@@ -69,7 +68,7 @@ def get_therapist_detail(therapist_id):
 @therapists_bp.route('/availability', methods=['GET'])
 @jwt_required()
 def get_availability():
-    """Get therapist's availability schedule"""
+    """Get therapist's availability schedule using new availability model"""
     logger.debug("[GET /availability] Endpoint accessed")
     current_user_id = get_jwt_identity()
     logger.debug(f"[GET /availability] Current user ID: {current_user_id}")
@@ -88,11 +87,32 @@ def get_availability():
         logger.warning(f"[GET /availability] Therapist profile not found for user_id: {current_user_id}")
         return jsonify({'error': 'Therapist profile not found'}), 404
     
-    logger.debug(f"[GET /availability] Retrieved availability: {therapist_profile.availability}")
+    # Get availability slots from new model
+    from ..models import TherapistAvailability
+    from datetime import datetime, timedelta
+    availability_slots = TherapistAvailability.query.filter_by(
+        therapist_profile_id=therapist_profile.id
+    ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
+    
+    # Convert to date-based format for frontend calendar compatibility
+    availability_data = {}
+    
+    for slot in availability_slots:
+        date_str = slot.date.strftime('%Y-%m-%d')
+        if date_str not in availability_data:
+            availability_data[date_str] = []
+        
+        availability_data[date_str].append({
+            'start': slot.start_time.strftime('%H:%M'),
+            'end': slot.end_time.strftime('%H:%M'),
+            'available': slot.is_available
+        })
+    
+    logger.debug(f"[GET /availability] Retrieved availability: {availability_data}")
     logger.debug(f"[GET /availability] Retrieved timezone: {therapist_profile.timezone}")
     
     return jsonify({
-        'availability': therapist_profile.availability or {},
+        'availability': availability_data,
         'timezone': therapist_profile.timezone
     })
 
@@ -100,7 +120,7 @@ def get_availability():
 @therapists_bp.route('/availability', methods=['POST'])
 @jwt_required()
 def update_availability():
-    """Update therapist's availability schedule"""
+    """Update therapist's availability schedule using new availability model"""
     logger.debug("[POST /availability] Endpoint accessed for updating availability")
     current_user_id = get_jwt_identity()
     logger.debug(f"[POST /availability] Current user ID: {current_user_id}")
@@ -126,7 +146,11 @@ def update_availability():
         logger.warning("[POST /availability] Missing 'availability' in request data")
         return jsonify({'error': 'Availability data is required'}), 400
     
-    # Validate availability data structure
+    # Clear existing availability slots
+    from ..models import TherapistAvailability
+    TherapistAvailability.query.filter_by(therapist_profile_id=therapist_profile.id).delete()
+    
+    # Parse availability data and create new slots
     availability = data['availability']
     logger.debug(f"[POST /availability] Availability data: {availability}")
     
@@ -134,24 +158,66 @@ def update_availability():
         logger.warning(f"[POST /availability] Invalid availability format. Expected dict, got: {type(availability)}")
         return jsonify({'error': 'Availability must be a dictionary'}), 400
     
-    # Update the availability
-    prev_availability = therapist_profile.availability
-    therapist_profile.availability = availability
-    logger.debug(f"[POST /availability] Updated availability from {prev_availability} to {availability}")
-    
-    # Update timezone if provided
-    if 'timezone' in data:
-        prev_timezone = therapist_profile.timezone
-        therapist_profile.timezone = data['timezone']
-        logger.debug(f"[POST /availability] Updated timezone from {prev_timezone} to {data['timezone']}")
-    
     try:
+        for date_str, day_slots in availability.items():
+            # Parse the date string
+            try:
+                from datetime import datetime, time
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                logger.debug(f"[POST /availability] Processing date: {date_str}")
+            except ValueError:
+                logger.warning(f"[POST /availability] Invalid date format: {date_str}")
+                continue
+            
+            # Handle array of slots for each date
+            slots = day_slots if isinstance(day_slots, list) else [day_slots] if day_slots else []
+            
+            for slot_data in slots:
+                if isinstance(slot_data, dict) and 'start' in slot_data and 'end' in slot_data:
+                    try:
+                        start_time = time.fromisoformat(slot_data['start'])
+                        end_time = time.fromisoformat(slot_data['end'])
+                        is_available = slot_data.get('available', True)
+                        
+                        availability_slot = TherapistAvailability(
+                            therapist_profile_id=therapist_profile.id,
+                            date=date_obj,
+                            start_time=start_time,
+                            end_time=end_time,
+                            is_available=is_available,
+                            timezone=data.get('timezone', therapist_profile.timezone)
+                        )
+                        
+                        db.session.add(availability_slot)
+                        logger.debug(f"[POST /availability] Created slot for {date_str} from {start_time} to {end_time}")
+                        
+                    except ValueError as e:
+                        logger.error(f"[POST /availability] Error parsing time for {date_str}: {e}")
+                        continue
+        
+        # Update timezone if provided
+        if 'timezone' in data:
+            prev_timezone = therapist_profile.timezone
+            therapist_profile.timezone = data['timezone']
+            logger.debug(f"[POST /availability] Updated timezone from {prev_timezone} to {data['timezone']}")
+        
+        # Count how many slots we're about to save
+        new_slots_count = len([obj for obj in db.session.new if isinstance(obj, TherapistAvailability)])
+        logger.debug(f"[POST /availability] About to save {new_slots_count} availability slots")
+        
         db.session.commit()
         logger.debug("[POST /availability] Successfully saved availability to database")
+        
+        # Verify the slots were saved
+        saved_slots_count = TherapistAvailability.query.filter_by(therapist_profile_id=therapist_profile.id).count()
+        logger.debug(f"[POST /availability] Verified {saved_slots_count} slots saved in database")
+        
+        # Return the updated availability in the old format for compatibility
         return jsonify({
             'message': 'Availability updated successfully',
-            'availability': therapist_profile.availability
+            'availability': availability
         })
+        
     except Exception as e:
         db.session.rollback()
         logger.error(f"[POST /availability] Failed to save availability: {str(e)}", exc_info=True)
@@ -192,9 +258,7 @@ def debug_therapist_profile():
             'is_therapist': is_therapist,
             'has_therapist_profile': therapist_profile is not None,
             'therapist_profile_id': therapist_profile.id if therapist_profile else None,
-            'availability_set': therapist_profile.availability is not None if therapist_profile else False,
-            'availability_type': type(therapist_profile.availability).__name__ if therapist_profile and therapist_profile.availability else None,
-            'availability_keys': list(therapist_profile.availability.keys()) if therapist_profile and therapist_profile.availability and isinstance(therapist_profile.availability, dict) else [],
+            'availability_slots_count': len(therapist_profile.availability_slots) if therapist_profile else 0,
             'db_connection': {
                 'connected': db_connected,
                 'error': db_error if not db_connected else None
@@ -205,7 +269,7 @@ def debug_therapist_profile():
 @therapists_bp.route('/<int:therapist_id>/availability', methods=['GET'])
 @jwt_required()
 def get_therapist_availability(therapist_id):
-    """Get specific therapist's availability for booking (patients can access this)"""
+    """Get specific therapist's availability for booking using new availability model"""
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
@@ -220,9 +284,30 @@ def get_therapist_availability(therapist_id):
     if not therapist_profile.is_approved:
         return jsonify({'error': 'Therapist is not approved'}), 404
     
+    # Get availability slots from new model
+    from ..models import TherapistAvailability
+    from datetime import datetime, timedelta
+    availability_slots = TherapistAvailability.query.filter_by(
+        therapist_profile_id=therapist_profile.id
+    ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
+    
+    # Convert to date-based format for frontend calendar compatibility
+    availability_data = {}
+    
+    for slot in availability_slots:
+        date_str = slot.date.strftime('%Y-%m-%d')
+        if date_str not in availability_data:
+            availability_data[date_str] = []
+        
+        availability_data[date_str].append({
+            'start': slot.start_time.strftime('%H:%M'),
+            'end': slot.end_time.strftime('%H:%M'),
+            'available': slot.is_available
+        })
+    
     return jsonify({
         'therapist_id': therapist_id,
-        'availability': therapist_profile.availability or {},
+        'availability': availability_data,
         'timezone': therapist_profile.timezone,
         'accepts_emergency': therapist_profile.accepts_emergency
     })
