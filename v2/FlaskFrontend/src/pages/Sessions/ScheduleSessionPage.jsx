@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
+import { 
+  FaUser, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, 
+  FaUsers, FaFilter, FaArrowLeft, FaCheck, FaTimes, FaSpinner,
+  FaExclamationTriangle, FaHeart, FaBrain, FaMedal
+} from 'react-icons/fa';
 
 const ScheduleSessionPage = () => {
   const [therapists, setTherapists] = useState([]);
@@ -14,7 +19,7 @@ const ScheduleSessionPage = () => {
     notes: '',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [currentView, setCurrentView] = useState('directory'); // directory, calendar
   const [calendarView, setCalendarView] = useState('month'); // month, week
@@ -27,9 +32,36 @@ const ScheduleSessionPage = () => {
     gender: 'no_preference'
   });
   const [selectedSlot, setSelectedSlot] = useState(null);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    specialization: '',
+    language: '',
+    gender: '',
+    rating: 0
+  });
 
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
+
+  // Computed filtered therapists
+  const filteredTherapists = useMemo(() => {
+    return therapists.filter(therapist => {
+      if (filters.specialization && !therapist.specializations?.some(spec => 
+        spec.toLowerCase().includes(filters.specialization.toLowerCase())
+      )) return false;
+      
+      if (filters.language && !therapist.languages?.some(lang => 
+        lang.toLowerCase().includes(filters.language.toLowerCase())
+      )) return false;
+      
+      if (filters.gender && therapist.gender?.toLowerCase() !== filters.gender.toLowerCase()) return false;
+      
+      if (filters.rating && therapist.rating < filters.rating) return false;
+      
+      return true;
+    });
+  }, [therapists, filters]);
 
   useEffect(() => {
     loadAvailableTherapists();
@@ -51,6 +83,7 @@ const ScheduleSessionPage = () => {
 
   const loadAvailableTherapists = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/sessions/available-therapists');
       // Enhance therapist data with additional display properties
       const enhancedTherapists = response.data.map(therapist => ({
@@ -58,6 +91,10 @@ const ScheduleSessionPage = () => {
         rating: therapist.rating || (4 + Math.random()).toFixed(1), // Default random rating if not provided
         languages: therapist.languages || ['English'],
         avatar: therapist.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name)}&background=random`,
+        review_count: therapist.review_count || Math.floor(Math.random() * 100) + 10,
+        experience_years: therapist.experience_years || Math.floor(Math.random() * 15) + 5,
+        location: therapist.location || 'Remote',
+        gender: therapist.gender || (Math.random() > 0.5 ? 'female' : 'male'),
         // The availability data should now be in the format:
         // {
         //   "2025-10-04": [{ "start": "09:00", "end": "17:00" }],
@@ -69,6 +106,8 @@ const ScheduleSessionPage = () => {
     } catch (error) {
       console.error('Error loading therapists:', error);
       setMessage('Error loading available therapists');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -489,69 +528,239 @@ const ScheduleSessionPage = () => {
     );
   }
 
-  // Therapist Directory View
+  // Therapist Directory View with Modern UI
   const renderTherapistDirectory = () => (
-    <>
-      <header className="bg-white shadow-md p-4 flex flex-col sm:flex-row justify-between items-center rounded-lg mb-6 gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">Schedule a Meeting</h1>
-        <button 
-          onClick={() => setShowMatchModal(true)}
-          className="bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm sm:text-base w-full sm:w-auto"
-        >
-          Get Matched Automatically
-        </button>
-      </header>
+    <div className="space-y-6">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3">Find Your Perfect Therapist</h1>
+            <p className="text-indigo-100 text-lg">Connect with qualified professionals who understand your needs</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button 
+              onClick={() => setShowMatchModal(true)}
+              className="flex items-center justify-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition-all transform hover:scale-105 shadow-lg"
+            >
+              <FaUsers className="w-5 h-5" />
+              Smart Match
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {therapists.map(therapist => (
-          <div key={therapist.id} className="bg-white shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="flex sm:block">
-              {/* Clickable image that goes to therapist detail */}
-              <Link to={`/therapists/${therapist.id}`} className="block w-24 sm:w-full">
-                <img 
-                  src={therapist.avatar} 
-                  className="w-24 sm:w-full h-24 sm:h-40 object-cover hover:opacity-90 transition-opacity" 
-                  alt={therapist.name}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "https://via.placeholder.com/300x200?text=Therapist";
-                  }}
-                />
-              </Link>
-              <div className="p-2 sm:p-4 flex-grow">
-                {/* Clickable name that goes to therapist detail */}
-                <Link to={`/therapists/${therapist.id}`} className="block hover:text-indigo-600 transition-colors">
-                  <h2 className="text-base sm:text-lg font-semibold mb-1">{therapist.name}</h2>
-                </Link>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">
-                  Specialty: {therapist.specializations?.join(', ') || 'General Therapy'}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">
-                  Language: {therapist.languages?.join(', ')}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600 mb-2">⭐ {therapist.rating} Rating</p>
+      {/* Filters Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+            <FaFilter className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Filter Therapists</h3>
+            <p className="text-sm text-gray-600">Find the perfect match for your needs</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+            <select
+              value={filters.specialization}
+              onChange={(e) => setFilters({...filters, specialization: e.target.value})}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
+            >
+              <option value="">All Specializations</option>
+              <option value="anxiety">Anxiety & Depression</option>
+              <option value="family">Family Therapy</option>
+              <option value="trauma">Trauma & PTSD</option>
+              <option value="addiction">Addiction Recovery</option>
+              <option value="couples">Couples Therapy</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+            <select
+              value={filters.language}
+              onChange={(e) => setFilters({...filters, language: e.target.value})}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
+            >
+              <option value="">All Languages</option>
+              <option value="English">English</option>
+              <option value="Swahili">Swahili</option>
+              <option value="French">French</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+            <select
+              value={filters.gender}
+              onChange={(e) => setFilters({...filters, gender: e.target.value})}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
+            >
+              <option value="">Any Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
+            <select
+              value={filters.rating}
+              onChange={(e) => setFilters({...filters, rating: parseFloat(e.target.value)})}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
+            >
+              <option value={0}>Any Rating</option>
+              <option value={4}>4+ Stars</option>
+              <option value={4.5}>4.5+ Stars</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      <div className="flex items-center justify-between">
+        <p className="text-gray-600">
+          Showing <span className="font-semibold text-gray-900">{filteredTherapists.length}</span> of {therapists.length} therapists
+        </p>
+        {filteredTherapists.length !== therapists.length && (
+          <button
+            onClick={() => setFilters({ specialization: '', language: '', gender: '', rating: 0 })}
+            className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Therapist Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          // Loading skeletons
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-pulse">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="h-3 bg-gray-200 rounded"></div>
+                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
+                <div className="h-8 bg-gray-200 rounded flex-1"></div>
+              </div>
+            </div>
+          ))
+        ) : filteredTherapists.length > 0 ? (
+          filteredTherapists.map((therapist) => (
+            <div key={therapist.id} className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group">
+              {/* Therapist Image & Basic Info */}
+              <div className="relative">
+                <div className="w-full h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden">
+                  {therapist.avatar ? (
+                    <img 
+                      src={therapist.avatar} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                      alt={therapist.name}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(therapist.name)}&background=random&size=200`;
+                      }}
+                    />
+                  ) : (
+                    <FaUser className="w-20 h-20 text-indigo-400" />
+                  )}
+                </div>
                 
-                {/* Action buttons */}
-                <div className="space-y-1 sm:space-y-2">
+                {/* Rating Badge */}
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 shadow-lg">
+                  <FaStar className="w-3 h-3 text-yellow-500" />
+                  <span className="text-sm font-semibold">{therapist.rating}</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    Dr. {therapist.first_name} {therapist.last_name}
+                  </h3>
+                  <p className="text-indigo-600 font-medium text-sm">
+                    {therapist.specializations?.join(' • ') || 'General Therapy'}
+                  </p>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FaMapMarkerAlt className="w-3 h-3 text-gray-400" />
+                    <span>{therapist.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FaClock className="w-3 h-3 text-gray-400" />
+                    <span>{therapist.experience_years}+ years experience</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FaUsers className="w-3 h-3 text-gray-400" />
+                    <span>{therapist.review_count} reviews</span>
+                  </div>
+                </div>
+
+                {/* Languages */}
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {therapist.languages?.map((language) => (
+                    <span key={language} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                      {language}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
                   <Link
                     to={`/therapists/${therapist.id}`}
-                    className="block w-full bg-indigo-100 text-indigo-700 px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-200 text-xs sm:text-sm text-center transition-colors"
+                    className="flex-1 text-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
                   >
                     View Profile
                   </Link>
                   <button
                     onClick={() => viewTherapistAvailability(therapist)}
-                    className="w-full bg-indigo-500 text-white px-2 sm:px-3 py-1 sm:py-2 rounded-md hover:bg-indigo-600 text-xs sm:text-sm transition-colors"
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                   >
-                    Book Session
+                    <FaCalendarAlt className="w-3 h-3" />
+                    Book Now
                   </button>
                 </div>
               </div>
             </div>
+          ))
+        ) : (
+          // Empty state
+          <div className="col-span-full bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaUsers className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No therapists found</h3>
+            <p className="text-gray-600 mb-6">Try adjusting your filters to see more options, or use our smart matching feature.</p>
+            <button
+              onClick={() => setShowMatchModal(true)}
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              <FaUsers className="w-4 h-4" />
+              Get Matched
+            </button>
           </div>
-        ))}
+        )}
       </div>
-    </>
+    </div>
   );
 
   // Calendar View
