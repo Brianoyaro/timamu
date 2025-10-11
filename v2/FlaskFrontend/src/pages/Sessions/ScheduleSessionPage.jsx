@@ -227,7 +227,7 @@ const ScheduleSessionPage = () => {
     const today = new Date();
     
     Object.entries(selectedTherapistObj.availability).forEach(([dateStr, slots]) => {
-      slots.forEach((slot, index) => {
+      slots.forEach((slot, slotIndex) => {
         const date = new Date(dateStr);
         // Skip past dates
         if (date < new Date(today.setHours(0,0,0,0))) return;
@@ -235,24 +235,33 @@ const ScheduleSessionPage = () => {
         const [startHour, startMin] = slot.start.split(':').map(Number);
         const [endHour, endMin] = (slot.end || '17:00').split(':').map(Number);
         
-        const startTime = new Date(date);
-        startTime.setHours(startHour, startMin, 0, 0);
-        
-        const endTime = new Date(date);
-        endTime.setHours(endHour, endMin, 0, 0);
-        
-        events.push({
-          id: `${dateStr}-${slot.start}-${index}`,
-          title: `Available at ${slot.start}`,
-          start: startTime,
-          end: endTime,
-          resource: {
-            therapistId: selectedTherapistObj.id,
-            date: dateStr,
-            time: slot.start,
-            therapist: selectedTherapistObj
-          }
-        });
+        // Create individual 1-hour slots between start and end time
+        for (let hour = startHour; hour < endHour; hour++) {
+          const slotStartTime = new Date(date);
+          slotStartTime.setHours(hour, startMin, 0, 0);
+          
+          const slotEndTime = new Date(date);
+          slotEndTime.setHours(hour + 1, startMin, 0, 0);
+          
+          // Skip if this specific hour slot is in the past
+          const now = new Date();
+          if (slotStartTime < now) continue;
+          
+          const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+          
+          events.push({
+            id: `${dateStr}-${timeString}-${slotIndex}`,
+            title: `Available at ${timeString}`,
+            start: slotStartTime,
+            end: slotEndTime,
+            resource: {
+              therapistId: selectedTherapistObj.id,
+              date: dateStr,
+              time: timeString,
+              therapist: selectedTherapistObj
+            }
+          });
+        }
       });
     });
     
