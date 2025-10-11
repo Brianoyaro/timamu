@@ -6,6 +6,18 @@ from ..utils.audit_utils import log_action
 from datetime import datetime, time, timedelta
 import json
 
+'''
+# WE'RE NOT USING THESE YET, BUT THEY WILL BE USEFUL LATER WHEN WE SWITCH FROM 
+/api/therapists/availability (GET/POST) - for therapist availability management
+/api/sessions/available-therapists (GET) - for patient booking
+to
+/api/availability/therapist/<int:therapist_id> (GET) - for therapist availability management
+/api/availability/my-availability (GET/POST) - for therapist to manage their own availability
+/api/availability/unavailable (POST) - to add unavailable periods
+/api/availability/unavailable/<int:period_id> (DELETE) - to remove unavailable periods
+/api/availability/available-slots/<int:therapist_id> (GET) - for patient booking
+'''
+
 availability_bp = Blueprint('availability', __name__, url_prefix='/api/availability')
 
 @availability_bp.route('/therapist/<int:therapist_id>', methods=['GET'])

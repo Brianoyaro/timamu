@@ -42,7 +42,7 @@ def create_app():
     from .messages import messages_bp
     from .dashboard import dashboard_bp
     from .test_routes import test_bp
-    from .routes.availability import availability_bp
+    from .routes.availability import availability_bp # WE'RE NOT USING THESE YET, BUT THEY WILL BE USEFUL LATER
     
     import logging
     logger = logging.getLogger(__name__)
