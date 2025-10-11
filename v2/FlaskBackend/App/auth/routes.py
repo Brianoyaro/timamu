@@ -613,3 +613,79 @@ def verify_token():
     except Exception as e:
         logging.error(f'Token verification failed with exception: {str(e)}')
         return jsonify({'error': 'Invalid or expired token'}), 401
+
+@auth_bp.route('/profile-status', methods=['GET'])
+@jwt_required()
+def get_profile_status():
+    '''
+    Check if user has completed their profile setup
+    '''
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.is_active:
+            return jsonify({'error': 'User not found or inactive'}), 404
+        
+        profile_complete = False
+        profile_data = None
+        
+        if user.role == 'PATIENT':
+            profile = PatientProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                # Check if essential fields are filled
+                profile_complete = bool(
+                    profile.date_of_birth or 
+                    profile.phone or 
+                    profile.emergency_contact
+                )
+                profile_data = {
+                    'has_basic_info': bool(profile.date_of_birth and profile.phone),
+                    'has_emergency_contact': bool(profile.emergency_contact),
+                    'completion_percentage': 0
+                }
+                
+                # Calculate completion percentage
+                fields = [
+                    profile.date_of_birth, profile.phone, profile.address,
+                    profile.emergency_contact, profile.medical_history,
+                    profile.preferred_language, profile.timezone
+                ]
+                filled_fields = sum(1 for field in fields if field)
+                profile_data['completion_percentage'] = int((filled_fields / len(fields)) * 100)
+                
+        elif user.role == 'THERAPIST':
+            profile = TherapistProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                # Check if essential fields are filled
+                profile_complete = bool(
+                    profile.license_number and 
+                    profile.specializations and 
+                    profile.bio
+                )
+                profile_data = {
+                    'has_license': bool(profile.license_number),
+                    'has_specializations': bool(profile.specializations),
+                    'has_bio': bool(profile.bio),
+                    'is_approved': profile.is_approved,
+                    'completion_percentage': 0
+                }
+                
+                # Calculate completion percentage
+                fields = [
+                    profile.license_number, profile.specializations, profile.languages,
+                    profile.experience, profile.education, profile.bio, profile.timezone
+                ]
+                filled_fields = sum(1 for field in fields if field)
+                profile_data['completion_percentage'] = int((filled_fields / len(fields)) * 100)
+        
+        return jsonify({
+            'success': True,
+            'profile_complete': profile_complete,
+            'profile_data': profile_data,
+            'user_role': user.role
+        }), 200
+        
+    except Exception as e:
+        logging.error(f'Get profile status failed with exception: {str(e)}')
+        return jsonify({'error': 'Failed to get profile status'}), 500
