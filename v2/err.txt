@@ -1,91 +1,11 @@
-VideoCallPage.jsx:35 VideoCallPage mounted for room: session_28e73bbc5ab7
-VideoCallPage.jsx:64 === INITIALIZING SESSION ===
-VideoCallPage.jsx:65 Room ID: session_28e73bbc5ab7
-VideoCallPage.jsx:66 User: {email: 'brianoyaro2000@gmail.com', id: 4, role: 'PATIENT'}
-VideoCallPage.jsx:67 Socket: Socket2 {connected: true, recovered: undefined, receiveBuffer: Array(0), sendBuffer: Array(0), _queue: Array(0), …}acks: {}auth: {token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6Z…5UIn0.s9d4hHc-_KHtp2i2fZT2WvapjsYCYHSiEppx9YQ8mWw'}connected: trueflags: {}id: "aOosZnQiLvqOAe21AAAD"ids: 0io: Manager {nsps: {…}, subs: Array(5), opts: {…}, setTimeoutFn: ƒ, clearTimeoutFn: ƒ, …}nsp: "/"receiveBuffer: []recovered: undefinedsendBuffer: []subs: (4) [ƒ, ƒ, ƒ, ƒ]_callbacks: {$connect: Array(1), $connected: Array(1), $disconnect: Array(1), $connect_error: Array(1), $reconnect: Array(1), …}_opts: {auth: {…}, query: {…}, transports: Array(2), timeout: 20000, forceNew: true, …}_pid: undefined_queue: []_queueSeq: 0active: (...)disconnected: (...)volatile: (...)[[Prototype]]: Emitter
-VideoCallPage.jsx:44 Socket/session effect triggered: {socketConnected: true, sessionLoaded: false, socketIsConnected: true}
-VideoCallPage.jsx:38 VideoCallPage unmounting, cleaning up...
-VideoCallPage.jsx:35 VideoCallPage mounted for room: session_28e73bbc5ab7
-VideoCallPage.jsx:64 === INITIALIZING SESSION ===
-VideoCallPage.jsx:65 Room ID: session_28e73bbc5ab7
-VideoCallPage.jsx:66 User: {email: 'brianoyaro2000@gmail.com', id: 4, role: 'PATIENT'}
-VideoCallPage.jsx:67 Socket: Socket2 {connected: true, recovered: undefined, receiveBuffer: Array(0), sendBuffer: Array(0), _queue: Array(0), …}acks: {}auth: {token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6Z…5UIn0.s9d4hHc-_KHtp2i2fZT2WvapjsYCYHSiEppx9YQ8mWw'}connected: trueflags: {}id: "aOosZnQiLvqOAe21AAAD"ids: 0io: Manager {nsps: {…}, subs: Array(5), opts: {…}, setTimeoutFn: ƒ, clearTimeoutFn: ƒ, …}nsp: "/"receiveBuffer: []recovered: undefinedsendBuffer: []subs: (4) [ƒ, ƒ, ƒ, ƒ]_callbacks: {$connect: Array(1), $connected: Array(1), $disconnect: Array(1), $connect_error: Array(1), $reconnect: Array(1), …}_opts: {auth: {…}, query: {…}, transports: Array(2), timeout: 20000, forceNew: true, …}_pid: undefined_queue: []_queueSeq: 0active: (...)disconnected: (...)volatile: (...)[[Prototype]]: Emitter
-VideoCallPage.jsx:44 Socket/session effect triggered: {socketConnected: true, sessionLoaded: false, socketIsConnected: true}
-api.js:14 [DEBUG API] Request to: /sessions/
-api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
-api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…5UIn0.s9d4hHc-_KHtp2i2fZT2WvapjsYCYHSiEppx9YQ8mWw'}
-api.js:14 [DEBUG API] Request to: /sessions/
-api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
-api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…5UIn0.s9d4hHc-_KHtp2i2fZT2WvapjsYCYHSiEppx9YQ8mWw'}
-api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
-VideoCallPage.jsx:72 Available sessions: 1
-VideoCallPage.jsx:75 Current session found: {actual_duration: null, can_join: false, cancellation_reason: null, cancelled_at: null, created_at: '2025-10-10T14:04:21', …}
-api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
-VideoCallPage.jsx:72 Available sessions: 1
-VideoCallPage.jsx:75 Current session found: {actual_duration: null, can_join: false, cancellation_reason: null, cancelled_at: null, created_at: '2025-10-10T14:04:21', …}actual_duration: nullcan_join: falsecancellation_reason: nullcancelled_at: nullcreated_at: "2025-10-10T14:04:21"duration: 60ended_at: nullid: 10is_emergency: falsejoin_url: "http://localhost:5000/video-call/session_28e73bbc5ab7"patient_name: "Brian Mokua"room_id: "session_28e73bbc5ab7"scheduled_at: "2025-10-10T17:00:00"session_type: "individual"started_at: nullstatus: "scheduled"therapist_name: "Therapist-one Last-name"timezone: "Africa/Nairobi"title: "Session with Therapist-one Last-name"updated_at: "2025-10-10T14:04:21"[[Prototype]]: Object
-+++++++++++++++++++++++++++++++++++++++++++++++++
+I propose creating a separate availability model table.
 
-Current session found: 
+I dont like the UI of therapists setting their availability. Firtly, hat's the essence of having a week view? Can we incorporate a calender instead of creating one from scratch [think a secondary library or something?].
 
-actual_duration
-: 
-null
-can_join
-: 
-false
-cancellation_reason
-: 
-null
-cancelled_at
-: 
-null
-created_at
-: 
-"2025-10-10T14:04:21"
-duration
-: 
-60
-ended_at
-: 
-null
-id
-: 
-10
-is_emergency
-: 
-false
-join_url
-: 
-"http://localhost:5000/video-call/session_28e73bbc5ab7"
-patient_name
-: 
-"Brian Mokua"
-room_id
-: 
-"session_28e73bbc5ab7"
-scheduled_at
-: 
-"2025-10-10T17:00:00"
-session_type
-: 
-"individual"
-started_at
-: 
-null
-status
-: 
-"scheduled"
-therapist_name
-: 
-"Therapist-one Last-name"
-timezone
-: 
-"Africa/Nairobi"
-title
-: 
-"Session with Therapist-one Last-name"
-updated_at
-: 
-"2025-10-10T14:04:21"
+The therapist dashboard is not very appealing. Make it modern, professional, production grade and mobile friendly.
 
+In the therapist setting availability, how can we provide automation for the therapists instead of manually setting each day up?
 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+I want us to modify the videocall diplay to display our stream as we await others to join just as zoom and google meet does. Also, I am testing on localhost and opening an incognito window during video testing removes the other logged in user. Can I test in the same network using another device in the same network/WLAN?

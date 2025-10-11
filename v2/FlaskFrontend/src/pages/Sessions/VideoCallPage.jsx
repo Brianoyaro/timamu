@@ -195,6 +195,7 @@ const VideoCallPage = () => {
       initializePeerConnection();
       
       setConnectionStatus('connected');
+      setLoading(false); // End loading state when media is ready
       console.log('=== MEDIA INITIALIZATION COMPLETE ===');
     } catch (err) {
       console.error('=== MEDIA ACCESS ERROR ===', err);
@@ -377,7 +378,7 @@ const VideoCallPage = () => {
     socket.on('session-message', (data) => {
       console.log('=== RECEIVED MESSAGE ===', data);
       setMessages(prev => [...prev, {
-        id: Date.now(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
         sender: data.sender,
         message: data.message,
         timestamp: new Date()
@@ -580,25 +581,121 @@ const VideoCallPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg mb-2">Connecting to session...</p>
-          <p className="text-gray-400 text-sm mb-4">Setting up video and audio</p>
-          
-          {/* Debug loading info */}
-          <div className="bg-gray-800 rounded p-3 text-xs text-left">
-            <p className="text-yellow-400 mb-1">Debug Info:</p>
-            <p className="text-gray-300">Socket: {socket?.connected ? 'Connected' : 'Disconnected'}</p>
-            <p className="text-gray-300">User: {user?.first_name} {user?.last_name}</p>
-            <p className="text-gray-300">Room: {roomId}</p>
-            <p className="text-gray-300">Session: {session ? 'Loaded' : 'Loading...'}</p>
-          </div>
-          
-          <p className="text-gray-500 text-xs mt-4">
-            Check browser console for detailed logs
+      <div className="min-h-screen bg-gray-900 flex flex-col">
+        {/* Header */}
+        <div className="bg-gray-800 px-6 py-4">
+          <h1 className="text-white text-lg font-semibold">
+            {session?.title || 'Loading Session...'}
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Setting up your connection...
           </p>
         </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex items-center justify-center relative">
+          {/* Show local video prominently if available */}
+          {localStreamRef.current ? (
+            <div className="w-full h-full relative bg-gray-800">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Overlay with status */}
+              <div className="absolute top-6 left-6 bg-black bg-opacity-60 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <div>
+                    <p className="text-white font-semibold">Ready to join</p>
+                    <p className="text-gray-300 text-sm">Waiting for other participants...</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Join status overlay */}
+              <div className="absolute bottom-6 left-6 right-6">
+                <div className="bg-black bg-opacity-60 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm">
+                        You can see and hear yourself. Others will join soon.
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        Check your audio and video before others arrive
+                      </p>
+                    </div>
+                    <div className="text-green-400">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Traditional loading screen if no video yet
+            <div className="text-center max-w-md mx-auto">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+              <p className="text-white text-lg mb-2">Connecting to session...</p>
+              <p className="text-gray-400 text-sm mb-4">Setting up video and audio</p>
+              
+              {/* Debug loading info */}
+              <div className="bg-gray-800 rounded p-3 text-xs text-left">
+                <p className="text-yellow-400 mb-1">Debug Info:</p>
+                <p className="text-gray-300">Socket: {socket?.connected ? 'Connected' : 'Disconnected'}</p>
+                <p className="text-gray-300">User: {user?.first_name} {user?.last_name}</p>
+                <p className="text-gray-300">Room: {roomId}</p>
+                <p className="text-gray-300">Session: {session ? 'Loaded' : 'Loading...'}</p>
+              </div>
+              
+              <p className="text-gray-500 text-xs mt-4">
+                Check browser console for detailed logs
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Basic controls at bottom if media is ready */}
+        {localStreamRef.current && (
+          <div className="bg-gray-800 px-6 py-4 flex justify-center space-x-4">
+            <button
+              onClick={toggleVideo}
+              className={`p-3 rounded-full ${
+                isVideoEnabled ? 'bg-gray-600 hover:bg-gray-700' : 'bg-red-600 hover:bg-red-700'
+              }`}
+              title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}
+            >
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {isVideoEnabled ? (
+                  <path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 2v-7l-4 2z" />
+                ) : (
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                )}
+              </svg>
+            </button>
+
+            <button
+              onClick={toggleAudio}
+              className={`p-3 rounded-full ${
+                isAudioEnabled ? 'bg-gray-600 hover:bg-gray-700' : 'bg-red-600 hover:bg-red-700'
+              }`}
+              title={isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'}
+            >
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {isAudioEnabled ? (
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z M17.3 11c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z" />
+                ) : (
+                  <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28z M14.98 11.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99z M4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z" />
+                )}
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -666,6 +763,23 @@ const VideoCallPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Logout Button */}
+          <button
+            onClick={() => {
+              const logout = useAuthStore.getState().logout;
+              cleanup();
+              logout();
+              navigate('/login');
+            }}
+            className="bg-gray-600 text-white px-3 py-2 rounded-md hover:bg-gray-700 text-sm"
+            title="Logout"
+          >
+            <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+            </svg>
+            Logout
+          </button>
+          
           {/* Manual join button for debugging */}
           {socket && session && socket.connected && (
             <button
@@ -708,14 +822,28 @@ const VideoCallPage = () => {
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 </div>
-                <p className="text-white text-lg mb-2">Waiting for other participant</p>
-                <p className="text-gray-400 text-sm">Share the session link or wait for them to join</p>
+                <p className="text-white text-lg mb-2">You're the first one here!</p>
+                <p className="text-gray-400 text-sm mb-4">
+                  Others will see you when they join. You can test your camera and audio in the preview below.
+                </p>
+                <div className="bg-green-500 bg-opacity-20 border border-green-500 rounded-lg p-3 mb-4">
+                  <p className="text-green-300 text-sm">
+                    ✓ Your camera and microphone are working
+                  </p>
+                </div>
+                <p className="text-gray-500 text-xs">
+                  Share the session link or wait for them to join
+                </p>
               </div>
             </div>
           )}
           
-          {/* Local Video (Picture-in-Picture) */}
-          <div className="absolute top-4 right-4 w-48 h-36 bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-600">
+          {/* Local Video (Responsive size - larger when alone, smaller when others present) */}
+          <div className={`absolute ${
+            participants.length === 0 
+              ? 'bottom-6 right-6 w-80 h-60' // Larger when alone
+              : 'top-4 right-4 w-48 h-36'   // Smaller when others present
+          } bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-600 shadow-lg`}>
             <video
               ref={localVideoRef}
               autoPlay
@@ -723,6 +851,12 @@ const VideoCallPage = () => {
               muted
               className="w-full h-full object-cover"
             />
+            {/* User name overlay */}
+            <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 rounded px-2 py-1">
+              <p className="text-white text-xs font-semibold">
+                You {!isVideoEnabled && '(Video Off)'}
+              </p>
+            </div>
             {!isVideoEnabled && (
               <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                 <div className="text-center">
