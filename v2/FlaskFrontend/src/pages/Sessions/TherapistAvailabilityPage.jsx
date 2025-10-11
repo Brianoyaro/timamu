@@ -105,22 +105,47 @@ const TherapistAvailabilityPage = () => {
       const response = await api.get('/therapists/availability');
       const availabilityData = response.data.availability || {};
       
-      // Convert availability data to calendar events
+      // Convert availability data to calendar events with individual hourly slots
       const calendarEvents = [];
       Object.keys(availabilityData).forEach(dateKey => {
         const slots = availabilityData[dateKey];
         if (Array.isArray(slots)) {
-          slots.forEach((slot, index) => {
-            const startDateTime = moment(`${dateKey} ${slot.start}`).toDate();
-            const endDateTime = moment(`${dateKey} ${slot.end}`).toDate();
+          slots.forEach((slot, slotIndex) => {
+            const [startHour, startMin] = slot.start.split(':').map(Number);
+            const [endHour, endMin] = slot.end.split(':').map(Number);
             
-            calendarEvents.push({
-              id: `${dateKey}-${index}`,
-              title: 'Available',
-              start: startDateTime,
-              end: endDateTime,
-              resource: { dateKey, slotIndex: index }
-            });
+            // Create individual 1-hour slots between start and end time
+            for (let hour = startHour; hour < endHour; hour++) {
+              const startDateTime = moment(dateKey).set({
+                hour: hour,
+                minute: startMin || 0,
+                second: 0,
+                millisecond: 0
+              }).toDate();
+              
+              const endDateTime = moment(dateKey).set({
+                hour: hour + 1,
+                minute: startMin || 0,
+                second: 0,
+                millisecond: 0
+              }).toDate();
+              
+              const timeString = `${hour.toString().padStart(2, '0')}:${(startMin || 0).toString().padStart(2, '0')}`;
+              
+              calendarEvents.push({
+                id: `${dateKey}-${timeString}-${slotIndex}`,
+                title: `Available ${timeString}`,
+                start: startDateTime,
+                end: endDateTime,
+                resource: { 
+                  dateKey, 
+                  slotIndex, 
+                  originalSlot: slot,
+                  hourSlot: hour,
+                  timeString 
+                }
+              });
+            }
           });
         }
       });
@@ -139,21 +164,60 @@ const TherapistAvailabilityPage = () => {
     try {
       setLoading(true);
       
-      // Convert events back to the API format
+      // Convert events back to the API format by consolidating consecutive hours
       const availability = {};
+      
+      // Group events by date
+      const eventsByDate = {};
       events.forEach(event => {
         const dateKey = moment(event.start).format('YYYY-MM-DD');
-        const startTime = moment(event.start).format('HH:mm');
-        const endTime = moment(event.end).format('HH:mm');
+        if (!eventsByDate[dateKey]) {
+          eventsByDate[dateKey] = [];
+        }
+        eventsByDate[dateKey].push({
+          hour: moment(event.start).hour(),
+          minute: moment(event.start).minute(),
+          event: event
+        });
+      });
+      
+      // For each date, consolidate consecutive hours into ranges
+      Object.keys(eventsByDate).forEach(dateKey => {
+        const dayEvents = eventsByDate[dateKey].sort((a, b) => a.hour - b.hour);
+        const consolidatedSlots = [];
         
-        if (!availability[dateKey]) {
-          availability[dateKey] = [];
+        let currentSlot = null;
+        
+        dayEvents.forEach(({ hour, minute }) => {
+          if (!currentSlot) {
+            // Start new slot
+            currentSlot = {
+              start: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+              end: `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+            };
+          } else {
+            // Check if this hour is consecutive to the current slot
+            const currentEndHour = parseInt(currentSlot.end.split(':')[0]);
+            if (hour === currentEndHour) {
+              // Extend current slot
+              currentSlot.end = `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            } else {
+              // Gap found, save current slot and start new one
+              consolidatedSlots.push(currentSlot);
+              currentSlot = {
+                start: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+                end: `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+              };
+            }
+          }
+        });
+        
+        // Don't forget the last slot
+        if (currentSlot) {
+          consolidatedSlots.push(currentSlot);
         }
         
-        availability[dateKey].push({
-          start: startTime,
-          end: endTime
-        });
+        availability[dateKey] = consolidatedSlots;
       });
       
       await api.post('/therapists/availability', { availability });
@@ -193,42 +257,95 @@ const TherapistAvailabilityPage = () => {
   }, []);
 
   const createAvailabilitySlot = () => {
-    const newEvent = {
-      id: `${Date.now()}-${Math.random()}`,
-      title: formData.title,
-      start: formData.start,
-      end: formData.end,
-    };
-
     if (formData.recurrence !== 'none') {
       // Create recurring slots
       const recurringEvents = [];
-      const startDate = moment(formData.start);
-      const endDate = moment(formData.end);
-      const duration = endDate.diff(startDate);
+      const startMoment = moment(formData.start);
+      const endMoment = moment(formData.end);
+      const startHour = startMoment.hour();
+      const endHour = endMoment.hour();
+      const startMin = startMoment.minute();
       
       for (let week = 0; week < formData.duration; week++) {
-        let nextStart, nextEnd;
+        let baseDate;
         
         if (formData.recurrence === 'weekly') {
-          nextStart = startDate.clone().add(week, 'weeks');
-          nextEnd = nextStart.clone().add(duration);
+          baseDate = startMoment.clone().add(week, 'weeks');
         } else if (formData.recurrence === 'daily') {
-          nextStart = startDate.clone().add(week * 7, 'days'); // Daily for 4 weeks
-          nextEnd = nextStart.clone().add(duration);
+          baseDate = startMoment.clone().add(week * 7, 'days'); // Daily for 4 weeks
         }
         
-        recurringEvents.push({
-          id: `${Date.now()}-${week}-${Math.random()}`,
-          title: formData.title,
-          start: nextStart.toDate(),
-          end: nextEnd.toDate(),
-        });
+        // Create individual hourly slots for this occurrence
+        for (let hour = startHour; hour < endHour; hour++) {
+          const slotStart = baseDate.clone().set({
+            hour: hour,
+            minute: startMin,
+            second: 0,
+            millisecond: 0
+          });
+          const slotEnd = baseDate.clone().set({
+            hour: hour + 1,
+            minute: startMin,
+            second: 0,
+            millisecond: 0
+          });
+          
+          const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+          
+          recurringEvents.push({
+            id: `${Date.now()}-${week}-${hour}-${Math.random()}`,
+            title: `Available ${timeString}`,
+            start: slotStart.toDate(),
+            end: slotEnd.toDate(),
+            resource: { 
+              dateKey: slotStart.format('YYYY-MM-DD'),
+              hourSlot: hour,
+              timeString 
+            }
+          });
+        }
       }
       
       setEvents(prev => [...prev, ...recurringEvents]);
     } else {
-      setEvents(prev => [...prev, newEvent]);
+      // Create single slot with individual hours
+      const startMoment = moment(formData.start);
+      const endMoment = moment(formData.end);
+      const startHour = startMoment.hour();
+      const endHour = endMoment.hour();
+      const startMin = startMoment.minute();
+      const singleSlotEvents = [];
+      
+      for (let hour = startHour; hour < endHour; hour++) {
+        const slotStart = startMoment.clone().set({
+          hour: hour,
+          minute: startMin,
+          second: 0,
+          millisecond: 0
+        });
+        const slotEnd = startMoment.clone().set({
+          hour: hour + 1,
+          minute: startMin,
+          second: 0,
+          millisecond: 0
+        });
+        
+        const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+        
+        singleSlotEvents.push({
+          id: `${Date.now()}-${hour}-${Math.random()}`,
+          title: `Available ${timeString}`,
+          start: slotStart.toDate(),
+          end: slotEnd.toDate(),
+          resource: { 
+            dateKey: slotStart.format('YYYY-MM-DD'),
+            hourSlot: hour,
+            timeString 
+          }
+        });
+      }
+      
+      setEvents(prev => [...prev, ...singleSlotEvents]);
     }
     
     setShowModal(false);
@@ -265,21 +382,39 @@ const TherapistAvailabilityPage = () => {
     for (let week = 0; week < 4; week++) {
       template.slots.forEach(slot => {
         const slotDate = startOfWeek.clone().add(week, 'weeks').day(slot.day);
-        const startTime = slotDate.clone().set({
-          hour: parseInt(slot.start.split(':')[0]),
-          minute: parseInt(slot.start.split(':')[1])
-        });
-        const endTime = slotDate.clone().set({
-          hour: parseInt(slot.end.split(':')[0]),
-          minute: parseInt(slot.end.split(':')[1])
-        });
+        const [startHour, startMin] = slot.start.split(':').map(Number);
+        const [endHour, endMin] = slot.end.split(':').map(Number);
         
-        newEvents.push({
-          id: `template-${week}-${slot.day}-${Math.random()}`,
-          title: 'Available',
-          start: startTime.toDate(),
-          end: endTime.toDate(),
-        });
+        // Create individual hourly slots between start and end time
+        for (let hour = startHour; hour < endHour; hour++) {
+          const startTime = slotDate.clone().set({
+            hour: hour,
+            minute: startMin || 0,
+            second: 0,
+            millisecond: 0
+          });
+          const endTime = slotDate.clone().set({
+            hour: hour + 1,
+            minute: startMin || 0,
+            second: 0,
+            millisecond: 0
+          });
+          
+          const timeString = `${hour.toString().padStart(2, '0')}:${(startMin || 0).toString().padStart(2, '0')}`;
+          
+          newEvents.push({
+            id: `template-${week}-${slot.day}-${hour}-${Math.random()}`,
+            title: `Available ${timeString}`,
+            start: startTime.toDate(),
+            end: endTime.toDate(),
+            resource: { 
+              dateKey: startTime.format('YYYY-MM-DD'),
+              slotIndex: slot.day,
+              hourSlot: hour,
+              timeString 
+            }
+          });
+        }
       });
     }
     
