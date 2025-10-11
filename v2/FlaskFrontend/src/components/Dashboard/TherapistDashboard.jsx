@@ -117,7 +117,7 @@ const TherapistDashboard = ({ stats, user }) => {
             <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-0">Today's Schedule</h2>
             <div className="flex gap-2">
               <button
-                onClick={() => navigate('/availability')}
+                onClick={() => navigate('/sessions/availability')}
                 className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <FaCalendarAlt className="w-4 h-4 mr-2" />
@@ -176,7 +176,7 @@ const TherapistDashboard = ({ stats, user }) => {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No sessions scheduled for today</h3>
               <p className="text-gray-600 mb-6">Take some time to review patient progress or plan upcoming sessions.</p>
               <button
-                onClick={() => navigate('/availability')}
+                onClick={() => navigate('/sessions/availability')}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 <FaCalendarAlt className="w-4 h-4 mr-2" />
