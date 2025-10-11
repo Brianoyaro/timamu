@@ -57,7 +57,24 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await api.post('/auth/register', userData);
-      set({ isLoading: false });
+      
+      // Extract tokens and user from response
+      const { access_token, refresh_token, user } = response.data;
+      
+      // Store tokens for automatic login after registration
+      localStorage.setItem('token', access_token);
+      if (refresh_token) {
+        localStorage.setItem('refresh_token', refresh_token);
+      }
+      
+      // Update auth state
+      set({ 
+        token: access_token, 
+        user, 
+        isAuthenticated: true, 
+        isLoading: false 
+      });
+      
       return response.data;
     } catch (error) {
       set({ error: error.message, isLoading: false });
