@@ -623,112 +623,155 @@ const ScheduleSessionPage = () => {
 
   // Render Confirmation Modal
   const renderConfirmModal = () => (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showConfirmModal ? '' : 'hidden'} p-4`}>
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-y-auto max-h-[90vh]">
-        <div className="flex justify-between items-center border-b p-4">
-          <h2 className="text-lg sm:text-xl font-bold text-indigo-600">Confirm Booking</h2>
-          <button 
-            onClick={() => setShowConfirmModal(false)}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-            aria-label="Close"
-          >
-            &times;
-          </button>
+    <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 ${showConfirmModal ? '' : 'hidden'} p-4`}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all duration-300 scale-100">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <FaCalendarAlt className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Confirm Booking</h2>
+            </div>
+            <button 
+              onClick={() => setShowConfirmModal(false)}
+              className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              aria-label="Close"
+            >
+              <span className="text-lg">×</span>
+            </button>
+          </div>
         </div>
         
-        {selectedSlot && (
-          <div className="p-4 space-y-3">
-            <p>
-              <span className="font-semibold">Therapist:</span> {selectedSlot.therapist.name}
-            </p>
-            <p>
-              <span className="font-semibold">Date:</span> {new Date(selectedSlot.date).toLocaleDateString()}
-            </p>
-            <p>
-              <span className="font-semibold">Time:</span> {selectedSlot.time}
-            </p>
-            
-            <div className="mt-4">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Session Title
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={sessionData.title}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g., Weekly Check-in, Anxiety Management"
-                required
-              />
-            </div>
-            
-            <div className="mt-4">
-              <label htmlFor="session_type" className="block text-sm font-medium text-gray-700 mb-2">
-                Session Type
-              </label>
-              <select
-                id="session_type"
-                name="session_type"
-                value={sessionData.session_type}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="individual">Individual Therapy</option>
-                <option value="group">Group Therapy</option>
-                <option value="emergency">Emergency Session</option>
-              </select>
-            </div>
-            
-            <div className="mt-4">
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-                Duration
-              </label>
-              <select
-                id="duration"
-                name="duration"
-                value={sessionData.duration}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </div>
-            
-            <div className="mt-4">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Notes (Optional)
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={sessionData.notes}
-                onChange={handleInputChange}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Any specific topics or concerns..."
-              />
-            </div>
-          </div>
-        )}
+        {/* Content */}
+        <div className="p-6 max-h-[70vh] overflow-y-auto">
+          {selectedSlot && (
+            <>
+              {/* Booking Summary */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-100">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <FaUser className="w-4 h-4 text-indigo-600" />
+                  Booking Summary
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Therapist:</span>
+                    <span className="font-medium text-gray-900">{selectedSlot.therapist.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Date:</span>
+                    <span className="font-medium text-gray-900">{new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-medium text-gray-900">{selectedSlot.time}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Session Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={sessionData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="e.g., Weekly Check-in, Anxiety Management"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="session_type" className="block text-sm font-semibold text-gray-900 mb-2">
+                      Session Type
+                    </label>
+                    <select
+                      id="session_type"
+                      name="session_type"
+                      value={sessionData.session_type}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-colors"
+                    >
+                      <option value="individual">Individual Therapy</option>
+                      <option value="group">Group Therapy</option>
+                      <option value="emergency">Emergency Session</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="duration" className="block text-sm font-semibold text-gray-900 mb-2">
+                      Duration
+                    </label>
+                    <select
+                      id="duration"
+                      name="duration"
+                      value={sessionData.duration}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-colors"
+                    >
+                      <option value={30}>30 minutes</option>
+                      <option value={45}>45 minutes</option>
+                      <option value={60}>60 minutes</option>
+                      <option value={90}>90 minutes</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="notes" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Additional Notes <span className="text-gray-500 font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    value={sessionData.notes}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                    placeholder="Any specific topics, concerns, or preparation notes..."
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         
-        <div className="p-4 border-t flex justify-end gap-2">
+        {/* Footer */}
+        <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button 
             onClick={() => setShowConfirmModal(false)}
-            className="px-3 sm:px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
+            className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium order-2 sm:order-1"
           >
             Cancel
           </button>
           <button 
             onClick={handleScheduleSession}
             disabled={loading}
-            className={`px-3 sm:px-4 py-2 rounded text-white text-sm ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-200 order-1 sm:order-2 flex items-center justify-center gap-2 ${
+              loading 
+                ? 'bg-gray-400 text-white cursor-not-allowed' 
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+            }`}
           >
-            {loading ? 'Processing...' : 'Confirm'}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Processing...
+              </>
+            ) : (
+              <>
+                <FaCalendarAlt className="w-4 h-4" />
+                Confirm Booking
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -737,74 +780,113 @@ const ScheduleSessionPage = () => {
 
   // Render Match Modal
   const renderMatchModal = () => (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 ${showMatchModal ? '' : 'hidden'} p-4`}>
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
-        <div className="flex justify-between items-center border-b p-4">
-          <h2 className="text-lg sm:text-xl font-bold text-indigo-600">Get Matched Automatically</h2>
-          <button 
-            onClick={() => setShowMatchModal(false)}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-            aria-label="Close"
-          >
-            &times;
-          </button>
+    <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 ${showMatchModal ? '' : 'hidden'} p-4`}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all duration-300 scale-100">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <FaUsers className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Smart Match</h2>
+            </div>
+            <button 
+              onClick={() => setShowMatchModal(false)}
+              className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              aria-label="Close"
+            >
+              <span className="text-lg">×</span>
+            </button>
+          </div>
+          <p className="text-purple-100 text-sm mt-2">Find your perfect therapist match automatically</p>
         </div>
         
-        <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">What do you need help with?</label>
-            <select 
-              className="w-full border rounded px-3 py-2 text-sm"
-              value={matchPreferences.specialization}
-              onChange={(e) => setMatchPreferences({...matchPreferences, specialization: e.target.value})}
-            >
-              <option value="">Select a specialization</option>
-              <option value="family">Family Therapy</option>
-              <option value="trauma">Trauma</option>
-              <option value="addiction">Addiction</option>
-              <option value="depression">Depression</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Preferred Language</label>
-            <select 
-              className="w-full border rounded px-3 py-2 text-sm"
-              value={matchPreferences.language}
-              onChange={(e) => setMatchPreferences({...matchPreferences, language: e.target.value})}
-            >
-              <option value="English">English</option>
-              <option value="Swahili">Swahili</option>
-              <option value="French">French</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Preferred Gender</label>
-            <select 
-              className="w-full border rounded px-3 py-2 text-sm"
-              value={matchPreferences.gender}
-              onChange={(e) => setMatchPreferences({...matchPreferences, gender: e.target.value})}
-            >
-              <option value="no_preference">No Preference</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
+        {/* Content */}
+        <div className="p-6">
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                What do you need help with? <span className="text-red-500">*</span>
+              </label>
+              <select 
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-colors"
+                value={matchPreferences.specialization}
+                onChange={(e) => setMatchPreferences({...matchPreferences, specialization: e.target.value})}
+              >
+                <option value="">Select a specialization</option>
+                <option value="anxiety">Anxiety & Depression</option>
+                <option value="family">Family Therapy</option>
+                <option value="trauma">Trauma & PTSD</option>
+                <option value="addiction">Addiction Recovery</option>
+                <option value="couples">Couples Therapy</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Preferred Language
+              </label>
+              <select 
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-colors"
+                value={matchPreferences.language}
+                onChange={(e) => setMatchPreferences({...matchPreferences, language: e.target.value})}
+              >
+                <option value="English">English</option>
+                <option value="Swahili">Swahili</option>
+                <option value="French">French</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Preferred Gender
+              </label>
+              <select 
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-colors"
+                value={matchPreferences.gender}
+                onChange={(e) => setMatchPreferences({...matchPreferences, gender: e.target.value})}
+              >
+                <option value="no_preference">No Preference</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <FaStar className="w-3 h-3 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-purple-900 mb-1">How it works</h4>
+                  <p className="text-xs text-purple-700">Our AI will analyze your preferences and match you with the most suitable therapist based on specialization, availability, and compatibility.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div className="p-4 border-t flex justify-end gap-2">
+        {/* Footer */}
+        <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row gap-3">
           <button 
             onClick={() => setShowMatchModal(false)}
-            className="px-3 sm:px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
+            className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium order-2 sm:order-1"
           >
             Cancel
           </button>
           <button 
             onClick={handleAutoMatch}
-            className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+            disabled={!matchPreferences.specialization}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-200 order-1 sm:order-2 flex items-center justify-center gap-2 ${
+              !matchPreferences.specialization
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+            }`}
           >
-            Find Match
+            <FaUsers className="w-4 h-4" />
+            Find My Match
           </button>
         </div>
       </div>
