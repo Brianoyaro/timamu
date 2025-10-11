@@ -1,16 +1,27 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
 import { 
   FaUser, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaStar, 
-  FaUsers, FaFilter, FaArrowLeft, FaCheck, FaTimes, FaSpinner,
-  FaExclamationTriangle, FaHeart, FaBrain, FaMedal
+  FaUsers, FaFilter
 } from 'react-icons/fa';
+import { 
+  HiOutlineCalendar,
+  HiOutlineClock
+} from 'react-icons/hi';
+
+// Calendar localization
+const localizer = momentLocalizer(moment);
+
+// Import CSS for react-big-calendar
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 const ScheduleSessionPage = () => {
   const [therapists, setTherapists] = useState([]);
-  const [selectedTherapist, setSelectedTherapist] = useState('');
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [sessionData, setSessionData] = useState({
     title: '',
     scheduled_at: '',
@@ -22,16 +33,16 @@ const ScheduleSessionPage = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [currentView, setCurrentView] = useState('directory'); // directory, calendar
-  const [calendarView, setCalendarView] = useState('month'); // month, week
+  const [calendarView, setCalendarView] = useState('week'); // month, week, day
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [matchPreferences, setMatchPreferences] = useState({
     specialization: '',
     language: 'English',
     gender: 'no_preference'
   });
-  const [selectedSlot, setSelectedSlot] = useState(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -162,16 +173,6 @@ const ScheduleSessionPage = () => {
   };
   
   // Calendar navigation functions
-  const changePeriod = (offset) => {
-    const newDate = new Date(currentDate);
-    if (calendarView === 'month') {
-      newDate.setMonth(newDate.getMonth() + offset);
-    } else {
-      newDate.setDate(newDate.getDate() + offset * 7);
-    }
-    setCurrentDate(newDate);
-  };
-
   // Open therapist calendar
   const viewTherapistAvailability = (therapist) => {
     setSelectedTherapist(therapist.id);
@@ -217,303 +218,118 @@ const ScheduleSessionPage = () => {
     }, 1500);
   };
 
-  // Calendar rendering functions
-  const renderCalendar = () => {
-    if (calendarView === 'month') {
-      return renderMonthView();
-    } else {
-      return renderWeekView();
-    }
-  };
+  // Load therapist availability for react-big-calendar
+  const loadTherapistAvailability = () => {
+    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
+    if (!selectedTherapistObj?.availability) return [];
 
-  const renderMonthView = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    const events = [];
     const today = new Date();
     
-    const monthName = currentDate.toLocaleString('default', { month: 'long' });
-    const calendarLabel = `${monthName} ${year}`;
-    
-    // Calculate which day of the week the month starts on (0 = Sunday, 1 = Monday, etc.)
-    // Adjust to start week on Monday (0 = Monday, 1 = Tuesday, etc.)
-    let startDay = (firstDay.getDay() + 6) % 7;
-    
-    const days = [];
-    
-    // Add empty cells for days before the 1st of the month
-    for (let i = 0; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="hidden sm:block h-16 sm:h-24"></div>);
-    }
-    
-    // Get the selected therapist's availability
-    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
-    // Availability should now be in the format:
-    // { "2025-10-04": [{ "start": "09:00", "end": "17:00" }] }
-    const availability = selectedTherapistObj?.availability || {};
-    
-    // Add days of the month
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      const dateObj = new Date(year, month, d);
-      const dateStr = dateObj.toISOString().split("T")[0];
-      const slots = availability[dateStr] || [];
-      const isPast = dateObj < new Date(today.setHours(0,0,0,0));
-      const isToday = dateObj.toDateString() === today.toDateString();
-      
-      // For mobile view - add day of week label
-      const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-      
-      // Check if this is the first day of the week (Monday) for mobile layout
-      const dayOfWeekNum = (startDay + d - 1) % 7;
-      const isFirstDayOfWeek = dayOfWeekNum === 0;
-      
-      days.push(
-        <div 
-          key={`day-${d}`} 
-          className={`h-16 sm:h-24 border rounded p-2 ${isPast ? 'bg-gray-100' : isToday ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}
-            ${d === 1 ? 'col-start-auto sm:col-start-' + (startDay + 1) : ''}`}
-        >
-          <div className="flex justify-between">
-            <div className="font-medium">{d}</div>
-            <div className="text-xs text-gray-500 sm:hidden">{dayOfWeek}</div>
-          </div>
-          <div className="flex flex-wrap gap-1 mt-1 overflow-y-auto max-h-8 sm:max-h-16">
-            {!isPast && slots.map((slot, idx) => (
-              <button 
-                key={`slot-${d}-${idx}`}
-                className="px-1 sm:px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
-                onClick={() => selectTimeSlot(selectedTherapist, dateStr, slot.start)}
-              >
-                {slot.start}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="overflow-x-auto pb-2">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-          <div className="space-x-2 flex">
-            <button 
-              onClick={() => changePeriod(-1)}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              &lt; Prev
-            </button>
-            <button 
-              onClick={() => changePeriod(1)}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              Next &gt;
-            </button>
-          </div>
-          <h3 className="font-semibold">{calendarLabel}</h3>
-          <div className="flex">
-            <button 
-              onClick={() => setCalendarView('month')}
-              className={`px-3 py-1 rounded ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-            >
-              Month
-            </button>
-            <button 
-              onClick={() => setCalendarView('week')}
-              className={`px-3 py-1 rounded ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-            >
-              Week
-            </button>
-          </div>
-        </div>
+    Object.entries(selectedTherapistObj.availability).forEach(([dateStr, slots]) => {
+      slots.forEach((slot, index) => {
+        const date = new Date(dateStr);
+        // Skip past dates
+        if (date < new Date(today.setHours(0,0,0,0))) return;
         
-        <div className="min-w-[340px]">
-          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs sm:text-sm font-medium mb-2">
-            <div className="hidden sm:block">Mon</div>
-            <div className="hidden sm:block">Tue</div>
-            <div className="hidden sm:block">Wed</div>
-            <div className="hidden sm:block">Thu</div>
-            <div className="hidden sm:block">Fri</div>
-            <div className="hidden sm:block">Sat</div>
-            <div className="hidden sm:block">Sun</div>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
-            {days}
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
-  const renderWeekView = () => {
-    const today = new Date();
-    const startOfWeek = new Date(currentDate);
-    // Set to Monday of the current week
-    startOfWeek.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7));
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
-    const options = { month: 'short', day: 'numeric' };
-    const calendarLabel = `${startOfWeek.toLocaleDateString(undefined, options)} - ${endOfWeek.toLocaleDateString(undefined, options)}`;
-    
-    // Standard available time slots
-    const times = ["09:00", "11:00", "14:00", "16:00"];
-    
-    // Get the selected therapist's availability
-    const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
-    // Availability should now be in the format:
-    // { "2025-10-04": [{ "start": "09:00", "end": "17:00" }] }
-    const availability = selectedTherapistObj?.availability || {};
-    
-    // Create array of week dates for mobile display
-    const weekDates = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      return {
-        date,
-        dayShort: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        dayNumber: date.getDate(),
-        dateStr: date.toISOString().split('T')[0]
-      };
+        const [startHour, startMin] = slot.start.split(':').map(Number);
+        const [endHour, endMin] = (slot.end || '17:00').split(':').map(Number);
+        
+        const startTime = new Date(date);
+        startTime.setHours(startHour, startMin, 0, 0);
+        
+        const endTime = new Date(date);
+        endTime.setHours(endHour, endMin, 0, 0);
+        
+        events.push({
+          id: `${dateStr}-${slot.start}-${index}`,
+          title: `Available at ${slot.start}`,
+          start: startTime,
+          end: endTime,
+          resource: {
+            therapistId: selectedTherapistObj.id,
+            date: dateStr,
+            time: slot.start,
+            therapist: selectedTherapistObj
+          }
+        });
+      });
     });
     
+    return events;
+  };
+
+  const handleSelectEvent = (event) => {
+    selectTimeSlot(
+      event.resource.therapistId,
+      event.resource.date,
+      event.resource.time
+    );
+  };
+
+  const handleSelectSlot = (slotInfo) => {
+    // Optional: Handle clicking on empty slots
+    console.log('Empty slot clicked:', slotInfo);
+  };
+
+  const EventComponent = ({ event }) => (
+    <div className="h-full flex items-center justify-center text-xs font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded px-1 cursor-pointer hover:from-emerald-600 hover:to-teal-700 transition-all duration-200">
+      <HiOutlineClock className="w-3 h-3 mr-1" />
+      {event.resource.time}
+    </div>
+  );
+
+  // Calendar rendering functions
+  const renderCalendar = () => {
+    const events = loadTherapistAvailability();
+    
     return (
-      <div>
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-          <div className="space-x-2 flex">
-            <button 
-              onClick={() => changePeriod(-1)}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              &lt; Prev
-            </button>
-            <button 
-              onClick={() => changePeriod(1)}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              Next &gt;
-            </button>
-          </div>
-          <h3 className="font-semibold text-sm sm:text-base">{calendarLabel}</h3>
-          <div className="flex">
-            <button 
-              onClick={() => setCalendarView('month')}
-              className={`px-3 py-1 rounded text-sm ${calendarView === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-            >
-              Month
-            </button>
-            <button 
-              onClick={() => setCalendarView('week')}
-              className={`px-3 py-1 rounded text-sm ${calendarView === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-            >
-              Week
-            </button>
-          </div>
-        </div>
-        
-        {/* Desktop Week View */}
-        <div className="hidden sm:block overflow-x-auto pb-3">
-          <div className="min-w-[640px]">
-            <div className="grid grid-cols-8 gap-2 text-sm font-medium text-center mb-2">
-              <div className="text-left">Time</div>
-              <div>Mon</div>
-              <div>Tue</div>
-              <div>Wed</div>
-              <div>Thu</div>
-              <div>Fri</div>
-              <div>Sat</div>
-              <div>Sun</div>
-            </div>
-            
-            <div className="grid grid-cols-8 gap-2">
-              {times.map(time => (
-                <React.Fragment key={`time-row-${time}`}>
-                  <div className="p-2 border rounded text-left font-medium">
-                    {time}
-                  </div>
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const slotDate = new Date(startOfWeek);
-                    slotDate.setDate(slotDate.getDate() + i);
-                    const dateStr = slotDate.toISOString().split("T")[0];
-                    const slots = availability[dateStr] || [];
-                    
-                    const [h, m] = time.split(":");
-                    slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
-                    
-                    const isPast = slotDate < today;
-                    const isAvailable = slots.some(slot => slot.start === time);
-                    const isToday = slotDate.toDateString() === today.toDateString();
-                    
-                    return (
-                      <div 
-                        key={`slot-${dateStr}-${time}`} 
-                        className={`p-2 border rounded text-center ${isToday ? 'bg-blue-50 border-blue-300' : ''}`}
-                      >
-                        {!isPast && isAvailable ? (
-                          <button 
-                            className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
-                            onClick={() => selectTimeSlot(selectedTherapist, dateStr, time)}
-                          >
-                            {time}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* Mobile Week View - Day by day with columns of times */}
-        <div className="sm:hidden">
-          {weekDates.map((dateInfo) => {
-            const isToday = dateInfo.date.toDateString() === today.toDateString();
-            const slots = availability[dateInfo.dateStr] || [];
-            
-            return (
-              <div 
-                key={dateInfo.dateStr} 
-                className={`mb-4 border rounded-lg overflow-hidden ${isToday ? 'border-blue-400' : ''}`}
-              >
-                <div className={`px-3 py-2 ${isToday ? 'bg-blue-100' : 'bg-gray-100'} flex justify-between items-center`}>
-                  <span className="font-medium">{dateInfo.dayShort}</span>
-                  <span>{dateInfo.dayNumber}</span>
-                </div>
-                <div className="p-2 grid grid-cols-2 gap-2">
-                  {times.map(time => {
-                    const [h, m] = time.split(":");
-                    const slotDate = new Date(dateInfo.date);
-                    slotDate.setHours(parseInt(h), parseInt(m), 0, 0);
-                    
-                    const isPast = slotDate < today;
-                    const isAvailable = slots.some(slot => slot.start === time);
-                    
-                    return (
-                      <div key={`${dateInfo.dateStr}-${time}`} className="text-center py-1">
-                        {!isPast && isAvailable ? (
-                          <button 
-                            className="w-full px-2 py-1 bg-green-200 text-green-800 rounded text-xs hover:bg-green-300"
-                            onClick={() => selectTimeSlot(selectedTherapist, dateInfo.dateStr, time)}
-                          >
-                            {time}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400 text-xs">{time} -</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
+      <div className="h-[600px] bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          views={['month', 'week', 'day']}
+          view={calendarView}
+          onView={setCalendarView}
+          date={currentDate}
+          onNavigate={setCurrentDate}
+          onSelectEvent={handleSelectEvent}
+          onSelectSlot={handleSelectSlot}
+          selectable
+          components={{
+            event: EventComponent,
+          }}
+          eventPropGetter={(event) => ({
+            style: {
+              backgroundColor: 'transparent',
+              border: 'none',
+            },
           })}
-        </div>
+          dayPropGetter={(date) => {
+            const today = new Date();
+            const isToday = date.toDateString() === today.toDateString();
+            const isPast = date < new Date(today.setHours(0,0,0,0));
+            
+            return {
+              style: {
+                backgroundColor: isToday ? '#eff6ff' : isPast ? '#f9fafb' : 'white',
+                color: isPast ? '#9ca3af' : '#374151'
+              }
+            };
+          }}
+          formats={{
+            timeGutterFormat: 'HH:mm',
+            eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
+              localizer.format(start, 'HH:mm', culture),
+          }}
+          min={new Date(0, 0, 0, 8, 0, 0)} // 8 AM
+          max={new Date(0, 0, 0, 20, 0, 0)} // 8 PM
+          step={60}
+          timeslots={1}
+          className="rbc-calendar"
+        />
       </div>
     );
   };
