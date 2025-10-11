@@ -2,9 +2,9 @@ I propose creating a separate availability model table.
 
 I dont like the UI of therapists setting their availability. Firtly, hat's the essence of having a week view? Can we incorporate a calender instead of creating one from scratch [think a secondary library or something?].
 
-The therapist dashboard is not very appealing. Make it modern, professional, production grade and mobile friendly.
-
 In the therapist setting availability, how can we provide automation for the therapists instead of manually setting each day up?
+
+The therapist dashboard is not very appealing. Make it modern, professional, production grade and mobile friendly.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
