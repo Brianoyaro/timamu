@@ -31,9 +31,38 @@ class TherapistProfile(db.Model):
     #hourly_rate = db.Column(db.Numeric(10, 2))
     is_approved = db.Column(db.Boolean, default=False)
     approved_at = db.Column(db.DateTime) # requires admin approval
-    availability = db.Column(db.JSON)
     timezone = db.Column(db.String(50), default='UTC')
     accepts_emergency = db.Column(db.Boolean, default=False)
+
+
+class TherapistAvailability(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    therapist_profile_id = db.Column(db.Integer, db.ForeignKey('therapist_profile.id'))
+    date = db.Column(db.Date)  # Actual date instead of day_of_week
+    start_time = db.Column(db.Time)
+    end_time = db.Column(db.Time)
+    is_available = db.Column(db.Boolean, default=True)
+    timezone = db.Column(db.String(50), default='UTC')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    therapist_profile = db.relationship('TherapistProfile', backref='availability_slots')
+
+
+class TherapistUnavailability(db.Model):
+    """Track specific dates/times when therapist is unavailable (vacations, appointments, etc.)"""
+    id = db.Column(db.Integer, primary_key=True)
+    therapist_profile_id = db.Column(db.Integer, db.ForeignKey('therapist_profile.id'))
+    start_datetime = db.Column(db.DateTime)
+    end_datetime = db.Column(db.DateTime)
+    reason = db.Column(db.String(100))  # vacation, appointment, emergency, etc.
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurrence_pattern = db.Column(db.JSON)  # For recurring unavailability
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    therapist_profile = db.relationship('TherapistProfile', backref='unavailability_periods')
 
 
 class PatientProfile(db.Model):

@@ -4,6 +4,6 @@ The landing page doesn't need the placeholder images. They are redundant, unnece
 
 
 When a session is booked, mark  that slot as unavailable in the therapuist's calender. 
-        + First, I have to create an availability model to separate the therapist-profile from availability json object as it will clutter the user.
+        + First, I have to create an availability model to separate the therapist-profile from availability json object as it will clutter the user. I should then update therapist availability uploading and patient retrieving a therapist's availability.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
 
 Implement the messaging functionality which is evident in the patient/therapist dashboards.

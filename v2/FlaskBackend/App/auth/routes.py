@@ -152,7 +152,18 @@ def register():
         
         elif data.get('role') == 'THERAPIST':
             # We'll receive these additional fields when we display a modal after login in the frontend where they can complete their profile or skip and fill later
-            therapist_profile = TherapistProfile(user_id=user.id, license_number=data.get('licenseNumber', ''), specializations=data.get('specializations', []), languages=data.get('languages', []), experience=data.get('experience', 0), education=data.get('education', ''), bio=data.get('bio', ''), is_approved=False, availability=data.get('availability', {}), timezone=data.get('timezone', 'UTC'), accepts_emergency=data.get('acceptsEmergency', False))
+            therapist_profile = TherapistProfile(
+                user_id=user.id, 
+                license_number=data.get('licenseNumber', ''), 
+                specializations=data.get('specializations', []), 
+                languages=data.get('languages', []), 
+                experience=data.get('experience', 0), 
+                education=data.get('education', ''), 
+                bio=data.get('bio', ''), 
+                is_approved=False, 
+                timezone=data.get('timezone', 'UTC'), 
+                accepts_emergency=data.get('acceptsEmergency', False)
+            )
             db.session.add(therapist_profile)
 
         db.session.commit()
@@ -464,7 +475,6 @@ def get_profile():
                     #'hourly_rate': float(profile.hourly_rate) if profile.hourly_rate else None,
                     'is_approved': profile.is_approved,
                     'approved_at': profile.approved_at.isoformat() if profile.approved_at else None,
-                    'availability': profile.availability,
                     'timezone': profile.timezone,
                     'accepts_emergency': profile.accepts_emergency
                 }
