@@ -1,3 +1,8 @@
-Whena user registers, let us take basic information then sho thema modal where e collect more information that we'll use to create their profile e.g patientprofile or therapist profile.
+Whena user registers, let us take basic information then show them a modal where e collect more information that we'll use to create their profile e.g patientprofile or therapist profile.
 
-The landing page doesn't need the placeholder images. They are redundant, unnecessary and not needed. Also, Mae the landing page professional, modern mobile-riendly with a mental health/healthcare flair.
+The landing page doesn't need the placeholder images. They are redundant, unnecessary and not needed. Also, Mae the landing page professional, modern mobile-riendly with a mental health/healthcare flair.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
+
+
+When a session is booked, mark  that slot as unavailable in the therapuist's calender. First, I have to create an availability model to separate the therapist-profile from availability json object as it will clutter the user.
+
+Implement the messaging functionality which is evident in the patient/therapist dashboards.
