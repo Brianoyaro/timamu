@@ -40,6 +40,15 @@ const mediaCodecs = [
   },
 ];
 
+// Data channel configuration
+const dataChannelOptions = {
+  ordered: true,
+  maxPacketLifeTime: 3000,
+  maxRetransmits: 3,
+  label: 'chat',
+  protocol: 'json'
+};
+
 const webRtcTransportOptions = {
   listenIps: [
     {
@@ -99,6 +108,8 @@ io.on('connection', (socket) => {
         socketId: socket.id,
         producers: new Map(),
         consumers: new Map(),
+        dataProducers: new Map(),
+        dataConsumers: new Map(),
         transports: new Map(),
       });
       
@@ -210,6 +221,42 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle data producer (for chat messages)
+  socket.on('produce-data', async (data) => {
+    try {
+      const { transportId } = data;
+      
+      const participant = getParticipant(socket);
+      const transport = participant?.transports.get(transportId);
+      
+      if (!transport) {
+        throw new Error('Transport not found');
+      }
+      
+      const dataProducer = await transport.produceData(dataChannelOptions);
+      
+      participant.dataProducers.set(dataProducer.id, dataProducer);
+      
+      dataProducer.on('transportclose', () => {
+        participant.dataProducers.delete(dataProducer.id);
+      });
+      
+      // Notify other participants about new data producer
+      socket.to(socket.roomId).emit('new-data-producer', {
+        dataProducerId: dataProducer.id,
+        socketId: socket.id,
+      });
+      
+      socket.emit('data-produced', {
+        dataProducerId: dataProducer.id,
+      });
+      
+    } catch (error) {
+      console.error('Error producing data:', error);
+      socket.emit('error', { message: 'Failed to produce data channel' });
+    }
+  });
+
   socket.on('consume', async (data) => {
     try {
       const { transportId, producerId, rtpCapabilities } = data;
@@ -253,6 +300,47 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Error consuming:', error);
       socket.emit('error', { message: 'Failed to consume media' });
+    }
+  });
+
+  // Handle data consumer (for chat messages)
+  socket.on('consume-data', async (data) => {
+    try {
+      const { transportId, dataProducerId } = data;
+      
+      const participant = getParticipant(socket);
+      const transport = participant?.transports.get(transportId);
+      
+      if (!transport) {
+        throw new Error('Transport not found');
+      }
+      
+      const dataConsumer = await transport.consumeData({
+        dataProducerId,
+      });
+      
+      participant.dataConsumers.set(dataConsumer.id, dataConsumer);
+      
+      dataConsumer.on('transportclose', () => {
+        participant.dataConsumers.delete(dataConsumer.id);
+      });
+      
+      dataConsumer.on('dataproducerclose', () => {
+        participant.dataConsumers.delete(dataConsumer.id);
+        socket.emit('data-consumer-closed', { dataConsumerId: dataConsumer.id });
+      });
+      
+      socket.emit('data-consumed', {
+        dataConsumerId: dataConsumer.id,
+        dataProducerId,
+        sctpStreamParameters: dataConsumer.sctpStreamParameters,
+        label: dataConsumer.label,
+        protocol: dataConsumer.protocol,
+      });
+      
+    } catch (error) {
+      console.error('Error consuming data:', error);
+      socket.emit('error', { message: 'Failed to consume data channel' });
     }
   });
 
@@ -303,6 +391,33 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('get-data-producers', () => {
+    try {
+      const room = rooms.get(socket.roomId);
+      if (!room) return;
+      
+      const dataProducers = [];
+      
+      for (const [socketId, participant] of room.participants) {
+        if (socketId !== socket.id) {
+          for (const [dataProducerId, dataProducer] of participant.dataProducers) {
+            dataProducers.push({
+              dataProducerId,
+              socketId,
+              label: dataProducer.label,
+            });
+          }
+        }
+      }
+      
+      socket.emit('data-producers-list', { dataProducers });
+      
+    } catch (error) {
+      console.error('Error getting data producers:', error);
+      socket.emit('error', { message: 'Failed to get data producers' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
     
@@ -313,9 +428,18 @@ io.on('connection', (socket) => {
         const participant = room.participants.get(socket.id);
         
         if (participant) {
-          // Close all transports, producers, and consumers
+          // Close all transports, producers, consumers, data producers and data consumers
           for (const transport of participant.transports.values()) {
             transport.close();
+          }
+          
+          // Clean up data producers and consumers
+          for (const dataProducer of participant.dataProducers.values()) {
+            dataProducer.close();
+          }
+          
+          for (const dataConsumer of participant.dataConsumers.values()) {
+            dataConsumer.close();
           }
           
           room.participants.delete(socket.id);

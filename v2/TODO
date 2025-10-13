@@ -7,3 +7,9 @@ When a session is booked, mark  that slot as unavailable in the therapuist's cal
         + First, I have to create an availability model to separate the therapist-profile from availability json object as it will clutter the user. I should then update therapist availability uploading and patient retrieving a therapist's availability.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
 
 Implement the messaging functionality which is evident in the patient/therapist dashboards.
+
++++++++++++++++++++++++
+So, are we not using mediasoupfor the messagesbecause I see socket.emit('session-message')
+
+
+The message sidebar needs a scroll bar to prevent it from messing with the parent heigh container.
