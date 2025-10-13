@@ -182,7 +182,7 @@ const SessionsPage = () => {
           text: `Starts in ${Math.floor(diffMins / 60)}h ${diffMins % 60}m`, 
           color: 'text-gray-600',
           canJoin: false,
-          detail: `Join button available 15 min before start time`
+          detail: `Join button available for testing`
         };
       } else if (diffMins > 0) {
         return { 
@@ -223,18 +223,12 @@ const SessionsPage = () => {
       return session.can_join && (session.status === 'scheduled' || session.status === 'started');
     }
     
-    // Fallback client-side logic - more lenient than backend
+    // Allow joining anytime for testing (removed time restrictions)
     if (!['scheduled', 'started'].includes(session.status)) {
       return false;
     }
     
-    const now = new Date();
-    const sessionTime = new Date(session.scheduled_at);
-    const joinWindowStart = sessionTime.getTime() - (15 * 60 * 1000); // 15 minutes before
-    const maxDelay = sessionTime.getTime() + (60 * 60 * 1000); // 1 hour after
-    
-    // Allow joining if within the time window
-    return now.getTime() >= joinWindowStart && now.getTime() <= maxDelay;
+    return true;
   };
 
   const canCancelSession = (session) => {

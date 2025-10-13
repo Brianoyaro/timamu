@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useSocketStore } from '../../stores/socketStore';
+import * as mediasoupClient from 'mediasoup-client';
+import io from 'socket.io-client';
 import api from '../../utils/api';
 
 const VideoCallPage = () => {
@@ -14,9 +16,18 @@ const VideoCallPage = () => {
   
   // Video/Audio refs
   const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null); // Single remote video element for main display
+  const remoteVideosRef = useRef(new Map()); // Map of participantId -> video element (multi-user)
   const localStreamRef = useRef(null);
-  const peerConnectionRef = useRef(null);
+  const screenShareRef = useRef(null);
+  
+  // MediaSoup refs
+  const mediaSoupSocketRef = useRef(null);
+  const deviceRef = useRef(null);
+  const producerTransportRef = useRef(null);
+  const consumerTransportRef = useRef(null);
+  const producersRef = useRef(new Map()); // kind -> Producer
+  const consumersRef = useRef(new Map()); // consumerId -> Consumer
   
   // State
   const [session, setSession] = useState(null);
@@ -122,8 +133,8 @@ const VideoCallPage = () => {
       // The socket-based video room join should be sufficient
       console.log('Session validation complete, proceeding to media initialization');
 
-      // Initialize media after session validation
-      await initializeMedia();
+      // Initialize MediaSoup after session validation
+      await initializeMediaSoup();
       
     } catch (err) {
       console.error('Failed to initialize session:', err);
@@ -132,21 +143,60 @@ const VideoCallPage = () => {
     }
   };
 
-  const initializeMedia = async () => {
+  const initializeMediaSoup = async () => {
+    try {
+      console.log('=== INITIALIZING MEDIASOUP ===');
+      
+      // Connect to MediaSoup server
+      const mediaSoupSocket = io('http://localhost:3001', {
+        transports: ['websocket', 'polling']
+      });
+      
+      mediaSoupSocketRef.current = mediaSoupSocket;
+      
+      // Wait for connection
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('MediaSoup connection timeout')), 10000);
+        
+        mediaSoupSocket.on('connect', () => {
+          clearTimeout(timeout);
+          console.log('Connected to MediaSoup server');
+          resolve();
+        });
+        
+        mediaSoupSocket.on('connect_error', (error) => {
+          clearTimeout(timeout);
+          console.error('MediaSoup connection error:', error);
+          reject(error);
+        });
+      });
+      
+      // Set up MediaSoup socket listeners
+      setupMediaSoupListeners();
+      
+      // Join room
+      mediaSoupSocket.emit('join-room', { roomId });
+      
+      // Get user media
+      await getUserMedia();
+      
+      setConnectionStatus('connected');
+      setLoading(false);
+      console.log('=== MEDIASOUP INITIALIZATION COMPLETE ===');
+    } catch (err) {
+      console.error('=== MEDIASOUP INITIALIZATION ERROR ===', err);
+      setError(`Failed to initialize video service: ${err.message}`);
+      setLoading(false);
+    }
+  };
+
+  const getUserMedia = async () => {
     try {
       console.log('=== REQUESTING MEDIA PERMISSIONS ===');
-      
-      // Check if getUserMedia is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('getUserMedia is not supported by this browser');
-      }
-      
-      console.log('getUserMedia is available, requesting permissions...');
       
       // Get user media with fallback options
       let stream;
       try {
-        console.log('Trying high quality video...');
         stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             width: { ideal: 1280 }, 
@@ -158,49 +208,29 @@ const VideoCallPage = () => {
             noiseSuppression: true
           }
         });
-        console.log('High quality stream obtained');
       } catch (err) {
         console.warn('High quality video failed, trying standard quality:', err);
-        // Fallback to lower quality
         stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true
         });
-        console.log('Standard quality stream obtained');
       }
       
-      console.log('Media stream obtained:', {
-        id: stream.id,
-        videoTracks: stream.getVideoTracks().length,
-        audioTracks: stream.getAudioTracks().length
-      });
-      
+      console.log('Media stream obtained');
       localStreamRef.current = stream;
+      
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        console.log('Local video element set');
-        
-        // Ensure video plays
         localVideoRef.current.onloadedmetadata = () => {
-          console.log('Local video metadata loaded');
-          localVideoRef.current.play().then(() => {
-            console.log('Local video playing');
-          }).catch(err => {
+          localVideoRef.current.play().catch(err => {
             console.error('Error playing local video:', err);
           });
         };
       }
       
-      // Initialize peer connection
-      initializePeerConnection();
-      
-      setConnectionStatus('connected');
-      setLoading(false); // End loading state when media is ready
-      console.log('=== MEDIA INITIALIZATION COMPLETE ===');
     } catch (err) {
       console.error('=== MEDIA ACCESS ERROR ===', err);
       
-      // Set a more specific error message
       let errorMessage = 'Could not access camera and microphone. ';
       if (err.name === 'NotAllowedError') {
         errorMessage += 'Please allow camera and microphone permissions and refresh the page.';
@@ -208,71 +238,297 @@ const VideoCallPage = () => {
         errorMessage += 'No camera or microphone found on this device.';
       } else if (err.name === 'NotReadableError') {
         errorMessage += 'Camera or microphone is already in use by another application.';
-      } else if (err.name === 'OverconstrainedError') {
-        errorMessage += 'Camera or microphone constraints could not be satisfied.';
       } else {
         errorMessage += `Error: ${err.message}. Please check your device settings and try again.`;
       }
       
-      setError(errorMessage);
-      setLoading(false);
+      throw new Error(errorMessage);
     }
   };
 
-  const initializePeerConnection = () => {
-    console.log('Initializing peer connection...');
+  const setupMediaSoupListeners = () => {
+    const mediaSoupSocket = mediaSoupSocketRef.current;
     
-    const configuration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    };
-
-    peerConnectionRef.current = new RTCPeerConnection(configuration);
+    mediaSoupSocket.on('room-joined', async (data) => {
+      console.log('MediaSoup room joined:', data);
+      
+      try {
+        // Load device with router RTP capabilities
+        deviceRef.current = new mediasoupClient.Device();
+        await deviceRef.current.load({ routerRtpCapabilities: data.rtpCapabilities });
+        
+        // Create producer transport
+        await createProducerTransport();
+        
+        // Create consumer transport
+        await createConsumerTransport();
+        
+        // Start producing media
+        await startProducing();
+        
+        // Get existing producers
+        mediaSoupSocket.emit('get-producers');
+        
+      } catch (error) {
+        console.error('Error handling room-joined:', error);
+        setError('Failed to setup video connection');
+      }
+    });
     
-    // Add local stream tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        console.log('Adding track to peer connection:', track.kind);
-        peerConnectionRef.current.addTrack(track, localStreamRef.current);
+    mediaSoupSocket.on('transport-created', (data) => {
+      console.log('Transport created:', data.transportId);
+    });
+    
+    mediaSoupSocket.on('transport-connected', () => {
+      console.log('Transport connected');
+    });
+    
+    mediaSoupSocket.on('produced', (data) => {
+      console.log('Media produced:', data.producerId);
+    });
+    
+    mediaSoupSocket.on('consumed', async (data) => {
+      console.log('Consuming media:', data);
+      await handleConsumer(data);
+    });
+    
+    mediaSoupSocket.on('new-producer', async (data) => {
+      console.log('New producer available:', data);
+      await consumeMedia(data.producerId);
+    });
+    
+    mediaSoupSocket.on('producers-list', (data) => {
+      console.log('Available producers:', data.producers);
+      data.producers.forEach(producer => {
+        consumeMedia(producer.producerId);
       });
-    }
-
-    // Handle remote stream
-    peerConnectionRef.current.ontrack = (event) => {
-      console.log('Received remote track:', event.track.kind);
-      if (remoteVideoRef.current && event.streams[0]) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-        console.log('Remote video stream set');
-      }
-    };
-
-    // Handle ICE candidates
-    peerConnectionRef.current.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        console.log('Sending ICE candidate');
-        socket.emit('ice-candidate', {
-          room: roomId,
-          candidate: event.candidate
-        });
-      }
-    };
-
-    // Connection state monitoring
-    peerConnectionRef.current.onconnectionstatechange = () => {
-      const state = peerConnectionRef.current.connectionState;
-      console.log('Peer connection state:', state);
-      setConnectionStatus(state);
-    };
-
-    // ICE connection state monitoring
-    peerConnectionRef.current.oniceconnectionstatechange = () => {
-      const state = peerConnectionRef.current.iceConnectionState;
-      console.log('ICE connection state:', state);
-    };
+    });
     
-    console.log('Peer connection initialized');
+    mediaSoupSocket.on('participant-joined', (data) => {
+      console.log('Participant joined:', data);
+      setParticipants(prev => [...prev.filter(p => p.socketId !== data.socketId), data]);
+    });
+    
+    mediaSoupSocket.on('participant-left', (data) => {
+      console.log('Participant left:', data);
+      setParticipants(prev => prev.filter(p => p.socketId !== data.socketId));
+      // Remove their video element
+      const videoElement = remoteVideosRef.current.get(data.socketId);
+      if (videoElement && videoElement.parentNode) {
+        videoElement.parentNode.removeChild(videoElement);
+      }
+      remoteVideosRef.current.delete(data.socketId);
+    });
+    
+    mediaSoupSocket.on('consumer-closed', (data) => {
+      console.log('Consumer closed:', data);
+      const consumer = consumersRef.current.get(data.consumerId);
+      if (consumer) {
+        consumer.close();
+        consumersRef.current.delete(data.consumerId);
+      }
+    });
+    
+    mediaSoupSocket.on('error', (error) => {
+      console.error('MediaSoup error:', error);
+      setError(`Video connection error: ${error.message}`);
+    });
+  };
+  
+  const createProducerTransport = async () => {
+    const mediaSoupSocket = mediaSoupSocketRef.current;
+    
+    return new Promise((resolve, reject) => {
+      mediaSoupSocket.emit('create-transport', { direction: 'send' });
+      
+      mediaSoupSocket.once('transport-created', async (data) => {
+        try {
+          const transport = deviceRef.current.createSendTransport({
+            id: data.transportId,
+            iceParameters: data.iceParameters,
+            iceCandidates: data.iceCandidates,
+            dtlsParameters: data.dtlsParameters,
+          });
+          
+          transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+            mediaSoupSocket.emit('connect-transport', {
+              transportId: transport.id,
+              dtlsParameters
+            });
+            
+            mediaSoupSocket.once('transport-connected', callback);
+            mediaSoupSocket.once('error', errback);
+          });
+          
+          transport.on('produce', ({ kind, rtpParameters }, callback, errback) => {
+            mediaSoupSocket.emit('produce', {
+              transportId: transport.id,
+              kind,
+              rtpParameters
+            });
+            
+            mediaSoupSocket.once('produced', (data) => {
+              callback({ id: data.producerId });
+            });
+            mediaSoupSocket.once('error', errback);
+          });
+          
+          producerTransportRef.current = transport;
+          resolve(transport);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  };
+  
+  const createConsumerTransport = async () => {
+    const mediaSoupSocket = mediaSoupSocketRef.current;
+    
+    return new Promise((resolve, reject) => {
+      mediaSoupSocket.emit('create-transport', { direction: 'recv' });
+      
+      mediaSoupSocket.once('transport-created', async (data) => {
+        try {
+          const transport = deviceRef.current.createRecvTransport({
+            id: data.transportId,
+            iceParameters: data.iceParameters,
+            iceCandidates: data.iceCandidates,
+            dtlsParameters: data.dtlsParameters,
+          });
+          
+          transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+            mediaSoupSocket.emit('connect-transport', {
+              transportId: transport.id,
+              dtlsParameters
+            });
+            
+            mediaSoupSocket.once('transport-connected', callback);
+            mediaSoupSocket.once('error', errback);
+          });
+          
+          consumerTransportRef.current = transport;
+          resolve(transport);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  };
+  
+  const startProducing = async () => {
+    const stream = localStreamRef.current;
+    const transport = producerTransportRef.current;
+    
+    if (!stream || !transport) return;
+    
+    try {
+      // Produce video
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        const videoProducer = await transport.produce({ track: videoTrack });
+        producersRef.current.set('video', videoProducer);
+        console.log('Video producer created');
+      }
+      
+      // Produce audio
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        const audioProducer = await transport.produce({ track: audioTrack });
+        producersRef.current.set('audio', audioProducer);
+        console.log('Audio producer created');
+      }
+    } catch (error) {
+      console.error('Error starting production:', error);
+    }
+  };
+  
+  const consumeMedia = async (producerId) => {
+    const mediaSoupSocket = mediaSoupSocketRef.current;
+    const device = deviceRef.current;
+    
+    if (!device.canConsume({ producerId, rtpCapabilities: device.rtpCapabilities })) {
+      console.warn('Cannot consume producer:', producerId);
+      return;
+    }
+    
+    mediaSoupSocket.emit('consume', {
+      transportId: consumerTransportRef.current.id,
+      producerId,
+      rtpCapabilities: device.rtpCapabilities
+    });
+  };
+  
+  const handleConsumer = async (data) => {
+    try {
+      const consumer = await consumerTransportRef.current.consume({
+        id: data.consumerId,
+        producerId: data.producerId,
+        kind: data.kind,
+        rtpParameters: data.rtpParameters
+      });
+      
+      consumersRef.current.set(consumer.id, consumer);
+      
+      // Resume consumer
+      mediaSoupSocketRef.current.emit('resume-consumer', { consumerId: consumer.id });
+      
+      // Handle the media track
+      handleRemoteTrack(consumer.track, data.producerId);
+      
+      console.log('Consumer created and resumed');
+    } catch (error) {
+      console.error('Error handling consumer:', error);
+    }
+  };
+  
+  const handleRemoteTrack = (track, producerId) => {
+    console.log('Handling remote track:', track.kind);
+    
+    // Create or get video element for this producer
+    let videoElement = document.getElementById(`remote-video-${producerId}`);
+    
+    if (!videoElement) {
+      videoElement = document.createElement('video');
+      videoElement.id = `remote-video-${producerId}`;
+      videoElement.autoplay = true;
+      videoElement.playsInline = true;
+      videoElement.className = 'w-full h-64 object-cover bg-gray-800 rounded-lg';
+      
+      // Add to remote videos container
+      const remoteContainer = document.getElementById('remote-videos-container');
+      if (remoteContainer) {
+        const participantContainer = document.createElement('div');
+        participantContainer.className = 'relative bg-gray-800 rounded-lg overflow-hidden';
+        participantContainer.appendChild(videoElement);
+        
+        // Add participant label
+        const label = document.createElement('div');
+        label.className = 'absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-sm px-2 py-1 rounded';
+        label.textContent = `Participant`;
+        participantContainer.appendChild(label);
+        
+        remoteContainer.appendChild(participantContainer);
+      }
+    }
+    
+    // Set up media stream
+    if (!videoElement.srcObject) {
+      videoElement.srcObject = new MediaStream();
+    }
+    
+    // Add track to stream
+    if (track.kind === 'video') {
+      // Remove existing video tracks
+      const existingTracks = videoElement.srcObject.getVideoTracks();
+      existingTracks.forEach(t => videoElement.srcObject.removeTrack(t));
+      videoElement.srcObject.addTrack(track);
+    } else if (track.kind === 'audio') {
+      // Remove existing audio tracks
+      const existingTracks = videoElement.srcObject.getAudioTracks();
+      existingTracks.forEach(t => videoElement.srcObject.removeTrack(t));
+      videoElement.srcObject.addTrack(track);
+    }
   };
 
   const setupSocketListeners = () => {
@@ -293,10 +549,10 @@ const VideoCallPage = () => {
     console.log('Session ID:', session.id);
     console.log('User:', user);
 
-    // Join the video room
-    console.log('Emitting join-video-room event...');
-    socket.emit('join-video-room', {
-      room: roomId,
+    // Join the MediaSoup room
+    console.log('Emitting join-room event...');
+    socket.emit('join-room', {
+      roomId,
       sessionId: session.id,
       user: {
         id: user.id,
@@ -304,76 +560,33 @@ const VideoCallPage = () => {
         role: user.role
       }
     });
-    console.log('join-video-room event emitted');
+    console.log('join-room event emitted');
 
     // Socket event listeners
-    socket.on('user-joined', async (data) => {
+    socket.on('user-joined', (data) => {
       console.log('=== USER JOINED ===', data);
       setParticipants(prev => {
         const filtered = prev.filter(p => p.id !== data.user.id);
         return [...filtered, data.user];
       });
-      
-      // If this is a new user and we're already connected, create offer
-      if (peerConnectionRef.current && peerConnectionRef.current.connectionState !== 'closed') {
-        console.log('Creating offer for new user...');
-        await createOffer();
-      }
     });
 
     socket.on('user-left', (data) => {
       console.log('=== USER LEFT ===', data);
       setParticipants(prev => prev.filter(p => p.id !== data.userId));
       
-      // Clear remote video if the user who left was connected
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = null;
-        console.log('Remote video cleared');
-      }
+      // Close consumer for the user who left
+      const userConsumers = Array.from(consumersRef.current.values()).filter(
+        consumer => consumer.appData?.userId === data.userId
+      );
+      
+      userConsumers.forEach(consumer => {
+        consumer.close();
+        consumersRef.current.delete(consumer.id);
+      });
     });
 
-    socket.on('offer', async (data) => {
-      console.log('=== RECEIVED OFFER ===');
-      try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await peerConnectionRef.current.createAnswer();
-          await peerConnectionRef.current.setLocalDescription(answer);
-          
-          socket.emit('answer', {
-            room: roomId,
-            answer: answer
-          });
-          console.log('Answer sent');
-        }
-      } catch (error) {
-        console.error('Error handling offer:', error);
-      }
-    });
 
-    socket.on('answer', async (data) => {
-      console.log('=== RECEIVED ANSWER ===');
-      try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-          console.log('Answer processed');
-        }
-      } catch (error) {
-        console.error('Error handling answer:', error);
-      }
-    });
-
-    socket.on('ice-candidate', async (data) => {
-      console.log('=== RECEIVED ICE CANDIDATE ===');
-      try {
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-          console.log('ICE candidate added');
-        }
-      } catch (error) {
-        console.error('Error handling ICE candidate:', error);
-      }
-    });
 
     socket.on('session-message', (data) => {
       console.log('=== RECEIVED MESSAGE ===', data);
@@ -403,23 +616,7 @@ const VideoCallPage = () => {
     console.log('=== SOCKET LISTENERS SET UP COMPLETE ===');
   };
 
-  const createOffer = async () => {
-    try {
-      if (peerConnectionRef.current) {
-        console.log('Creating offer...');
-        const offer = await peerConnectionRef.current.createOffer();
-        await peerConnectionRef.current.setLocalDescription(offer);
-        
-        socket.emit('offer', {
-          room: roomId,
-          offer: offer
-        });
-        console.log('Offer sent');
-      }
-    } catch (error) {
-      console.error('Error creating offer:', error);
-    }
-  };
+
 
   const toggleVideo = () => {
     if (localStreamRef.current) {
@@ -428,12 +625,14 @@ const VideoCallPage = () => {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
         
-        // Notify other participants
-        if (socket) {
-          socket.emit('participant-update', {
-            room: roomId,
-            updates: { videoEnabled: videoTrack.enabled }
-          });
+        // Pause/resume MediaSoup producer
+        const videoProducer = producersRef.current.get('video');
+        if (videoProducer) {
+          if (videoTrack.enabled) {
+            videoProducer.resume();
+          } else {
+            videoProducer.pause();
+          }
         }
       }
     }
@@ -446,12 +645,14 @@ const VideoCallPage = () => {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
         
-        // Notify other participants
-        if (socket) {
-          socket.emit('participant-update', {
-            room: roomId,
-            updates: { audioEnabled: audioTrack.enabled }
-          });
+        // Pause/resume MediaSoup producer
+        const audioProducer = producersRef.current.get('audio');
+        if (audioProducer) {
+          if (audioTrack.enabled) {
+            audioProducer.resume();
+          } else {
+            audioProducer.pause();
+          }
         }
       }
     }
@@ -464,14 +665,10 @@ const VideoCallPage = () => {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const videoTrack = screenStream.getVideoTracks()[0];
         
-        // Replace video track in peer connection
-        if (peerConnectionRef.current) {
-          const sender = peerConnectionRef.current.getSenders().find(s => 
-            s.track && s.track.kind === 'video'
-          );
-          if (sender) {
-            await sender.replaceTrack(videoTrack);
-          }
+        // Replace video track in MediaSoup producer
+        const videoProducer = producersRef.current.get('video');
+        if (videoProducer) {
+          await videoProducer.replaceTrack({ track: videoTrack });
         }
         
         // Update local video
@@ -485,14 +682,7 @@ const VideoCallPage = () => {
         });
         
         setIsScreenSharing(true);
-        
-        // Notify other participants
-        if (socket) {
-          socket.emit('participant-update', {
-            room: roomId,
-            updates: { screenSharing: true }
-          });
-        }
+        screenShareRef.current = screenStream;
       } else {
         stopScreenShare();
       }
@@ -503,37 +693,30 @@ const VideoCallPage = () => {
 
   const stopScreenShare = async () => {
     try {
-      if (localStreamRef.current) {
-        // Get camera stream back
-        const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const videoTrack = cameraStream.getVideoTracks()[0];
-        
-        // Replace screen share track with camera track
-        if (peerConnectionRef.current) {
-          const sender = peerConnectionRef.current.getSenders().find(s => 
-            s.track && s.track.kind === 'video'
-          );
-          if (sender) {
-            await sender.replaceTrack(videoTrack);
-          }
-        }
-        
-        // Update local video
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = cameraStream;
-        }
-        
-        localStreamRef.current = cameraStream;
-        setIsScreenSharing(false);
-        
-        // Notify other participants
-        if (socket) {
-          socket.emit('participant-update', {
-            room: roomId,
-            updates: { screenSharing: false }
-          });
+      // Stop screen share tracks
+      if (screenShareRef.current) {
+        screenShareRef.current.getTracks().forEach(track => track.stop());
+        screenShareRef.current = null;
+      }
+      
+      // Get camera stream back
+      await getUserMedia();
+      
+      // Replace screen share track with camera track
+      const videoProducer = producersRef.current.get('video');
+      if (videoProducer && localStreamRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (videoTrack) {
+          await videoProducer.replaceTrack({ track: videoTrack });
         }
       }
+      
+      // Update local video
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+      
+      setIsScreenSharing(false);
     } catch (error) {
       console.error('Error stopping screen share:', error);
     }
@@ -568,14 +751,34 @@ const VideoCallPage = () => {
       localStreamRef.current.getTracks().forEach(track => track.stop());
     }
     
-    // Close peer connection
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
+    if (screenShareRef.current) {
+      screenShareRef.current.getTracks().forEach(track => track.stop());
+    }
+    
+    // Close MediaSoup producers
+    producersRef.current.forEach(producer => {
+      producer.close();
+    });
+    producersRef.current.clear();
+    
+    // Close MediaSoup consumers
+    consumersRef.current.forEach(consumer => {
+      consumer.close();
+    });
+    consumersRef.current.clear();
+    
+    // Close MediaSoup transports
+    if (producerTransportRef.current) {
+      producerTransportRef.current.close();
+    }
+    
+    if (consumerTransportRef.current) {
+      consumerTransportRef.current.close();
     }
     
     // Leave socket room
     if (socket && roomId) {
-      socket.emit('leave-video-room', { room: roomId });
+      socket.emit('leave-room', { roomId });
     }
   };
 

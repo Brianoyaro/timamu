@@ -139,11 +139,8 @@ const PatientDashboard = ({ stats, user }) => {
   };
 
   const canJoinSession = (scheduledAt) => {
-    const now = new Date();
-    const sessionTime = new Date(scheduledAt);
-    const diffMs = sessionTime - now;
-    const diffMinutes = diffMs / (1000 * 60);
-    return diffMinutes >= -30 && diffMinutes <= 30;
+    // Allow joining anytime (removed time restrictions for testing)
+    return true;
   };
 
   const quickActions = [

@@ -360,19 +360,12 @@ def join_session(session_id):
     if session.status in ['cancelled', 'completed', 'no_show', 'forfeited']:
         return jsonify({'error': f'Cannot join session with status: {session.status}'}), 400
     
-    # Check timing and enforce attendance window
+    # Check timing and enforce attendance window (REMOVED 15-minute constraint for testing)
     now = datetime.utcnow()
-    join_window_start = session.scheduled_at - timedelta(minutes=15)  # 15 minutes before
     grace_period_end = session.scheduled_at + timedelta(minutes=30)   # 30 minutes after start
     absolute_deadline = session.scheduled_at + timedelta(hours=1)     # 1 hour max (for emergencies)
     
-    # If trying to join before the window opens
-    if now < join_window_start:
-        minutes_until_available = int((join_window_start - now).total_seconds() / 60)
-        return jsonify({
-            'error': 'Session is not yet available to join',
-            'details': f'Session will be available in {minutes_until_available} minutes'
-        }), 400
+    # Allow joining anytime before grace period ends (removed 15-minute restriction)
     
     # If session is past the grace period, mark as forfeited/no-show
     if now > grace_period_end and session.status == 'scheduled':

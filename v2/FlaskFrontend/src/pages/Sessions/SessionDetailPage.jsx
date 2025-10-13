@@ -97,13 +97,8 @@ const SessionDetailPage = () => {
       return session.can_join;
     }
     
-    // Fallback client-side logic - allow joining 15 minutes before and up to 1 hour after
-    const now = new Date();
-    const sessionTime = new Date(session.scheduled_at);
-    const joinWindowStart = sessionTime.getTime() - (15 * 60 * 1000); // 15 minutes before
-    const maxDelay = sessionTime.getTime() + (60 * 60 * 1000); // 1 hour after
-    
-    return now.getTime() >= joinWindowStart && now.getTime() <= maxDelay;
+    // Allow joining anytime (removed time restrictions for testing)
+    return true;
   };
 
   const canCancelSession = () => {
@@ -430,7 +425,7 @@ const SessionDetailPage = () => {
               <p className="text-blue-700 text-sm mb-3">
                 {canJoinSession() 
                   ? "Ready to join the video session" 
-                  : "Video session will be available 15 minutes before start time"
+                  : "Video session is now available for testing"
                 }
               </p>
               {canJoinSession() ? (

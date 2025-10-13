@@ -57,10 +57,10 @@ export default function SessionsPage() {
     try {
       const now = new Date();
       const sessionStart = parseISO(session.scheduledAt);
-      const joinWindow = addMinutes(sessionStart, -10); // Allow joining 10 minutes early
       const sessionEnd = addMinutes(sessionStart, 60); // 1 hour session
       
-      return isAfter(now, joinWindow) && isBefore(now, sessionEnd);
+      // Allow joining anytime before session ends (removed time restrictions for testing)
+      return isBefore(now, sessionEnd);
     } catch (error) {
       console.error('Error checking join session availability:', error, session);
       return false;
