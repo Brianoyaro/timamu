@@ -181,8 +181,11 @@ const VideoCallPage = () => {
     try {
       console.log('=== INITIALIZING MEDIASOUP ===');
       
-      // Connect to MediaSoup server
-      const mediaSoupSocket = io('http://localhost:3001', {
+      // Connect to MediaSoup server using environment variable
+      const mediaSoupUrl = import.meta.env.VITE_MEDIASOUP_URL || 'http://localhost:3001';
+      console.log('Connecting to MediaSoup server at:', mediaSoupUrl);
+      
+      const mediaSoupSocket = io(mediaSoupUrl, {
         transports: ['websocket', 'polling']
       });
       

@@ -8,16 +8,23 @@ require('dotenv').config();
 const app = express();
 const server = createServer(app);
 
+// Parse CORS origins from environment variable
+const corsOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : ["http://localhost:3000", "http://localhost:5173"];
+
+console.log('CORS origins configured:', corsOrigins);
+
 // CORS configuration
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173"],
+  origin: corsOrigins,
   credentials: true
 }));
 
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:5173"],
+    origin: corsOrigins,
     credentials: true
   }
 });

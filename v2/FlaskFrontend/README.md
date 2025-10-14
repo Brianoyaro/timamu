@@ -28,6 +28,15 @@ This is the frontend for the Timamu application built with React, Vite, and Tail
 3. Create a `.env` file in the root directory with:
    ```
    VITE_API_URL=http://localhost:5000/api
+   VITE_SOCKET_URL=http://localhost:5000
+   VITE_MEDIASOUP_URL=http://localhost:3001
+   VITE_APP_NAME=Timamu
+   VITE_APP_ENV=development
+   ```
+   
+   Or copy from the example:
+   ```bash
+   cp .env.example .env
    ```
 
 4. Run the development server:
