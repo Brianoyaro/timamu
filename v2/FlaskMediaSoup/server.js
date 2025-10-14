@@ -59,6 +59,12 @@ const webRtcTransportOptions = {
   enableUdp: true,
   enableTcp: true,
   preferUdp: true,
+  enableSctp: true, // Enable SCTP for data channels
+  numSctpStreams: {
+    OS: 1024,
+    MIS: 1024,
+  },
+  maxSctpMessageSize: 262144, // 256 KB
   portRange: {
     min: parseInt(process.env.RTC_MIN_PORT) || 40000,
     max: parseInt(process.env.RTC_MAX_PORT) || 49999,
@@ -154,6 +160,7 @@ io.on('connection', (socket) => {
         iceParameters: transport.iceParameters,
         iceCandidates: transport.iceCandidates,
         dtlsParameters: transport.dtlsParameters,
+        sctpParameters: transport.sctpParameters,
       });
       
     } catch (error) {
@@ -224,16 +231,37 @@ io.on('connection', (socket) => {
   // Handle data producer (for chat messages)
   socket.on('produce-data', async (data) => {
     try {
-      const { transportId } = data;
+      console.log('=== PRODUCE-DATA REQUEST ===', data);
+      const { transportId, sctpStreamParameters, label, protocol } = data;
       
       const participant = getParticipant(socket);
       const transport = participant?.transports.get(transportId);
       
       if (!transport) {
+        console.error('Transport not found:', transportId);
         throw new Error('Transport not found');
       }
       
-      const dataProducer = await transport.produceData(dataChannelOptions);
+      console.log('Transport found, creating data producer with options:', {
+        label: label || dataChannelOptions.label,
+        protocol: protocol || dataChannelOptions.protocol,
+        ordered: dataChannelOptions.ordered
+      });
+      
+      // Use the provided parameters or fallback to defaults
+      const dataProducerOptions = {
+        ...dataChannelOptions,
+        ...(sctpStreamParameters && { sctpStreamParameters }),
+        ...(label && { label }),
+        ...(protocol && { protocol })
+      };
+      
+      const dataProducer = await transport.produceData(dataProducerOptions);
+      console.log('=== DATA PRODUCER CREATED ===', {
+        id: dataProducer.id,
+        label: dataProducer.label,
+        protocol: dataProducer.protocol
+      });
       
       participant.dataProducers.set(dataProducer.id, dataProducer);
       
@@ -250,6 +278,8 @@ io.on('connection', (socket) => {
       socket.emit('data-produced', {
         dataProducerId: dataProducer.id,
       });
+      
+      console.log('=== DATA-PRODUCED RESPONSE SENT ===', dataProducer.id);
       
     } catch (error) {
       console.error('Error producing data:', error);
