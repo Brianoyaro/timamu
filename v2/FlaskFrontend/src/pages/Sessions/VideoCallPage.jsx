@@ -332,12 +332,23 @@ const VideoCallPage = () => {
     
     mediaSoupSocket.on('participant-joined', (data) => {
       console.log('Participant joined:', data);
-      setParticipants(prev => [...prev.filter(p => p.socketId !== data.socketId), data]);
+      console.log('Current participants before update:', participants);
+      setParticipants(prev => {
+        const filtered = prev.filter(p => p.socketId !== data.socketId);
+        const updated = [...filtered, data];
+        console.log('Updated participants list:', updated);
+        return updated;
+      });
     });
     
     mediaSoupSocket.on('participant-left', (data) => {
       console.log('Participant left:', data);
-      setParticipants(prev => prev.filter(p => p.socketId !== data.socketId));
+      console.log('Current participants before removal:', participants);
+      setParticipants(prev => {
+        const updated = prev.filter(p => p.socketId !== data.socketId);
+        console.log('Updated participants list after removal:', updated);
+        return updated;
+      });
       // Remove their video element
       const videoElement = remoteVideosRef.current.get(data.socketId);
       if (videoElement && videoElement.parentNode) {
@@ -697,14 +708,18 @@ const VideoCallPage = () => {
           const messageData = JSON.parse(message);
           console.log('Received message via data channel:', messageData);
           
-          // Add to messages state
-          setMessages(prev => [...prev, {
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            sender: messageData.sender,
-            message: messageData.message,
-            timestamp: new Date(messageData.timestamp),
-            isOwn: false
-          }]);
+          // Don't add your own messages - they're already added when sending
+          if (messageData.sender.id !== user.id) {
+            setMessages(prev => [...prev, {
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              sender: messageData.sender,
+              message: messageData.message,
+              timestamp: new Date(messageData.timestamp),
+              isOwn: false
+            }]);
+          } else {
+            console.log('Ignoring own message received via data channel');
+          }
         } catch (error) {
           console.error('Error parsing data channel message:', error);
         }
@@ -1247,7 +1262,7 @@ const VideoCallPage = () => {
                 <div className="flex items-center space-x-2">
                   <HiOutlineUserGroup className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-400 text-xs sm:text-sm">
-                    {participants.length + 1} participant{participants.length !== 0 ? 's' : ''}
+                    {participants.length} participant{participants.length === 1 ? '' : 's'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
