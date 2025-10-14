@@ -1228,7 +1228,7 @@ const VideoCallPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex flex-col">
+    <div className="h-screen max-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex flex-col overflow-hidden">
       {/* Modern Header */}
       <div className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
@@ -1399,9 +1399,9 @@ const VideoCallPage = () => {
 
         {/* Modern Chat Sidebar */}
         {isChatOpen && (
-          <div className="w-full sm:w-80 bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col absolute sm:relative inset-y-0 right-0 z-20">
+          <div className="w-full sm:w-80 bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col absolute sm:relative inset-y-0 right-0 z-20 max-h-screen">
             {/* Chat Header */}
-            <div className="px-4 py-3 border-b border-slate-700/50">
+            <div className="px-4 py-3 border-b border-slate-700/50 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <HiOutlineChatBubbleBottomCenter className="w-5 h-5 text-emerald-400" />
@@ -1417,7 +1417,11 @@ const VideoCallPage = () => {
             </div>
             
             {/* Messages Area */}
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div 
+              ref={messagesContainerRef} 
+              className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+              style={{ maxHeight: 'calc(100vh - 160px)' }}
+            >
               {messages.length === 0 ? (
                 <div className="text-center py-8">
                   <HiOutlineChatBubbleBottomCenter className="w-12 h-12 text-slate-600 mx-auto mb-3" />
