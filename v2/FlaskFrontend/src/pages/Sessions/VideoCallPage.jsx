@@ -399,11 +399,17 @@ const VideoCallPage = () => {
       
       mediaSoupSocket.once('transport-created', async (data) => {
         try {
+          console.log('Producer transport data:', { 
+            transportId: data.transportId,
+            hasSctpParameters: !!data.sctpParameters,
+            sctpParameters: data.sctpParameters 
+          });
           const transport = deviceRef.current.createSendTransport({
             id: data.transportId,
             iceParameters: data.iceParameters,
             iceCandidates: data.iceCandidates,
             dtlsParameters: data.dtlsParameters,
+            sctpParameters: data.sctpParameters,
           });
           
           transport.on('connect', ({ dtlsParameters }, callback, errback) => {
@@ -429,6 +435,31 @@ const VideoCallPage = () => {
             mediaSoupSocket.once('error', errback);
           });
           
+          transport.on('producedata', ({ sctpStreamParameters, label, protocol }, callback, errback) => {
+            console.log('=== TRANSPORT PRODUCEDATA EVENT ===', {
+              sctpStreamParameters,
+              label,
+              protocol,
+              transportId: transport.id
+            });
+            
+            mediaSoupSocket.emit('produce-data', {
+              transportId: transport.id,
+              sctpStreamParameters,
+              label,
+              protocol
+            });
+            
+            mediaSoupSocket.once('data-produced', (data) => {
+              console.log('=== DATA-PRODUCED RESPONSE RECEIVED ===', data);
+              callback({ id: data.dataProducerId });
+            });
+            mediaSoupSocket.once('error', (error) => {
+              console.error('=== PRODUCE-DATA ERROR ===', error);
+              errback(error);
+            });
+          });
+          
           producerTransportRef.current = transport;
           resolve(transport);
         } catch (error) {
@@ -446,11 +477,17 @@ const VideoCallPage = () => {
       
       mediaSoupSocket.once('transport-created', async (data) => {
         try {
+          console.log('Consumer transport data:', { 
+            transportId: data.transportId,
+            hasSctpParameters: !!data.sctpParameters,
+            sctpParameters: data.sctpParameters 
+          });
           const transport = deviceRef.current.createRecvTransport({
             id: data.transportId,
             iceParameters: data.iceParameters,
             iceCandidates: data.iceCandidates,
             dtlsParameters: data.dtlsParameters,
+            sctpParameters: data.sctpParameters,
           });
           
           transport.on('connect', ({ dtlsParameters }, callback, errback) => {
@@ -590,9 +627,17 @@ const VideoCallPage = () => {
   // Data producer for chat messages
   const createDataProducer = async () => {
     const transport = producerTransportRef.current;
-    if (!transport) return;
+    if (!transport) {
+      console.error('No producer transport available for data producer');
+      return;
+    }
+    
+    console.log('=== CREATING DATA PRODUCER ===');
+    console.log('Transport:', transport.id);
+    console.log('Transport SCTP capabilities:', transport.sctpParameters);
     
     try {
+      // This will trigger the 'producedata' event on the transport
       const dataProducer = await transport.produceData({
         ordered: true,
         maxPacketLifeTime: 3000,
@@ -601,15 +646,21 @@ const VideoCallPage = () => {
       });
       
       dataProducerRef.current = dataProducer;
-      console.log('Data producer created for chat:', dataProducer.id);
-      
-      // Notify MediaSoup server
-      const mediaSoupSocket = mediaSoupSocketRef.current;
-      mediaSoupSocket.emit('produce-data', {
-        transportId: transport.id
+      console.log('=== DATA PRODUCER CREATED SUCCESSFULLY ===', {
+        id: dataProducer.id,
+        label: dataProducer.label,
+        protocol: dataProducer.protocol,
+        readyState: dataProducer.readyState
       });
+      
+      // No need to manually emit 'produce-data' - the transport event handler does this
     } catch (error) {
-      console.error('Error creating data producer:', error);
+      console.error('=== ERROR CREATING DATA PRODUCER ===', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
     }
   };
   

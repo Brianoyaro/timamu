@@ -1,0 +1,408 @@
+Layout.jsx:41 Disconnecting from socket server...
+main.jsx:53 Disconnecting from socket server...
+hook.js:377 Cleanup: Disconnecting from socket server...
+hook.js:377 Cleanup: Disconnecting from socket server...
+hook.js:377 Disconnecting from socket server...
+hook.js:377 Disconnecting from socket server...
+LoginPage.jsx:23 LoginPage location state: null
+hook.js:377 LoginPage location state: null
+api.js:14 [DEBUG API] Request to: /auth/login
+hook.js:608 [DEBUG API] No token found in localStorage for request to /auth/login
+overrideMethod @ hook.js:608
+api.js:23 [DEBUG API] Request headers: AxiosHeaders
+api.js:25 [DEBUG API] Request data: Object
+api.js:39 [DEBUG API] Response from /auth/login: {status: 200, statusText: 'OK', data: {…}}
+Layout.jsx:46 Cleanup: Disconnecting from socket server...
+main.jsx:58 Cleanup: Disconnecting from socket server...
+Layout.jsx:38 Connecting to socket server...
+socketStore.js:15 Socket environment: {socketUrl: 'http://localhost:5000'}
+main.jsx:50 Connecting to socket server...
+socketStore.js:15 Socket environment: {socketUrl: 'http://localhost:5000'}
+socketStore.js:41 Socket authenticated: {message: 'Connected to WebSocket server', userId: 21}
+socketStore.js:36 Socket connected to: http://localhost:5000
+socketStore.js:41 Socket authenticated: {message: 'Connected to WebSocket server', userId: 21}
+socketStore.js:36 Socket connected to: http://localhost:5000
+api.js:14 [DEBUG API] Request to: /auth/verify
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /dashboard/stats
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /auth/verify
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /dashboard/stats
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:39 [DEBUG API] Response from /dashboard/stats: {status: 200, statusText: 'OK', data: {…}}
+api.js:14 [DEBUG API] Request to: /auth/verify
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /auth/verify
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:39 [DEBUG API] Response from /auth/verify: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /dashboard/stats: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:39 [DEBUG API] Response from /auth/verify: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /auth/verify: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+api.js:39 [DEBUG API] Response from /auth/verify: {status: 200, statusText: 'OK', data: {…}}
+VideoCallPage.jsx:73 VideoCallPage mounted for room: session_2a5e40da7e04
+VideoCallPage.jsx:97 === INITIALIZING SESSION ===
+VideoCallPage.jsx:98 Room ID from params: session_2a5e40da7e04
+VideoCallPage.jsx:99 User object: {email: 'brianoyaro2000@gmail.com', id: 21, role: 'PATIENT'}
+VideoCallPage.jsx:100 Is authenticated: true
+VideoCallPage.jsx:109 Fetching all sessions to find by room_id...
+VideoCallPage.jsx:89 Session effect triggered: {sessionLoaded: false}
+VideoCallPage.jsx:76 VideoCallPage unmounting, cleaning up...
+VideoCallPage.jsx:73 VideoCallPage mounted for room: session_2a5e40da7e04
+VideoCallPage.jsx:97 === INITIALIZING SESSION ===
+VideoCallPage.jsx:98 Room ID from params: session_2a5e40da7e04
+VideoCallPage.jsx:99 User object: {email: 'brianoyaro2000@gmail.com', id: 21, role: 'PATIENT'}
+VideoCallPage.jsx:100 Is authenticated: true
+VideoCallPage.jsx:109 Fetching all sessions to find by room_id...
+VideoCallPage.jsx:89 Session effect triggered: {sessionLoaded: false}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:14 [DEBUG API] Request to: /sessions/
+api.js:18 [DEBUG API] Token attached to request: eyJhbGciOiJIUzI1NiIs...
+api.js:23 [DEBUG API] Request headers: AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcm…OVCJ9.Hu3AVQVWt_fPEWHCCoeTEvz5Vogji7m-0_kzwgPoFyw'}
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+VideoCallPage.jsx:112 All sessions received: [{…}]
+VideoCallPage.jsx:115 Found session by room_id: {actual_duration: null, can_join: false, cancellation_reason: null, cancelled_at: null, created_at: '2025-10-13T15:19:32', …}
+VideoCallPage.jsx:126 === PERMISSION CHECK ===
+VideoCallPage.jsx:127 User ID: 21
+VideoCallPage.jsx:128 Session patient_id: 21
+VideoCallPage.jsx:129 Session therapist_id: 22
+VideoCallPage.jsx:130 Session object keys: (22) ['actual_duration', 'can_join', 'cancellation_reason', 'cancelled_at', 'created_at', 'duration', 'ended_at', 'id', 'is_emergency', 'join_url', 'patient_id', 'patient_name', 'room_id', 'scheduled_at', 'session_type', 'started_at', 'status', 'therapist_id', 'therapist_name', 'timezone', 'title', 'updated_at']
+VideoCallPage.jsx:144 Permission check passed!
+VideoCallPage.jsx:149 Backend says can_join is false, but allowing for development
+overrideMethod @ hook.js:608
+initializeSession @ VideoCallPage.jsx:149
+await in initializeSession
+(anonymous) @ VideoCallPage.jsx:74
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18567
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+commitHookEffectListMount @ react-dom_client.js?v=359559a0:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=359559a0:9465
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11040
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=359559a0:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=359559a0:11066
+flushPassiveEffects @ react-dom_client.js?v=359559a0:13150
+(anonymous) @ react-dom_client.js?v=359559a0:12776
+performWorkUntilDeadline @ react-dom_client.js?v=359559a0:36
+<VideoCallPage>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+App @ main.jsx:81
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531
+VideoCallPage.jsx:154 Session validation complete, proceeding to media initialization
+VideoCallPage.jsx:168 === INITIALIZING MEDIASOUP ===
+VideoCallPage.jsx:89 Session effect triggered: {sessionLoaded: true}
+VideoCallPage.jsx:183 Connected to MediaSoup server
+VideoCallPage.jsx:215 === REQUESTING MEDIA PERMISSIONS ===
+VideoCallPage.jsx:273 MediaSoup room joined: {rtpCapabilities: {…}}
+VideoCallPage.jsx:305 Transport created: 9d4d9219-d3eb-4476-b4d0-9c4117f64c52
+VideoCallPage.jsx:305 Transport created: a2a06529-a5d0-4a4e-9941-1d5e4d01b004
+VideoCallPage.jsx:612 Error creating data producer: UnsupportedError: SCTP not enabled by remote Transport
+    at Transport.produceData (mediasoup-client.js?v=359559a0:3723:17)
+    at createDataProducer (VideoCallPage.jsx:596:44)
+    at Socket2.<anonymous> (VideoCallPage.jsx:293:15)
+overrideMethod @ hook.js:608
+createDataProducer @ VideoCallPage.jsx:612
+await in createDataProducer
+(anonymous) @ VideoCallPage.jsx:293
+await in (anonymous)
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+emitEvent @ socket__io-client.js?v=359559a0:2655
+onevent @ socket__io-client.js?v=359559a0:2643
+onpacket @ socket__io-client.js?v=359559a0:2614
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+(anonymous) @ socket__io-client.js?v=359559a0:3218
+Promise.then
+(anonymous) @ socket__io-client.js?v=359559a0:372
+ondecoded @ socket__io-client.js?v=359559a0:3217
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+add @ socket__io-client.js?v=359559a0:2069
+ondata @ socket__io-client.js?v=359559a0:3206
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+_onPacket @ socket__io-client.js?v=359559a0:1379
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+onPacket @ socket__io-client.js?v=359559a0:553
+onData @ socket__io-client.js?v=359559a0:545
+ws.onmessage @ socket__io-client.js?v=359559a0:1009
+VideoCallPage.jsx:327 Available producers: []
+VideoCallPage.jsx:369 Available data producers: []
+api.js:39 [DEBUG API] Response from /sessions/: {status: 200, statusText: 'OK', data: {…}}
+VideoCallPage.jsx:112 All sessions received: [{…}]
+VideoCallPage.jsx:115 Found session by room_id: {actual_duration: null, can_join: false, cancellation_reason: null, cancelled_at: null, created_at: '2025-10-13T15:19:32', …}
+VideoCallPage.jsx:126 === PERMISSION CHECK ===
+VideoCallPage.jsx:127 User ID: 21
+VideoCallPage.jsx:128 Session patient_id: 21
+VideoCallPage.jsx:129 Session therapist_id: 22
+VideoCallPage.jsx:130 Session object keys: (22) ['actual_duration', 'can_join', 'cancellation_reason', 'cancelled_at', 'created_at', 'duration', 'ended_at', 'id', 'is_emergency', 'join_url', 'patient_id', 'patient_name', 'room_id', 'scheduled_at', 'session_type', 'started_at', 'status', 'therapist_id', 'therapist_name', 'timezone', 'title', 'updated_at']
+VideoCallPage.jsx:144 Permission check passed!
+VideoCallPage.jsx:149 Backend says can_join is false, but allowing for development
+overrideMethod @ hook.js:608
+initializeSession @ VideoCallPage.jsx:149
+await in initializeSession
+(anonymous) @ VideoCallPage.jsx:74
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18567
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+commitHookEffectListMount @ react-dom_client.js?v=359559a0:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=359559a0:9465
+reconnectPassiveEffects @ react-dom_client.js?v=359559a0:11273
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=359559a0:13339
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13312
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13317
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=359559a0:13347
+flushPassiveEffects @ react-dom_client.js?v=359559a0:13157
+(anonymous) @ react-dom_client.js?v=359559a0:12776
+performWorkUntilDeadline @ react-dom_client.js?v=359559a0:36
+<VideoCallPage>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+App @ main.jsx:81
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531
+VideoCallPage.jsx:154 Session validation complete, proceeding to media initialization
+VideoCallPage.jsx:168 === INITIALIZING MEDIASOUP ===
+VideoCallPage.jsx:89 Session effect triggered: {sessionLoaded: true}
+VideoCallPage.jsx:183 Connected to MediaSoup server
+VideoCallPage.jsx:215 === REQUESTING MEDIA PERMISSIONS ===
+VideoCallPage.jsx:334 Participant joined: {socketId: '8DDUQESojHyV2w5JAAAD'}
+VideoCallPage.jsx:273 MediaSoup room joined: {rtpCapabilities: {…}}
+VideoCallPage.jsx:305 Transport created: 6456da39-7635-429e-91ce-4d3bf7bd8891
+VideoCallPage.jsx:305 Transport created: bcc95260-1f56-4d76-851c-da0b3b29161f
+VideoCallPage.jsx:612 Error creating data producer: UnsupportedError: SCTP not enabled by remote Transport
+    at Transport.produceData (mediasoup-client.js?v=359559a0:3723:17)
+    at createDataProducer (VideoCallPage.jsx:596:44)
+    at Socket2.<anonymous> (VideoCallPage.jsx:293:15)
+overrideMethod @ hook.js:608
+createDataProducer @ VideoCallPage.jsx:612
+await in createDataProducer
+(anonymous) @ VideoCallPage.jsx:293
+await in (anonymous)
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+emitEvent @ socket__io-client.js?v=359559a0:2655
+onevent @ socket__io-client.js?v=359559a0:2643
+onpacket @ socket__io-client.js?v=359559a0:2614
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+(anonymous) @ socket__io-client.js?v=359559a0:3218
+Promise.then
+(anonymous) @ socket__io-client.js?v=359559a0:372
+ondecoded @ socket__io-client.js?v=359559a0:3217
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+add @ socket__io-client.js?v=359559a0:2069
+ondata @ socket__io-client.js?v=359559a0:3206
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+_onPacket @ socket__io-client.js?v=359559a0:1379
+Emitter.emit @ socket__io-client.js?v=359559a0:354
+onPacket @ socket__io-client.js?v=359559a0:553
+onData @ socket__io-client.js?v=359559a0:545
+ws.onmessage @ socket__io-client.js?v=359559a0:1009
+VideoCallPage.jsx:327 Available producers: []
+VideoCallPage.jsx:369 Available data producers: []
+VideoCallPage.jsx:239 Media stream obtained
+VideoCallPage.jsx:205 === MEDIASOUP INITIALIZATION COMPLETE ===
+VideoCallPage.jsx:239 Media stream obtained
+VideoCallPage.jsx:205 === MEDIASOUP INITIALIZATION COMPLETE ===
+VideoCallPage.jsx:821 === CANNOT SEND MESSAGE === {hasMessage: true, hasDataProducer: false}hasDataProducer: falsehasMessage: true[[Prototype]]: Object
+overrideMethod @ hook.js:608
+sendMessage @ VideoCallPage.jsx:821
+onKeyPress @ VideoCallPage.jsx:1441
+executeDispatch @ react-dom_client.js?v=359559a0:13622
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+processDispatchQueue @ react-dom_client.js?v=359559a0:13658
+(anonymous) @ react-dom_client.js?v=359559a0:14071
+batchedUpdates$1 @ react-dom_client.js?v=359559a0:2626
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=359559a0:13763
+dispatchEvent @ react-dom_client.js?v=359559a0:16784
+dispatchDiscreteEvent @ react-dom_client.js?v=359559a0:16765
+<input>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+VideoCallPage @ VideoCallPage.jsx:1437
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531
+<VideoCallPage>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+App @ main.jsx:81
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531
+
+
+
+
+
+=== CANNOT SEND MESSAGE === {hasMessage: true, hasDataProducer: false}hasDataProducer: falsehasMessage: true[[Prototype]]: Object
+overrideMethod @ hook.js:608
+sendMessage @ VideoCallPage.jsx:821
+onKeyPress @ VideoCallPage.jsx:1441
+executeDispatch @ react-dom_client.js?v=359559a0:13622
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+processDispatchQueue @ react-dom_client.js?v=359559a0:13658
+(anonymous) @ react-dom_client.js?v=359559a0:14071
+batchedUpdates$1 @ react-dom_client.js?v=359559a0:2626
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=359559a0:13763
+dispatchEvent @ react-dom_client.js?v=359559a0:16784
+dispatchDiscreteEvent @ react-dom_client.js?v=359559a0:16765
+<input>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+VideoCallPage @ VideoCallPage.jsx:1437
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531
+<VideoCallPage>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=359559a0:247
+App @ main.jsx:81
+react_stack_bottom_frame @ react-dom_client.js?v=359559a0:18509
+renderWithHooksAgain @ react-dom_client.js?v=359559a0:5729
+renderWithHooks @ react-dom_client.js?v=359559a0:5665
+updateFunctionComponent @ react-dom_client.js?v=359559a0:7475
+beginWork @ react-dom_client.js?v=359559a0:8525
+runWithFiberInDEV @ react-dom_client.js?v=359559a0:997
+performUnitOfWork @ react-dom_client.js?v=359559a0:12561
+workLoopSync @ react-dom_client.js?v=359559a0:12424
+renderRootSync @ react-dom_client.js?v=359559a0:12408
+performWorkOnRoot @ react-dom_client.js?v=359559a0:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=359559a0:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=359559a0:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=359559a0:13437
+(anonymous) @ react-dom_client.js?v=359559a0:13531Understand this warning
