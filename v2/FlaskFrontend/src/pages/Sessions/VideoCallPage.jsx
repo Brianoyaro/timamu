@@ -35,6 +35,7 @@ const VideoCallPage = () => {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const token = useAuthStore((state) => state.token);
+  const loadUser = useAuthStore((state) => state.loadUser);
   
   // Video/Audio refs
   const localVideoRef = useRef(null);
@@ -97,12 +98,25 @@ const VideoCallPage = () => {
       console.log('=== INITIALIZING SESSION ===');
       console.log('Room ID from params:', roomId);
       console.log('User object:', user);
+      console.log('User object keys:', Object.keys(user || {}));
       console.log('Is authenticated:', isAuthenticated);
       
       if (!isAuthenticated) {
         setError('You must be logged in to join a video call');
         setLoading(false);
         return;
+      }
+
+      // Ensure we have complete user data
+      let currentUser = user;
+      if (!currentUser || !currentUser.first_name) {
+        console.log('Loading full user data...');
+        try {
+          currentUser = await loadUser();
+          console.log('Full user data loaded:', currentUser);
+        } catch (error) {
+          console.error('Failed to load user data:', error);
+        }
       }
 
       // Get all sessions and find the one with matching room_id
@@ -124,12 +138,12 @@ const VideoCallPage = () => {
 
       // Check if user has permission to join
       console.log('=== PERMISSION CHECK ===');
-      console.log('User ID:', user.id);
+      console.log('User ID:', currentUser.id);
       console.log('Session patient_id:', currentSession.patient_id);
       console.log('Session therapist_id:', currentSession.therapist_id);
       console.log('Session object keys:', Object.keys(currentSession));
       
-      if (user.id !== currentSession.patient_id && user.id !== currentSession.therapist_id) {
+      if (currentUser.id !== currentSession.patient_id && currentUser.id !== currentSession.therapist_id) {
         console.error('Permission denied - user ID does not match patient or therapist ID');
         setError('You do not have permission to join this session');
         setLoading(false);
@@ -709,7 +723,8 @@ const VideoCallPage = () => {
           console.log('Received message via data channel:', messageData);
           
           // Don't add your own messages - they're already added when sending
-          if (messageData.sender.id !== user.id) {
+          const currentUser = useAuthStore.getState().user;
+          if (messageData.sender.id !== currentUser.id) {
             setMessages(prev => [...prev, {
               id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               sender: messageData.sender,
@@ -841,14 +856,22 @@ const VideoCallPage = () => {
 
   const sendMessage = () => {
     if (newMessage.trim() && dataProducerRef.current) {
+      // Get current user from store (should have full data now)
+      const currentUser = useAuthStore.getState().user;
+      
+      // Extract name from email if first_name/last_name are not available
+      const displayName = currentUser.first_name && currentUser.last_name 
+        ? `${currentUser.first_name} ${currentUser.last_name}`
+        : currentUser.name || currentUser.email?.split('@')[0] || 'Anonymous User';
+      
       const messageData = {
         room: roomId,
         sessionId: session.id,
         message: newMessage.trim(),
         sender: {
-          id: user.id,
-          name: `${user.first_name} ${user.last_name}`,
-          role: user.role
+          id: currentUser.id,
+          name: displayName,
+          role: currentUser.role
         },
         timestamp: new Date().toISOString()
       };
