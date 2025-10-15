@@ -544,10 +544,16 @@ def get_available_therapists():
     for user, profile in therapists:
         # Get availability data for this therapist
         from ..models import TherapistAvailability
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, date, time
+        
+        # Get current date and time for filtering
+        now = datetime.utcnow()
+        today = now.date()
         
         availability_slots = TherapistAvailability.query.filter_by(
             therapist_profile_id=profile.id
+        ).filter(
+            TherapistAvailability.date >= today  # Only future and today's dates
         ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
         
         # Convert to date-based format with slot-level availability
@@ -563,24 +569,33 @@ def get_available_therapists():
             available_slots = slot.get_available_slots()
             booked_slots = slot.booked_slots or []
             
-            availability_data[date_str].append({
-                'id': slot.id,
-                'start': slot.start_time.strftime('%H:%M'),
-                'end': slot.end_time.strftime('%H:%M'),
-                'available': slot.is_available,
-                'total_slots': total_slots,
-                'available_slots': available_slots,
-                'booked_slots': booked_slots,
-                'individual_slots': [
-                    {
+            # Filter individual slots based on current time
+            filtered_individual_slots = []
+            for i in range(total_slots):
+                slot_start_time = (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time()
+                slot_datetime = datetime.combine(slot.date, slot_start_time)
+                
+                # Only include slots that are in the future
+                if slot_datetime > now:
+                    filtered_individual_slots.append({
                         'slot_index': i,
-                        'start_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time().strftime('%H:%M'),
+                        'start_time': slot_start_time.strftime('%H:%M'),
                         'end_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i+1)).time().strftime('%H:%M'),
                         'is_available': i in available_slots
-                    }
-                    for i in range(total_slots)
-                ]
-            })
+                    })
+            
+            # Only add the slot if it has future individual slots
+            if filtered_individual_slots:
+                availability_data[date_str].append({
+                    'id': slot.id,
+                    'start': slot.start_time.strftime('%H:%M'),
+                    'end': slot.end_time.strftime('%H:%M'),
+                    'available': slot.is_available,
+                    'total_slots': total_slots,
+                    'available_slots': available_slots,
+                    'booked_slots': booked_slots,
+                    'individual_slots': filtered_individual_slots
+                })
         
         therapists_data.append({
             'id': user.id,

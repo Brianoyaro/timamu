@@ -89,9 +89,17 @@ def get_availability():
     
     # Get availability slots from new model
     from ..models import TherapistAvailability
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, date, time
+    
+    # Get current date and time for filtering
+    now = datetime.utcnow()
+    today = now.date()
+    current_time = now.time()
+    
     availability_slots = TherapistAvailability.query.filter_by(
         therapist_profile_id=therapist_profile.id
+    ).filter(
+        TherapistAvailability.date >= today  # Only future and today's dates
     ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
     
     # Convert to date-based format with slot-level availability
@@ -107,24 +115,33 @@ def get_availability():
         available_slots = slot.get_available_slots()
         booked_slots = slot.booked_slots or []
         
-        availability_data[date_str].append({
-            'id': slot.id,
-            'start': slot.start_time.strftime('%H:%M'),
-            'end': slot.end_time.strftime('%H:%M'),
-            'available': slot.is_available,
-            'total_slots': total_slots,
-            'available_slots': available_slots,
-            'booked_slots': booked_slots,
-            'individual_slots': [
-                {
+        # Filter individual slots based on current time
+        filtered_individual_slots = []
+        for i in range(total_slots):
+            slot_start_time = (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time()
+            slot_datetime = datetime.combine(slot.date, slot_start_time)
+            
+            # Only include slots that are in the future
+            if slot_datetime > now:
+                filtered_individual_slots.append({
                     'slot_index': i,
-                    'start_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time().strftime('%H:%M'),
+                    'start_time': slot_start_time.strftime('%H:%M'),
                     'end_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i+1)).time().strftime('%H:%M'),
                     'is_available': i in available_slots
-                }
-                for i in range(total_slots)
-            ]
-        })
+                })
+        
+        # Only add the slot if it has future individual slots
+        if filtered_individual_slots:
+            availability_data[date_str].append({
+                'id': slot.id,
+                'start': slot.start_time.strftime('%H:%M'),
+                'end': slot.end_time.strftime('%H:%M'),
+                'available': slot.is_available,
+                'total_slots': total_slots,
+                'available_slots': available_slots,
+                'booked_slots': booked_slots,
+                'individual_slots': filtered_individual_slots
+            })
     
     logger.debug(f"[GET /availability] Retrieved availability: {availability_data}")
     logger.debug(f"[GET /availability] Retrieved timezone: {therapist_profile.timezone}")
@@ -332,9 +349,16 @@ def get_therapist_availability(therapist_id):
     
     # Get availability slots from new model
     from ..models import TherapistAvailability
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, date, time
+    
+    # Get current date and time for filtering
+    now = datetime.utcnow()
+    today = now.date()
+    
     availability_slots = TherapistAvailability.query.filter_by(
         therapist_profile_id=therapist_profile.id
+    ).filter(
+        TherapistAvailability.date >= today  # Only future and today's dates
     ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
     
     # Convert to date-based format with slot-level availability for booking
@@ -350,24 +374,33 @@ def get_therapist_availability(therapist_id):
         available_slots = slot.get_available_slots()
         booked_slots = slot.booked_slots or []
         
-        availability_data[date_str].append({
-            'id': slot.id,
-            'start': slot.start_time.strftime('%H:%M'),
-            'end': slot.end_time.strftime('%H:%M'),
-            'available': slot.is_available,
-            'total_slots': total_slots,
-            'available_slots': available_slots,
-            'booked_slots': booked_slots,
-            'individual_slots': [
-                {
+        # Filter individual slots based on current time
+        filtered_individual_slots = []
+        for i in range(total_slots):
+            slot_start_time = (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time()
+            slot_datetime = datetime.combine(slot.date, slot_start_time)
+            
+            # Only include slots that are in the future
+            if slot_datetime > now:
+                filtered_individual_slots.append({
                     'slot_index': i,
-                    'start_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time().strftime('%H:%M'),
+                    'start_time': slot_start_time.strftime('%H:%M'),
                     'end_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i+1)).time().strftime('%H:%M'),
                     'is_available': i in available_slots
-                }
-                for i in range(total_slots)
-            ]
-        })
+                })
+        
+        # Only add the slot if it has future individual slots
+        if filtered_individual_slots:
+            availability_data[date_str].append({
+                'id': slot.id,
+                'start': slot.start_time.strftime('%H:%M'),
+                'end': slot.end_time.strftime('%H:%M'),
+                'available': slot.is_available,
+                'total_slots': total_slots,
+                'available_slots': available_slots,
+                'booked_slots': booked_slots,
+                'individual_slots': filtered_individual_slots
+            })
     
     return jsonify({
         'therapist_id': therapist_id,
@@ -452,8 +485,15 @@ def unbook_slot(availability_id, slot_index):
         return jsonify({'error': 'Unauthorized to unbook this slot'}), 403
     
     try:
+        # Log before unbooking
+        logger.debug(f"[POST /unbook_slot] Before unbook - booked_slots: {availability_slot.booked_slots}")
+        
         # Unbook the slot
-        availability_slot.unbook_slot(slot_index)
+        result = availability_slot.unbook_slot(slot_index)
+        
+        # Log after unbooking but before commit
+        logger.debug(f"[POST /unbook_slot] After unbook - booked_slots: {availability_slot.booked_slots}, result: {result}")
+        
         db.session.commit()
         logger.debug(f"[POST /unbook_slot] Successfully unbooked slot {slot_index}")
         

@@ -1,0 +1,11 @@
+
+When a session is booked, mark  that slot as unavailable in the therapuist's calender so that other patients can't book the same slot. [DONEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
+
+I don't like how the sessions are tagged in general --more so in sessions page. Improve this. Make the tagging intuitive, professional and modern; befitting of a teleheatlth/telepsychology platform
+
+Implement the messaging functionality which is evident in the patient/therapist dashboards.
+
+
+++++++++++++++++++++
+unbooking a slot by the therapist doesn't unbook the slot. [DONEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
+the available hour count and slots-displayed also includes days and time prior to now[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]

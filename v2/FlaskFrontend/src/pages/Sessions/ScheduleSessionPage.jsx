@@ -307,13 +307,14 @@ const ScheduleSessionPage = () => {
     if (!selectedTherapistObj?.availability) return [];
 
     const events = [];
-    const today = new Date();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
     
     Object.entries(selectedTherapistObj.availability).forEach(([dateStr, slots]) => {
       slots.forEach((slot, slotIndex) => {
         const date = new Date(dateStr);
         // Skip past dates
-        if (date < new Date(today.setHours(0,0,0,0))) return;
+        if (date < today) return;
         
         // Use the new individual_slots data if available
         if (slot.individual_slots && Array.isArray(slot.individual_slots)) {
@@ -325,8 +326,7 @@ const ScheduleSessionPage = () => {
             const slotEndTime = moment(`${dateStr} ${individualSlot.end_time}`, 'YYYY-MM-DD HH:mm').toDate();
             
             // Skip if this specific slot is in the past
-            const now = new Date();
-            if (slotStartTime < now) return;
+            if (slotStartTime <= now) return;
             
             events.push({
               id: `${dateStr}-${individualSlot.slot_index}-${slot.id}`,
@@ -365,8 +365,7 @@ const ScheduleSessionPage = () => {
             slotEndTime.setHours(hour + 1, startMin, 0, 0);
             
             // Skip if this specific hour slot is in the past
-            const now = new Date();
-            if (slotStartTime < now) continue;
+            if (slotStartTime <= now) continue;
             
             const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
             
@@ -677,8 +676,9 @@ const ScheduleSessionPage = () => {
                     <FaCalendarAlt className="w-3 h-3 text-green-400" />
                     <span className="text-green-600 font-medium">
                       {(() => {
-                        // Count available slots for next 7 days
-                        const today = new Date();
+                        // Count available slots for next 7 days, excluding past times
+                        const now = new Date();
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
                         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
                         let availableCount = 0;
                         
@@ -687,12 +687,37 @@ const ScheduleSessionPage = () => {
                           if (date >= today && date <= nextWeek) {
                             slots.forEach(slot => {
                               if (slot.individual_slots) {
-                                availableCount += slot.individual_slots.filter(s => s.is_available).length;
+                                // Filter out past times for today
+                                const availableSlots = slot.individual_slots.filter(s => {
+                                  if (!s.is_available) return false;
+                                  
+                                  // If it's today, only count future time slots
+                                  if (date.toDateString() === now.toDateString()) {
+                                    const slotTime = new Date(`${dateStr} ${s.start_time}`);
+                                    return slotTime > now;
+                                  }
+                                  return true;
+                                });
+                                availableCount += availableSlots.length;
                               } else {
-                                // Fallback calculation
+                                // Fallback calculation with time filtering
                                 const bookedSlots = slot.booked_slots || [];
-                                const totalSlots = slot.total_slots || Math.floor((parseInt(slot.end.split(':')[0]) - parseInt(slot.start.split(':')[0])));
-                                availableCount += totalSlots - bookedSlots.length;
+                                const [startHour] = slot.start.split(':').map(Number);
+                                const [endHour] = slot.end.split(':').map(Number);
+                                
+                                for (let hour = startHour; hour < endHour; hour++) {
+                                  const slotIndex = hour - startHour;
+                                  if (!bookedSlots.includes(slotIndex)) {
+                                    // If it's today, only count future hours
+                                    if (date.toDateString() === now.toDateString()) {
+                                      if (hour > now.getHours() || (hour === now.getHours() && now.getMinutes() < 30)) {
+                                        availableCount++;
+                                      }
+                                    } else {
+                                      availableCount++;
+                                    }
+                                  }
+                                }
                               }
                             });
                           }

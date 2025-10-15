@@ -75,18 +75,18 @@ class TherapistAvailability(db.Model):
         """Book a specific slot"""
         if not self.is_slot_available(slot_index):
             return False
-        booked = self.booked_slots or []
+        booked = (self.booked_slots or []).copy()  # Create a new list
         if slot_index not in booked:
             booked.append(slot_index)
-            self.booked_slots = booked
+            self.booked_slots = booked  # Assign new list to trigger change detection
         return True
     
     def unbook_slot(self, slot_index):
         """Unbook a specific slot"""
-        booked = self.booked_slots or []
+        booked = (self.booked_slots or []).copy()  # Create a new list
         if slot_index in booked:
             booked.remove(slot_index)
-            self.booked_slots = booked
+            self.booked_slots = booked  # Assign new list to trigger change detection
         return True
 
 

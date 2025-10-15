@@ -406,7 +406,11 @@ const TherapistAvailabilityPage = () => {
       setLoading(true);
       const { availabilityId, slotIndex } = selectedEvent.resource;
       
-      await api.post(`/therapists/availability/${availabilityId}/slots/${slotIndex}/unbook`);
+      console.log('Unbooking slot:', { availabilityId, slotIndex, selectedEvent });
+      
+      const response = await api.post(`/therapists/availability/${availabilityId}/slots/${slotIndex}/unbook`);
+      
+      console.log('Unbook response:', response.data);
       
       setMessage('Slot unbooked successfully!');
       setTimeout(() => setMessage(''), 3000);
