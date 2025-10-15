@@ -5,6 +5,9 @@ I don't like how the sessions are tagged in general --more so in sessions page. 
 
 Implement the messaging functionality which is evident in the patient/therapist dashboards.
 
+I should implement google OAuth.
+
+I should configure, complete and wind-up on the email sending logic
 
 ++++++++++++++++++++
 unbooking a slot by the therapist doesn't unbook the slot. [DONEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
