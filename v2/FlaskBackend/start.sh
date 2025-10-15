@@ -7,5 +7,5 @@ pip install -r requirements.txt
 # Run database migrations (if you have a database)
 # flask db upgrade
 
-# Start the application with Gunicorn using gevent worker
-gunicorn --worker-class gevent -w 1 --worker-connections 1000 --bind 0.0.0.0:${PORT:-5000} app:app
+# Start the application with Gunicorn using standard sync workers
+gunicorn -w 4 --bind 0.0.0.0:${PORT:-5000} app:app

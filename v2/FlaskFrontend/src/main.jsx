@@ -5,7 +5,6 @@ import './index.css';
 
 // Auth Store
 import { useAuthStore } from './stores/authStore.js';
-import { useSocketStore } from './stores/socketStore.js';
 
 // Layout
 import Layout from './components/Layout/Layout.jsx';
@@ -36,29 +35,12 @@ import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import ProfilePage from './pages/Profile/ProfilePage';
 
 const App = () => {
-  const { initialize, isAuthenticated, token } = useAuthStore();
-  const { connect, disconnect } = useSocketStore();
+  const { initialize } = useAuthStore();
 
   useEffect(() => {
     // Initialize auth store on app start
     initialize();
   }, []);
-
-  // Connect to socket when authenticated
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      console.log('Connecting to socket server...');
-      connect(token);
-    } else {
-      console.log('Disconnecting from socket server...');
-      disconnect();
-    }
-    
-    return () => {
-      console.log('Cleanup: Disconnecting from socket server...');
-      disconnect();
-    };
-  }, [isAuthenticated, token]);
 
   return (
     <Router>
