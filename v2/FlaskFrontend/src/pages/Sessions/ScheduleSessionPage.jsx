@@ -106,10 +106,17 @@ const ScheduleSessionPage = () => {
         experience_years: therapist.experience_years || Math.floor(Math.random() * 15) + 5,
         location: therapist.location || 'Remote',
         gender: therapist.gender || (Math.random() > 0.5 ? 'female' : 'male'),
-        // The availability data should now be in the format:
+        // The availability data is now in the enhanced format:
         // {
-        //   "2025-10-04": [{ "start": "09:00", "end": "17:00" }],
-        //   "2025-10-05": [{ "start": "10:00", "end": "15:00" }]
+        //   "2025-10-04": [{
+        //     "id": 123,
+        //     "start": "09:00", "end": "17:00",
+        //     "available": true,
+        //     "total_slots": 8,
+        //     "available_slots": [0, 2, 3, 4, 5, 6, 7],
+        //     "booked_slots": [1],
+        //     "individual_slots": [...]
+        //   }]
         // }
         availability: therapist.availability || {}
       }));
@@ -142,6 +149,22 @@ const ScheduleSessionPage = () => {
     setMessage('');
 
     try {
+      // First check availability before booking
+      const date = moment(sessionData.scheduled_at).format('YYYY-MM-DD');
+      const time = moment(sessionData.scheduled_at).format('HH:mm');
+      
+      const availabilityCheck = await api.post('/sessions/check-availability', {
+        therapist_id: parseInt(selectedTherapist),
+        date: date,
+        time: time
+      });
+
+      if (!availabilityCheck.data.available) {
+        setMessage('This time slot is no longer available. Please select a different time.');
+        setLoading(false);
+        return;
+      }
+
       const scheduleData = {
         ...sessionData,
         therapist_id: parseInt(selectedTherapist)
@@ -149,7 +172,7 @@ const ScheduleSessionPage = () => {
 
       const response = await api.post('/sessions/schedule', scheduleData);
 
-      setMessage('Session scheduled successfully! Confirmation emails have been sent.');
+      setMessage('Session scheduled successfully! The time slot has been booked and confirmation emails have been sent.');
       setShowConfirmModal(false);
       
       // Reset form
@@ -164,9 +187,15 @@ const ScheduleSessionPage = () => {
       setSelectedTherapist('');
       setCurrentView('directory');
 
+      // Reload therapists to get updated availability
+      setTimeout(() => {
+        loadAvailableTherapists();
+      }, 1000);
+
     } catch (error) {
       console.error('Error scheduling session:', error);
-      setMessage(`Error: ${error.response?.data?.message || error.message || 'Failed to schedule session'}`);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to schedule session';
+      setMessage(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -197,70 +226,165 @@ const ScheduleSessionPage = () => {
     setShowConfirmModal(true);
   };
   
-  // Handle auto-match
-  const handleAutoMatch = () => {
-    // In a real app, you would call an API to find a match based on preferences
-    // For now, we'll just simulate finding a match
+  // Handle auto-match with slot availability checking
+  const handleAutoMatch = async () => {
+    setMessage('Finding the perfect therapist match with available slots...');
     
-    setMessage('Finding the perfect therapist match for you...');
-    
-    setTimeout(() => {
-      // Just pick a random therapist for demo purposes
-      if (therapists.length > 0) {
-        const matchedTherapist = therapists[Math.floor(Math.random() * therapists.length)];
-        setSelectedTherapist(matchedTherapist.id);
-        setCurrentView('calendar');
-        setMessage(`Matched with ${matchedTherapist.name} based on your preferences!`);
-      } else {
-        setMessage('No therapists available for matching. Please try again later.');
+    try {
+      // Get available slots for the next 7 days for all therapists
+      const today = moment().format('YYYY-MM-DD');
+      const nextWeek = moment().add(7, 'days').format('YYYY-MM-DD');
+      
+      const therapistsWithSlots = [];
+      
+      for (const therapist of therapists) {
+        try {
+          const slotsResponse = await api.post('/sessions/available-slots', {
+            therapist_id: therapist.id,
+            start_date: today,
+            end_date: nextWeek
+          });
+          
+          if (slotsResponse.data.available_slots.length > 0) {
+            therapistsWithSlots.push({
+              ...therapist,
+              availableSlots: slotsResponse.data.available_slots
+            });
+          }
+        } catch (error) {
+          console.log(`No slots available for therapist ${therapist.id}`);
+        }
       }
-      setShowMatchModal(false);
-    }, 1500);
+      
+      if (therapistsWithSlots.length > 0) {
+        // Filter by preferences if specified
+        let matchedTherapists = therapistsWithSlots;
+        
+        if (matchPreferences.specialization) {
+          matchedTherapists = matchedTherapists.filter(t => 
+            t.specializations?.some(spec => 
+              spec.toLowerCase().includes(matchPreferences.specialization.toLowerCase())
+            )
+          );
+        }
+        
+        if (matchPreferences.language !== 'English') {
+          matchedTherapists = matchedTherapists.filter(t => 
+            t.languages?.includes(matchPreferences.language)
+          );
+        }
+        
+        if (matchedTherapists.length > 0) {
+          // Pick the therapist with the most available slots or highest rating
+          const bestMatch = matchedTherapists.sort((a, b) => {
+            // Sort by available slots count, then by rating
+            const slotsA = a.availableSlots.length;
+            const slotsB = b.availableSlots.length;
+            if (slotsA !== slotsB) return slotsB - slotsA;
+            return parseFloat(b.rating) - parseFloat(a.rating);
+          })[0];
+          
+          setSelectedTherapist(bestMatch.id);
+          setCurrentView('calendar');
+          setMessage(`Matched with ${bestMatch.name} - they have ${bestMatch.availableSlots.length} available slots this week!`);
+        } else {
+          setMessage('No therapists found matching your preferences with available slots. Try adjusting your criteria.');
+        }
+      } else {
+        setMessage('No therapists have available slots in the next week. Please try again later.');
+      }
+    } catch (error) {
+      console.error('Error in auto-match:', error);
+      setMessage('Error finding matches. Please try selecting a therapist manually.');
+    }
+    
+    setShowMatchModal(false);
   };
 
-  // Load therapist availability for react-big-calendar
+  // Load therapist availability for react-big-calendar with slot-based system
   const loadTherapistAvailability = () => {
     const selectedTherapistObj = therapists.find(t => t.id === parseInt(selectedTherapist));
     if (!selectedTherapistObj?.availability) return [];
 
     const events = [];
-    const today = new Date();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
     
     Object.entries(selectedTherapistObj.availability).forEach(([dateStr, slots]) => {
       slots.forEach((slot, slotIndex) => {
         const date = new Date(dateStr);
         // Skip past dates
-        if (date < new Date(today.setHours(0,0,0,0))) return;
+        if (date < today) return;
         
-        const [startHour, startMin] = slot.start.split(':').map(Number);
-        const [endHour, endMin] = (slot.end || '17:00').split(':').map(Number);
-        
-        // Create individual 1-hour slots between start and end time
-        for (let hour = startHour; hour < endHour; hour++) {
-          const slotStartTime = new Date(date);
-          slotStartTime.setHours(hour, startMin, 0, 0);
-          
-          const slotEndTime = new Date(date);
-          slotEndTime.setHours(hour + 1, startMin, 0, 0);
-          
-          // Skip if this specific hour slot is in the past
-          const now = new Date();
-          if (slotStartTime < now) continue;
-          
-          const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
-          
-          events.push({
-            id: `${dateStr}-${timeString}-${slotIndex}`,
-            title: `Available at ${timeString}`,
-            start: slotStartTime,
-            end: slotEndTime,
-            resource: {
-              therapistId: selectedTherapistObj.id,
-              date: dateStr,
-              time: timeString,
-              therapist: selectedTherapistObj
-            }
+        // Use the new individual_slots data if available
+        if (slot.individual_slots && Array.isArray(slot.individual_slots)) {
+          slot.individual_slots.forEach(individualSlot => {
+            // Only show available slots
+            if (!individualSlot.is_available) return;
+            
+            const slotStartTime = moment(`${dateStr} ${individualSlot.start_time}`, 'YYYY-MM-DD HH:mm').toDate();
+            const slotEndTime = moment(`${dateStr} ${individualSlot.end_time}`, 'YYYY-MM-DD HH:mm').toDate();
+            
+            // Skip if this specific slot is in the past
+            if (slotStartTime <= now) return;
+            
+            events.push({
+              id: `${dateStr}-${individualSlot.slot_index}-${slot.id}`,
+              title: `Available ${individualSlot.start_time}`,
+              start: slotStartTime,
+              end: slotEndTime,
+              resource: {
+                therapistId: selectedTherapistObj.id,
+                date: dateStr,
+                time: individualSlot.start_time,
+                therapist: selectedTherapistObj,
+                slotIndex: individualSlot.slot_index,
+                availabilityId: slot.id,
+                isAvailable: true
+              }
+            });
           });
+        } else {
+          // Fallback for old format - create individual 1-hour slots
+          const [startHour, startMin] = slot.start.split(':').map(Number);
+          const [endHour, endMin] = (slot.end || '17:00').split(':').map(Number);
+          
+          // Check which slots are available (not booked)
+          const bookedSlots = slot.booked_slots || [];
+          
+          for (let hour = startHour; hour < endHour; hour++) {
+            const slotIdx = hour - startHour;
+            
+            // Skip booked slots
+            if (bookedSlots.includes(slotIdx)) continue;
+            
+            const slotStartTime = new Date(date);
+            slotStartTime.setHours(hour, startMin, 0, 0);
+            
+            const slotEndTime = new Date(date);
+            slotEndTime.setHours(hour + 1, startMin, 0, 0);
+            
+            // Skip if this specific hour slot is in the past
+            if (slotStartTime <= now) continue;
+            
+            const timeString = `${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+            
+            events.push({
+              id: `${dateStr}-${slotIdx}-${slot.id || slotIndex}`,
+              title: `Available ${timeString}`,
+              start: slotStartTime,
+              end: slotEndTime,
+              resource: {
+                therapistId: selectedTherapistObj.id,
+                date: dateStr,
+                time: timeString,
+                therapist: selectedTherapistObj,
+                slotIndex: slotIdx,
+                availabilityId: slot.id,
+                isAvailable: true
+              }
+            });
+          }
         }
       });
     });
@@ -281,12 +405,22 @@ const ScheduleSessionPage = () => {
     console.log('Empty slot clicked:', slotInfo);
   };
 
-  const EventComponent = ({ event }) => (
-    <div className="h-full flex items-center justify-center text-xs font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded px-1 cursor-pointer hover:from-emerald-600 hover:to-teal-700 transition-all duration-200">
-      <HiOutlineClock className="w-3 h-3 mr-1" />
-      {event.resource.time}
-    </div>
-  );
+  const EventComponent = ({ event }) => {
+    const isAvailable = event.resource?.isAvailable !== false;
+    
+    return (
+      <div className={`h-full flex items-center justify-center text-xs font-medium text-white rounded px-1 cursor-pointer transition-all duration-200 ${
+        isAvailable 
+          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 hover:shadow-md' 
+          : 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-60 cursor-not-allowed'
+      }`}>
+        <HiOutlineClock className="w-3 h-3 mr-1" />
+        <span className="truncate">
+          {isAvailable ? event.resource.time : `Booked ${event.resource.time}`}
+        </span>
+      </div>
+    );
+  };
 
   // Calendar rendering functions
   const renderCalendar = () => {
@@ -537,6 +671,62 @@ const ScheduleSessionPage = () => {
                     <FaUsers className="w-3 h-3 text-gray-400" />
                     <span>{therapist.review_count} reviews</span>
                   </div>
+                  {/* Available slots indicator */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <FaCalendarAlt className="w-3 h-3 text-green-400" />
+                    <span className="text-green-600 font-medium">
+                      {(() => {
+                        // Count available slots for next 7 days, excluding past times
+                        const now = new Date();
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
+                        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        let availableCount = 0;
+                        
+                        Object.entries(therapist.availability || {}).forEach(([dateStr, slots]) => {
+                          const date = new Date(dateStr);
+                          if (date >= today && date <= nextWeek) {
+                            slots.forEach(slot => {
+                              if (slot.individual_slots) {
+                                // Filter out past times for today
+                                const availableSlots = slot.individual_slots.filter(s => {
+                                  if (!s.is_available) return false;
+                                  
+                                  // If it's today, only count future time slots
+                                  if (date.toDateString() === now.toDateString()) {
+                                    const slotTime = new Date(`${dateStr} ${s.start_time}`);
+                                    return slotTime > now;
+                                  }
+                                  return true;
+                                });
+                                availableCount += availableSlots.length;
+                              } else {
+                                // Fallback calculation with time filtering
+                                const bookedSlots = slot.booked_slots || [];
+                                const [startHour] = slot.start.split(':').map(Number);
+                                const [endHour] = slot.end.split(':').map(Number);
+                                
+                                for (let hour = startHour; hour < endHour; hour++) {
+                                  const slotIndex = hour - startHour;
+                                  if (!bookedSlots.includes(slotIndex)) {
+                                    // If it's today, only count future hours
+                                    if (date.toDateString() === now.toDateString()) {
+                                      if (hour > now.getHours() || (hour === now.getHours() && now.getMinutes() < 30)) {
+                                        availableCount++;
+                                      }
+                                    } else {
+                                      availableCount++;
+                                    }
+                                  }
+                                }
+                              }
+                            });
+                          }
+                        });
+                        
+                        return availableCount > 0 ? `${availableCount} slots this week` : 'No slots available';
+                      })()}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Languages */}
@@ -666,6 +856,31 @@ const ScheduleSessionPage = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Time:</span>
                     <span className="font-medium text-gray-900">{selectedSlot.time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="font-medium text-gray-900">{sessionData.duration} minutes</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status:</span>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Available
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Warning about slot availability */}
+                <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-4 h-4 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <FaClock className="w-2 h-2 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-yellow-800 font-medium">Time slot reservation</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        This slot will be reserved for you once confirmed. Please complete your booking promptly.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -18,13 +18,26 @@ export const useAuthStore = create((set, get) => ({
   isInitialized: false,
 
   // Initialize store with localStorage data
-  initialize: () => {
+  initialize: async () => {
     const token = getStoredToken();
     set({ 
       token, 
       isAuthenticated: !!token,
       isInitialized: true 
     });
+    
+    // If we have a token, try to load user data immediately
+    if (token) {
+      try {
+        const { loadUser } = get();
+        await loadUser();
+      } catch (error) {
+        console.error('Failed to load user during initialization:', error);
+        // Token might be invalid, clear it
+        localStorage.removeItem('token');
+        set({ token: null, isAuthenticated: false, user: null });
+      }
+    }
   },
 
   // Login function
@@ -45,7 +58,16 @@ export const useAuthStore = create((set, get) => ({
 
       // Update state with access token (always use access token for active session)
       set({ token: access_token, user, isAuthenticated: true, isLoading: false });
-      return user;
+      
+      // Load full user data from /auth/me to get first_name, last_name, etc.
+      try {
+        const { loadUser } = get();
+        const fullUser = await loadUser();
+        return fullUser;
+      } catch (error) {
+        console.warn('Failed to load full user data after login:', error);
+        return user; // Return basic user data as fallback
+      }
     } catch (error) {
       set({ error: error.message, isLoading: false });
       throw error;
@@ -75,7 +97,15 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false 
       });
       
-      return response.data;
+      // Load full user data from /auth/me to get complete profile
+      try {
+        const { loadUser } = get();
+        const fullUser = await loadUser();
+        return { ...response.data, user: fullUser };
+      } catch (error) {
+        console.warn('Failed to load full user data after registration:', error);
+        return response.data; // Return basic data as fallback
+      }
     } catch (error) {
       set({ error: error.message, isLoading: false });
       throw error;
