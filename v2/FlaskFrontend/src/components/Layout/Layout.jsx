@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { useSocketStore } from '../../stores/socketStore';
-import SocketStatus from './SocketStatus';
 import ToastContainer from '../common/ToastContainer';
 
 const Layout = () => {
@@ -14,8 +12,6 @@ const Layout = () => {
   const loadUser = useAuthStore((state) => state.loadUser);
   const initialize = useAuthStore((state) => state.initialize);
   const token = useAuthStore((state) => state.token);
-  
-  const { connect, disconnect } = useSocketStore();
   
   const navigate = useNavigate();
 
@@ -31,22 +27,6 @@ const Layout = () => {
       loadUser();
     }
   }, [isInitialized, isAuthenticated, user, loadUser]);
-
-  // Connect to socket when authenticated
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      console.log('Connecting to socket server...');
-      connect(token);
-    } else {
-      console.log('Disconnecting from socket server...');
-      disconnect();
-    }
-    
-    return () => {
-      console.log('Cleanup: Disconnecting from socket server...');
-      disconnect();
-    };
-  }, [isAuthenticated, token, connect, disconnect]);
 
   const handleLogout = () => {
     logout();
@@ -292,9 +272,6 @@ const Layout = () => {
           </p>
         </div>
       </footer>
-      
-      {/* Socket connection status indicator */}
-      {isAuthenticated && <SocketStatus />}
       
       {/* Global toast notifications */}
       <ToastContainer />

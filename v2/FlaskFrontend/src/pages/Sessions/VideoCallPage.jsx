@@ -90,7 +90,7 @@ const VideoCallPage = () => {
     console.log('Session effect triggered:', { 
       sessionLoaded: !!session
     });
-    // MediaSoup handles all communication now - no need for Flask socket
+    // MediaSoup handles all communication - no additional socket needed
   }, [session]);
 
   const initializeSession = async () => {
