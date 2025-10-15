@@ -154,7 +154,7 @@ def schedule_session():
     if not therapist or therapist.role.upper() != 'THERAPIST':
         return jsonify({'error': 'Invalid therapist'}), 400
     
-    # Check for scheduling conflicts
+    # Check for scheduling conflicts and book the slot in the new availability system
     conflict = Session.query.filter(
         Session.therapist_id == data['therapist_id'],
         Session.scheduled_at == scheduled_at,
@@ -163,6 +163,35 @@ def schedule_session():
     
     if conflict:
         return jsonify({'error': 'Therapist is not available at this time'}), 409
+    
+    # Check and book availability slot using the new slot-based system
+    from ..models import TherapistAvailability
+    therapist_profile = TherapistProfile.query.filter_by(user_id=data['therapist_id']).first()
+    if not therapist_profile:
+        return jsonify({'error': 'Therapist profile not found'}), 404
+    
+    # Find the availability slot that covers this time
+    date_obj = scheduled_at.date()
+    time_obj = scheduled_at.time()
+    
+    availability_slot = TherapistAvailability.query.filter(
+        TherapistAvailability.therapist_profile_id == therapist_profile.id,
+        TherapistAvailability.date == date_obj,
+        TherapistAvailability.start_time <= time_obj,
+        TherapistAvailability.end_time > time_obj,
+        TherapistAvailability.is_available == True
+    ).first()
+    
+    if not availability_slot:
+        return jsonify({'error': 'Therapist is not available at this time slot'}), 409
+    
+    # Calculate which hour slot this booking corresponds to
+    time_diff = datetime.combine(date_obj, time_obj) - datetime.combine(date_obj, availability_slot.start_time)
+    slot_index = int(time_diff.total_seconds() / 3600)
+    
+    # Check if the specific slot is available
+    if not availability_slot.is_slot_available(slot_index):
+        return jsonify({'error': 'This specific time slot is already booked'}), 409
     
     # Generate unique room ID and join URL
     room_id = f"session_{uuid.uuid4().hex[:12]}"
@@ -186,8 +215,14 @@ def schedule_session():
     )
     
     try:
+        # Book the availability slot first
+        if not availability_slot.book_slot(slot_index):
+            return jsonify({'error': 'Failed to book the time slot'}), 500
+        
         db.session.add(session)
         db.session.commit()
+        
+        current_app.logger.info(f"Session {session.id} scheduled and slot {slot_index} booked for therapist {data['therapist_id']}")
         
         # Send confirmation emails with calendar attachments
         patient_user = User.query.get(session.patient_id)
@@ -211,6 +246,11 @@ def schedule_session():
                 'status': session.status,
                 'join_url': session.join_url,
                 'room_id': session.room_id
+            },
+            'slot_booked': {
+                'availability_id': availability_slot.id,
+                'slot_index': slot_index,
+                'booked_time': f"{time_obj.strftime('%H:%M')}-{(datetime.combine(date_obj, time_obj) + timedelta(hours=1)).time().strftime('%H:%M')}"
             }
         }), 201
         
@@ -333,9 +373,37 @@ def cancel_session(session_id):
     session.updated_at = datetime.utcnow()
     
     try:
+        # Unbook the availability slot when session is cancelled
+        from ..models import TherapistAvailability
+        therapist_profile = TherapistProfile.query.filter_by(user_id=session.therapist_id).first()
+        
+        if therapist_profile:
+            date_obj = session.scheduled_at.date()
+            time_obj = session.scheduled_at.time()
+            
+            # Find the availability slot that covers this time
+            availability_slot = TherapistAvailability.query.filter(
+                TherapistAvailability.therapist_profile_id == therapist_profile.id,
+                TherapistAvailability.date == date_obj,
+                TherapistAvailability.start_time <= time_obj,
+                TherapistAvailability.end_time > time_obj
+            ).first()
+            
+            if availability_slot:
+                # Calculate which hour slot this booking corresponds to
+                time_diff = datetime.combine(date_obj, time_obj) - datetime.combine(date_obj, availability_slot.start_time)
+                slot_index = int(time_diff.total_seconds() / 3600)
+                
+                # Unbook the slot
+                availability_slot.unbook_slot(slot_index)
+                current_app.logger.info(f"Unbooked slot {slot_index} for cancelled session {session.id}")
+        
         db.session.commit()
         # TODO: Send cancellation emails
-        return jsonify({'message': 'Session cancelled successfully'})
+        return jsonify({
+            'message': 'Session cancelled successfully',
+            'slot_unbooked': True
+        })
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to cancel session: {str(e)}'}), 500
@@ -482,7 +550,7 @@ def get_available_therapists():
             therapist_profile_id=profile.id
         ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
         
-        # Convert to date-based format for frontend calendar compatibility
+        # Convert to date-based format with slot-level availability
         availability_data = {}
         
         for slot in availability_slots:
@@ -490,10 +558,28 @@ def get_available_therapists():
             if date_str not in availability_data:
                 availability_data[date_str] = []
             
+            # Get available and booked slots for this time block
+            total_slots = slot.get_total_slots()
+            available_slots = slot.get_available_slots()
+            booked_slots = slot.booked_slots or []
+            
             availability_data[date_str].append({
+                'id': slot.id,
                 'start': slot.start_time.strftime('%H:%M'),
                 'end': slot.end_time.strftime('%H:%M'),
-                'available': slot.is_available
+                'available': slot.is_available,
+                'total_slots': total_slots,
+                'available_slots': available_slots,
+                'booked_slots': booked_slots,
+                'individual_slots': [
+                    {
+                        'slot_index': i,
+                        'start_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i)).time().strftime('%H:%M'),
+                        'end_time': (datetime.combine(slot.date, slot.start_time) + timedelta(hours=i+1)).time().strftime('%H:%M'),
+                        'is_available': i in available_slots
+                    }
+                    for i in range(total_slots)
+                ]
             })
         
         therapists_data.append({
@@ -532,7 +618,7 @@ def check_availability():
     if not therapist_profile:
         return jsonify({'error': 'Therapist not found'}), 404
     
-    # Check if therapist has availability on this date/time using new availability model
+    # Check if therapist has availability on this date/time using new slot-based availability model
     from ..models import TherapistAvailability
     
     # Check specific date availability
@@ -549,12 +635,23 @@ def check_availability():
         ).all()
         
         is_available = False
+        availability_slot_found = None
+        slot_index = None
+        
         for slot in availability_slots:
             if slot.start_time <= time_obj < slot.end_time:
-                is_available = True
+                # Calculate which hour slot this time falls into
+                time_diff = datetime.combine(date_obj, time_obj) - datetime.combine(date_obj, slot.start_time)
+                hour_slot = int(time_diff.total_seconds() / 3600)
+                
+                # Check if this specific hour slot is available (not booked)
+                if slot.is_slot_available(hour_slot):
+                    is_available = True
+                    availability_slot_found = slot
+                    slot_index = hour_slot
                 break
         
-        # Check for existing bookings
+        # Check for existing session bookings at this exact time
         if is_available:
             scheduled_datetime = datetime.strptime(f"{date} {time}", '%Y-%m-%d %H:%M')
             existing_session = Session.query.filter(
@@ -566,15 +663,106 @@ def check_availability():
             if existing_session:
                 is_available = False
         
-        return jsonify({
+        response_data = {
             'available': is_available,
             'therapist_id': therapist_id,
             'date': date,
             'time': time
-        })
+        }
+        
+        # Add slot details if available
+        if availability_slot_found and slot_index is not None:
+            response_data.update({
+                'availability_id': availability_slot_found.id,
+                'slot_index': slot_index,
+                'slot_details': {
+                    'start_time': availability_slot_found.start_time.strftime('%H:%M'),
+                    'end_time': availability_slot_found.end_time.strftime('%H:%M'),
+                    'total_slots': availability_slot_found.get_total_slots(),
+                    'available_slots': availability_slot_found.get_available_slots(),
+                    'booked_slots': availability_slot_found.booked_slots or []
+                }
+            })
+        
+        return jsonify(response_data)
         
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+
+
+@sessions_bp.route('/available-slots', methods=['POST'])
+@jwt_required()
+def get_available_slots():
+    """Get all available individual slots for booking within a date range"""
+    data = request.get_json()
+    
+    required_fields = ['therapist_id', 'start_date']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    therapist_id = data['therapist_id']
+    start_date = data['start_date']  # Format: YYYY-MM-DD
+    end_date = data.get('end_date', start_date)  # Default to same day if not provided
+    
+    # Get therapist profile
+    therapist_profile = TherapistProfile.query.filter_by(user_id=therapist_id).first()
+    if not therapist_profile:
+        return jsonify({'error': 'Therapist not found'}), 404
+    
+    try:
+        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Get availability slots within date range
+    from ..models import TherapistAvailability
+    availability_slots = TherapistAvailability.query.filter(
+        TherapistAvailability.therapist_profile_id == therapist_profile.id,
+        TherapistAvailability.date >= start_date_obj,
+        TherapistAvailability.date <= end_date_obj,
+        TherapistAvailability.is_available == True
+    ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
+    
+    # Collect all available individual slots
+    available_slots = []
+    
+    for availability_slot in availability_slots:
+        available_slot_indices = availability_slot.get_available_slots()
+        
+        for slot_index in available_slot_indices:
+            slot_start = datetime.combine(availability_slot.date, availability_slot.start_time) + timedelta(hours=slot_index)
+            slot_end = slot_start + timedelta(hours=1)
+            
+            # Check for existing session bookings at this time
+            existing_session = Session.query.filter(
+                Session.therapist_id == therapist_id,
+                Session.scheduled_at == slot_start,
+                Session.status.in_(['scheduled', 'started'])
+            ).first()
+            
+            if not existing_session:  # Only include if no session conflict
+                available_slots.append({
+                    'availability_id': availability_slot.id,
+                    'slot_index': slot_index,
+                    'date': availability_slot.date.strftime('%Y-%m-%d'),
+                    'start_datetime': slot_start.isoformat(),
+                    'end_datetime': slot_end.isoformat(),
+                    'start_time': slot_start.time().strftime('%H:%M'),
+                    'end_time': slot_end.time().strftime('%H:%M'),
+                    'timezone': availability_slot.timezone
+                })
+    
+    return jsonify({
+        'therapist_id': therapist_id,
+        'date_range': {
+            'start_date': start_date,
+            'end_date': end_date
+        },
+        'available_slots': available_slots,
+        'total_available': len(available_slots)
+    })
 
 
 @sessions_bp.route('/cleanup-overdue', methods=['POST'])

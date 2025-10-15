@@ -105,46 +105,77 @@ const TherapistAvailabilityPage = () => {
       const response = await api.get('/therapists/availability');
       const availabilityData = response.data.availability || {};
       
-      // Convert availability data to calendar events with individual hourly slots
+      // Convert new slot-based availability data to calendar events
       const calendarEvents = [];
       Object.keys(availabilityData).forEach(dateKey => {
         const slots = availabilityData[dateKey];
         if (Array.isArray(slots)) {
           slots.forEach((slot, slotIndex) => {
-            const [startHour, startMin] = slot.start.split(':').map(Number);
-            const [endHour, endMin] = slot.end.split(':').map(Number);
-            
-            // Create individual 1-hour slots between start and end time
-            for (let hour = startHour; hour < endHour; hour++) {
-              const startDateTime = moment(dateKey).set({
-                hour: hour,
-                minute: startMin || 0,
-                second: 0,
-                millisecond: 0
-              }).toDate();
-              
-              const endDateTime = moment(dateKey).set({
-                hour: hour + 1,
-                minute: startMin || 0,
-                second: 0,
-                millisecond: 0
-              }).toDate();
-              
-              const timeString = `${hour.toString().padStart(2, '0')}:${(startMin || 0).toString().padStart(2, '0')}`;
-              
-              calendarEvents.push({
-                id: `${dateKey}-${timeString}-${slotIndex}`,
-                title: `Available ${timeString}`,
-                start: startDateTime,
-                end: endDateTime,
-                resource: { 
-                  dateKey, 
-                  slotIndex, 
-                  originalSlot: slot,
-                  hourSlot: hour,
-                  timeString 
-                }
+            // Handle the new slot structure with individual_slots
+            if (slot.individual_slots && Array.isArray(slot.individual_slots)) {
+              slot.individual_slots.forEach(individualSlot => {
+                const startDateTime = moment(`${dateKey} ${individualSlot.start_time}`, 'YYYY-MM-DD HH:mm').toDate();
+                const endDateTime = moment(`${dateKey} ${individualSlot.end_time}`, 'YYYY-MM-DD HH:mm').toDate();
+                
+                calendarEvents.push({
+                  id: `${dateKey}-${individualSlot.slot_index}-${slot.id}`,
+                  title: individualSlot.is_available ? 
+                    `Available ${individualSlot.start_time}` : 
+                    `Booked ${individualSlot.start_time}`,
+                  start: startDateTime,
+                  end: endDateTime,
+                  resource: { 
+                    dateKey, 
+                    slotIndex: individualSlot.slot_index,
+                    availabilityId: slot.id,
+                    originalSlot: slot,
+                    individualSlot: individualSlot,
+                    isAvailable: individualSlot.is_available,
+                    isBooked: !individualSlot.is_available,
+                    timeString: individualSlot.start_time
+                  }
+                });
               });
+            } else {
+              // Fallback for old format - create individual 1-hour slots
+              const [startHour, startMin] = slot.start.split(':').map(Number);
+              const [endHour, endMin] = slot.end.split(':').map(Number);
+              
+              for (let hour = startHour; hour < endHour; hour++) {
+                const startDateTime = moment(dateKey).set({
+                  hour: hour,
+                  minute: startMin || 0,
+                  second: 0,
+                  millisecond: 0
+                }).toDate();
+                
+                const endDateTime = moment(dateKey).set({
+                  hour: hour + 1,
+                  minute: startMin || 0,
+                  second: 0,
+                  millisecond: 0
+                }).toDate();
+                
+                const timeString = `${hour.toString().padStart(2, '0')}:${(startMin || 0).toString().padStart(2, '0')}`;
+                const slotIdx = hour - startHour;
+                const isBooked = slot.booked_slots && slot.booked_slots.includes(slotIdx);
+                
+                calendarEvents.push({
+                  id: `${dateKey}-${slotIdx}-${slot.id || slotIndex}`,
+                  title: isBooked ? `Booked ${timeString}` : `Available ${timeString}`,
+                  start: startDateTime,
+                  end: endDateTime,
+                  resource: { 
+                    dateKey, 
+                    slotIndex: slotIdx,
+                    availabilityId: slot.id,
+                    originalSlot: slot,
+                    isAvailable: !isBooked,
+                    isBooked: isBooked,
+                    timeString 
+                  }
+                });
+              }
             }
           });
         }
@@ -245,14 +276,22 @@ const TherapistAvailabilityPage = () => {
 
   const handleSelectEvent = useCallback((event) => {
     setSelectedEvent(event);
-    setFormData({
-      title: event.title,
-      start: event.start,
-      end: event.end,
-      recurrence: 'none',
-      duration: 4,
-    });
-    setModalType('edit');
+    
+    // Check if this is a booked slot
+    if (event.resource?.isBooked) {
+      // For booked slots, show different modal with unbook option
+      setModalType('manage-booked');
+    } else {
+      // For available slots, show edit modal
+      setFormData({
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        recurrence: 'none',
+        duration: 4,
+      });
+      setModalType('edit');
+    }
     setShowModal(true);
   }, []);
 
@@ -362,6 +401,29 @@ const TherapistAvailabilityPage = () => {
     resetForm();
   };
 
+  const unbookSlot = async () => {
+    try {
+      setLoading(true);
+      const { availabilityId, slotIndex } = selectedEvent.resource;
+      
+      await api.post(`/therapists/availability/${availabilityId}/slots/${slotIndex}/unbook`);
+      
+      setMessage('Slot unbooked successfully!');
+      setTimeout(() => setMessage(''), 3000);
+      
+      // Reload availability to get updated data
+      await loadAvailability();
+      
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error unbooking slot:', error);
+      setMessage(`Error: ${error.response?.data?.error || 'Failed to unbook slot'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const deleteAvailabilitySlot = () => {
     setEvents(prev => prev.filter(event => event.id !== selectedEvent.id));
     setShowModal(false);
@@ -435,18 +497,55 @@ const TherapistAvailabilityPage = () => {
   };
 
   const eventStyleGetter = (event) => {
-    return {
-      style: {
-        backgroundColor: '#3b82f6',
-        borderRadius: '8px',
-        opacity: 0.8,
-        color: 'white',
-        border: '0px',
-        display: 'block',
-        fontSize: '12px',
-        padding: '2px 4px'
-      }
-    };
+    const isBooked = event.resource?.isBooked;
+    const isAvailable = event.resource?.isAvailable;
+    
+    if (isBooked) {
+      // Booked slots - red/orange styling
+      return {
+        style: {
+          backgroundColor: '#ef4444',
+          borderRadius: '6px',
+          opacity: 0.9,
+          color: 'white',
+          border: '0px',
+          display: 'block',
+          fontSize: '11px',
+          padding: '2px 4px',
+          fontWeight: '500'
+        }
+      };
+    } else if (isAvailable) {
+      // Available slots - blue/green styling  
+      return {
+        style: {
+          backgroundColor: '#10b981',
+          borderRadius: '6px',
+          opacity: 0.8,
+          color: 'white',
+          border: '0px',
+          display: 'block',
+          fontSize: '11px',
+          padding: '2px 4px',
+          fontWeight: '500'
+        }
+      };
+    } else {
+      // Default styling for newly created slots
+      return {
+        style: {
+          backgroundColor: '#3b82f6',
+          borderRadius: '6px',
+          opacity: 0.8,
+          color: 'white',
+          border: '0px',
+          display: 'block',
+          fontSize: '11px',
+          padding: '2px 4px',
+          fontWeight: '500'
+        }
+      };
+    }
   };
 
   if (user?.role?.toUpperCase() !== 'THERAPIST') {
@@ -544,30 +643,45 @@ const TherapistAvailabilityPage = () => {
 
       {/* Statistics Cards */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FaCalendarAlt className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <FaCheck className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">{events.length}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {events.filter(e => e.resource?.isAvailable).length}
+                </div>
                 <div className="text-sm text-gray-600">Available Slots</div>
               </div>
             </div>
           </div>
           <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <FaClock className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <FaTimes className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {Math.round(events.reduce((total, event) => {
+                <div className="text-2xl font-bold text-red-600">
+                  {events.filter(e => e.resource?.isBooked).length}
+                </div>
+                <div className="text-sm text-gray-600">Booked Slots</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FaClock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {Math.round(events.filter(e => e.resource?.isAvailable).reduce((total, event) => {
                     return total + (moment(event.end).diff(moment(event.start), 'hours', true));
                   }, 0))}h
                 </div>
-                <div className="text-sm text-gray-600">Total Hours</div>
+                <div className="text-sm text-gray-600">Available Hours</div>
               </div>
             </div>
           </div>
@@ -589,10 +703,30 @@ const TherapistAvailabilityPage = () => {
         {/* Calendar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200/50 p-6">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Your Availability Calendar</h2>
-            <p className="text-sm text-gray-600">
-              Click and drag to create new availability slots. Click existing slots to edit or delete them.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Your Availability Calendar</h2>
+                <p className="text-sm text-gray-600">
+                  Click and drag to create new availability slots. Click existing slots to edit or manage them.
+                </p>
+              </div>
+              
+              {/* Legend */}
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span className="text-gray-600">Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span className="text-gray-600">Booked</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                  <span className="text-gray-600">New/Draft</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           {loading && !events.length ? (
@@ -766,6 +900,81 @@ const TherapistAvailabilityPage = () => {
               </div>
             )}
 
+            {/* Manage Booked Slot Modal */}
+            {modalType === 'manage-booked' && selectedEvent && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <FaTimes className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Booked Time Slot</h2>
+                    <p className="text-sm text-gray-600">
+                      {moment(selectedEvent.start).format('MMMM Do, YYYY [at] h:mm A')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <FaTimes className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-red-800 mb-1">This slot is currently booked</h3>
+                      <p className="text-sm text-red-700">
+                        This time slot has an active booking. Unbooking it will make it available again, 
+                        but please ensure you've coordinated with the patient if there's an active session.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="text-sm text-gray-600">
+                    <strong>Slot Details:</strong>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Time:</span>
+                      <span className="font-medium">
+                        {moment(selectedEvent.start).format('h:mm A')} - {moment(selectedEvent.end).format('h:mm A')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Date:</span>
+                      <span className="font-medium">{moment(selectedEvent.start).format('MMMM Do, YYYY')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Booked
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between gap-2">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm font-medium"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={unbookSlot}
+                    disabled={loading}
+                    className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm font-medium disabled:bg-gray-400"
+                  >
+                    {loading ? (
+                      <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <FaTimes className="w-4 h-4 mr-2" />
+                    )}
+                    {loading ? 'Unbooking...' : 'Unbook Slot'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Create/Edit Slot Modal */}
             {(modalType === 'create' || modalType === 'edit') && (
               <div className="p-6">
@@ -905,18 +1114,34 @@ const TherapistAvailabilityPage = () => {
         }
         
         .rbc-event {
-          background: linear-gradient(135deg, #3b82f6, #6366f1);
           border: none;
           border-radius: 6px;
           padding: 2px 6px;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
         }
         
         .rbc-event:hover {
           opacity: 0.9;
           transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Available slots - green */
+        .rbc-event[style*="background-color: rgb(16, 185, 129)"] {
+          background: linear-gradient(135deg, #10b981, #059669) !important;
+        }
+        
+        /* Booked slots - red */
+        .rbc-event[style*="background-color: rgb(239, 68, 68)"] {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        }
+        
+        /* New/Draft slots - blue */
+        .rbc-event[style*="background-color: rgb(59, 130, 246)"] {
+          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
         }
         
         .rbc-day-bg {

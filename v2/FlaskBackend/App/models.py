@@ -41,13 +41,53 @@ class TherapistAvailability(db.Model):
     date = db.Column(db.Date)  # Actual date instead of day_of_week
     start_time = db.Column(db.Time)
     end_time = db.Column(db.Time)
-    is_available = db.Column(db.Boolean, default=True)
+    is_available = db.Column(db.Boolean, default=True)  # Overall availability for the entire time block
+    booked_slots = db.Column(db.JSON, default=list)  # Array of booked slot indices (0-based, 1-hour intervals)
     timezone = db.Column(db.String(50), default='UTC')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship
     therapist_profile = db.relationship('TherapistProfile', backref='availability_slots')
+    
+    def get_total_slots(self):
+        """Calculate total number of 1-hour slots in this availability block"""
+        if not self.start_time or not self.end_time:
+            return 0
+        start_hour = self.start_time.hour + (self.start_time.minute / 60)
+        end_hour = self.end_time.hour + (self.end_time.minute / 60)
+        return int(end_hour - start_hour)
+    
+    def get_available_slots(self):
+        """Get list of available slot indices"""
+        total_slots = self.get_total_slots()
+        booked = self.booked_slots or []
+        return [i for i in range(total_slots) if i not in booked]
+    
+    def is_slot_available(self, slot_index):
+        """Check if a specific slot is available"""
+        if not self.is_available:
+            return False
+        booked = self.booked_slots or []
+        return slot_index not in booked and slot_index < self.get_total_slots()
+    
+    def book_slot(self, slot_index):
+        """Book a specific slot"""
+        if not self.is_slot_available(slot_index):
+            return False
+        booked = self.booked_slots or []
+        if slot_index not in booked:
+            booked.append(slot_index)
+            self.booked_slots = booked
+        return True
+    
+    def unbook_slot(self, slot_index):
+        """Unbook a specific slot"""
+        booked = self.booked_slots or []
+        if slot_index in booked:
+            booked.remove(slot_index)
+            self.booked_slots = booked
+        return True
 
 
 class TherapistUnavailability(db.Model):

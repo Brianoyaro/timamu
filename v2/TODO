@@ -1,15 +1,11 @@
-Whena user registers, let us take basic information then show them a modal where e collect more information that we'll use to create their profile e.g patientprofile or therapist profile.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
 
-The landing page doesn't need the placeholder images. They are redundant, unnecessary and not needed. Also, Mae the landing page professional, modern mobile-riendly with a mental health/healthcare flair.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
+When a session is booked, mark  that slot as unavailable in the therapuist's calender so that other patients can't book the same slot. 
 
-
-When a session is booked, mark  that slot as unavailable in the therapuist's calender. 
-        + First, I have to create an availability model to separate the therapist-profile from availability json object as it will clutter the user. I should then update therapist availability uploading and patient retrieving a therapist's availability.[DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE]
+I don't like how the sessions are tagged in general --more so in sessions page. Improve this. Make the tagging intuitive, professional and modern; befitting of a teleheatlth/telepsychology platform
 
 Implement the messaging functionality which is evident in the patient/therapist dashboards.
 
-+++++++++++++++++++++++
-So, are we not using mediasoupfor the messagesbecause I see socket.emit('session-message')
 
-
-The message sidebar needs a scroll bar to prevent it from messing with the parent heigh container.
+++++++++++++++++++++
+unbooking a slot by the therapist doesn't unbook the slot.
+the available hour count and slots-displayed also includes days and time prior to now
