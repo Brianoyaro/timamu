@@ -1060,7 +1060,7 @@ const TherapistAvailabilityPage = () => {
       )}
 
       {/* Custom Calendar Styles */}
-      <style jsx global>{`
+      <style>{`
         .modern-calendar {
           font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
