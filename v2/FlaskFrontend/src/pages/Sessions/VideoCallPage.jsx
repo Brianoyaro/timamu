@@ -541,24 +541,42 @@ const VideoCallPage = () => {
     const stream = localStreamRef.current;
     const transport = producerTransportRef.current;
     
-    if (!stream || !transport) return;
+    console.log('=== STARTING MEDIA PRODUCTION ===', {
+      hasStream: !!stream,
+      hasTransport: !!transport,
+      videoTracks: stream?.getVideoTracks()?.length || 0,
+      audioTracks: stream?.getAudioTracks()?.length || 0
+    });
+    
+    if (!stream || !transport) {
+      console.warn('Cannot start producing - missing stream or transport');
+      return;
+    }
     
     try {
       // Produce video
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
+        console.log('Creating video producer...');
         const videoProducer = await transport.produce({ track: videoTrack });
         producersRef.current.set('video', videoProducer);
-        console.log('Video producer created');
+        console.log('Video producer created successfully:', videoProducer.id);
+      } else {
+        console.warn('No video track available for production');
       }
       
       // Produce audio
       const audioTrack = stream.getAudioTracks()[0];
       if (audioTrack) {
+        console.log('Creating audio producer...');
         const audioProducer = await transport.produce({ track: audioTrack });
         producersRef.current.set('audio', audioProducer);
-        console.log('Audio producer created');
+        console.log('Audio producer created successfully:', audioProducer.id);
+      } else {
+        console.warn('No audio track available for production');
       }
+      
+      console.log('=== MEDIA PRODUCTION COMPLETE ===');
     } catch (error) {
       console.error('Error starting production:', error);
     }
@@ -674,12 +692,33 @@ const VideoCallPage = () => {
       });
       
       dataProducerRef.current = dataProducer;
+      
+      // Add event listeners to track data channel state
+      dataProducer.on('open', () => {
+        console.log('=== DATA CHANNEL OPENED ===');
+      });
+      
+      dataProducer.on('error', (error) => {
+        console.error('=== DATA CHANNEL ERROR ===', error);
+      });
+      
+      dataProducer.on('close', () => {
+        console.log('=== DATA CHANNEL CLOSED ===');
+      });
+      
       console.log('=== DATA PRODUCER CREATED SUCCESSFULLY ===', {
         id: dataProducer.id,
         label: dataProducer.label,
         protocol: dataProducer.protocol,
         readyState: dataProducer.readyState
       });
+      
+      // Wait a moment for the data channel to fully establish
+      setTimeout(() => {
+        console.log('=== DATA CHANNEL STATUS AFTER DELAY ===', {
+          readyState: dataProducer.readyState
+        });
+      }, 2000);
       
       // No need to manually emit 'produce-data' - the transport event handler does this
     } catch (error) {
@@ -859,6 +898,15 @@ const VideoCallPage = () => {
 
   const sendMessage = () => {
     if (newMessage.trim() && dataProducerRef.current) {
+      // Check if data channel is open
+      if (dataProducerRef.current.readyState !== 'open') {
+        console.warn('=== DATA CHANNEL NOT READY ===', {
+          readyState: dataProducerRef.current.readyState,
+          message: 'Data channel is not open yet. Please wait a moment and try again.'
+        });
+        return;
+      }
+
       // Get current user from store (should have full data now)
       const currentUser = useAuthStore.getState().user;
       
@@ -882,6 +930,7 @@ const VideoCallPage = () => {
       console.log('=== SENDING MESSAGE VIA DATA CHANNEL ===', {
         messageData,
         dataProducerReady: !!dataProducerRef.current,
+        dataChannelState: dataProducerRef.current.readyState,
         messagesCount: messages.length
       });
       
@@ -912,7 +961,8 @@ const VideoCallPage = () => {
     } else {
       console.warn('=== CANNOT SEND MESSAGE ===', {
         hasMessage: !!newMessage.trim(),
-        hasDataProducer: !!dataProducerRef.current
+        hasDataProducer: !!dataProducerRef.current,
+        dataChannelState: dataProducerRef.current?.readyState
       });
     }
   };
