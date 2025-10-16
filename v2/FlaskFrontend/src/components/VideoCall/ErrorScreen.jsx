@@ -1,5 +1,4 @@
-import { MdArrowBack, MdRefresh, MdVideocamOff } from 'react-icons/md';
-import { HiOutlineExclamationTriangle } from 'react-icons/hi';
+import { MdArrowBack, MdRefresh, MdVideocamOff, MdError } from 'react-icons/md';
 
 const ErrorScreen = ({ 
   error, 
@@ -18,7 +17,7 @@ const ErrorScreen = ({
         <div className="bg-slate-800/90 backdrop-blur-md border border-slate-700/50 rounded-3xl p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <HiOutlineExclamationTriangle className="w-8 h-8 text-red-400" />
+              <MdError className="w-8 h-8 text-red-400" />
             </div>
             <h2 className="text-red-400 text-xl sm:text-2xl font-bold mb-2">Connection Error</h2>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed">{error}</p>

@@ -1,5 +1,4 @@
-import { MdVideocam, MdSignalWifi4Bar } from 'react-icons/md';
-import { HiOutlineExclamationTriangle } from 'react-icons/hi';
+import { MdVideocam, MdSignalWifi4Bar, MdWarning } from 'react-icons/md';
 import ConnectionStatus from './ConnectionStatus';
 import VideoControls from './VideoControls';
 
@@ -127,7 +126,7 @@ const LoadingScreen = ({
             {/* Debug Info Card */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-3 text-left">
               <div className="flex items-center space-x-2 mb-2">
-                <HiOutlineExclamationTriangle className="w-4 h-4 text-amber-400" />
+                <MdWarning className="w-4 h-4 text-amber-400" />
                 <p className="text-amber-400 text-xs font-medium">Debug Information</p>
               </div>
               <div className="space-y-1 text-xs">
