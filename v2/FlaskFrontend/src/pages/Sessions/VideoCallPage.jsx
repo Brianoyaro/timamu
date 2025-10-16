@@ -211,11 +211,11 @@ const VideoCallPage = () => {
       // Set up MediaSoup socket listeners
       setupMediaSoupListeners();
       
+      // Get user media BEFORE joining room
+      await getUserMedia();
+      
       // Join room
       mediaSoupSocket.emit('join-room', { roomId });
-      
-      // Get user media
-      await getUserMedia();
       
       setConnectionStatus('connected');
       setLoading(false);
@@ -416,6 +416,12 @@ const VideoCallPage = () => {
     mediaSoupSocket.on('error', (error) => {
       console.error('MediaSoup error:', error);
       setError(`Video connection error: ${error.message}`);
+    });
+
+    // Handle chat messages via socket fallback
+    mediaSoupSocket.on('chat-message', (messageData) => {
+      console.log('=== RECEIVED CHAT MESSAGE VIA SOCKET ===', messageData);
+      setMessages(prevMessages => [...prevMessages, messageData]);
     });
   };
   
@@ -670,57 +676,112 @@ const VideoCallPage = () => {
     }
   };
 
-  // Data producer for chat messages
-  const createDataProducer = async () => {
+  // Enhanced data producer with retry mechanism
+  const createDataProducerWithRetry = async (retryCount = 0, maxRetries = 3) => {
     const transport = producerTransportRef.current;
     if (!transport) {
       console.error('No producer transport available for data producer');
       return;
     }
     
-    console.log('=== CREATING DATA PRODUCER ===');
+    console.log(`=== CREATING DATA PRODUCER (Attempt ${retryCount + 1}/${maxRetries + 1}) ===`);
     console.log('Transport:', transport.id);
     console.log('Transport SCTP capabilities:', transport.sctpParameters);
+    console.log('Transport connection state:', transport.connectionState);
+    
+    // Wait for transport to be fully connected
+    if (transport.connectionState !== 'connected') {
+      console.log('Waiting for transport to connect...');
+      await new Promise((resolve) => {
+        const checkConnection = () => {
+          if (transport.connectionState === 'connected') {
+            resolve();
+          } else {
+            setTimeout(checkConnection, 100);
+          }
+        };
+        checkConnection();
+      });
+    }
     
     try {
-      // This will trigger the 'producedata' event on the transport
+      // Use simpler, more reliable data channel configuration
       const dataProducer = await transport.produceData({
-        ordered: true,
-        maxPacketLifeTime: 3000,
+        ordered: true, // Use ordered delivery for chat messages
         label: 'chat',
         protocol: 'json'
+        // Remove maxPacketLifeTime to improve reliability
       });
       
       dataProducerRef.current = dataProducer;
       
-      // Add event listeners to track data channel state
-      dataProducer.on('open', () => {
-        console.log('=== DATA CHANNEL OPENED ===');
-      });
-      
-      dataProducer.on('error', (error) => {
-        console.error('=== DATA CHANNEL ERROR ===', error);
-      });
-      
-      dataProducer.on('close', () => {
-        console.log('=== DATA CHANNEL CLOSED ===');
-      });
-      
-      console.log('=== DATA PRODUCER CREATED SUCCESSFULLY ===', {
+      console.log('=== DATA PRODUCER CREATED ===', {
         id: dataProducer.id,
         label: dataProducer.label,
         protocol: dataProducer.protocol,
         readyState: dataProducer.readyState
       });
       
-      // Wait a moment for the data channel to fully establish
-      setTimeout(() => {
-        console.log('=== DATA CHANNEL STATUS AFTER DELAY ===', {
-          readyState: dataProducer.readyState
+      // Set up event listeners
+      dataProducer.on('open', () => {
+        console.log('=== DATA CHANNEL OPENED ===', {
+          id: dataProducer.id,
+          timestamp: new Date().toISOString()
         });
-      }, 2000);
+      });
       
-      // No need to manually emit 'produce-data' - the transport event handler does this
+      dataProducer.on('error', (error) => {
+        console.error('=== DATA CHANNEL ERROR ===', error);
+        // Retry on error if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          console.log(`=== RETRYING DATA PRODUCER CREATION ===`);
+          setTimeout(() => createDataProducerWithRetry(retryCount + 1, maxRetries), 2000);
+        }
+      });
+      
+      dataProducer.on('close', () => {
+        console.log('=== DATA CHANNEL CLOSED ===', {
+          id: dataProducer.id,
+          timestamp: new Date().toISOString()
+        });
+      });
+      
+      // Monitor state with timeout
+      let stateCheckCount = 0;
+      const maxChecks = 20; // 10 seconds max
+      
+      const checkDataChannelState = () => {
+        stateCheckCount++;
+        console.log('=== DATA CHANNEL STATE CHECK ===', {
+          readyState: dataProducer.readyState,
+          timestamp: new Date().toISOString(),
+          checkCount: stateCheckCount
+        });
+        
+        if (dataProducer.readyState === 'open') {
+          console.log('=== DATA CHANNEL IS NOW OPEN ===');
+          return;
+        }
+        
+        if (dataProducer.readyState === 'connecting' && stateCheckCount < maxChecks) {
+          setTimeout(checkDataChannelState, 500);
+        } else if (stateCheckCount >= maxChecks) {
+          console.error('=== DATA CHANNEL FAILED TO OPEN ===', {
+            readyState: dataProducer.readyState,
+            attempts: stateCheckCount
+          });
+          
+          // Retry if we haven't exceeded max retries
+          if (retryCount < maxRetries) {
+            console.log(`=== RETRYING DATA PRODUCER CREATION ===`);
+            setTimeout(() => createDataProducerWithRetry(retryCount + 1, maxRetries), 2000);
+          }
+        }
+      };
+      
+      // Start monitoring immediately
+      checkDataChannelState();
+      
     } catch (error) {
       console.error('=== ERROR CREATING DATA PRODUCER ===', error);
       console.error('Error details:', {
@@ -728,8 +789,17 @@ const VideoCallPage = () => {
         message: error.message,
         stack: error.stack
       });
+      
+      // Retry on error if we haven't exceeded max retries
+      if (retryCount < maxRetries) {
+        console.log(`=== RETRYING DATA PRODUCER CREATION ===`);
+        setTimeout(() => createDataProducerWithRetry(retryCount + 1, maxRetries), 2000);
+      }
     }
   };
+
+  // Wrapper function for backward compatibility
+  const createDataProducer = () => createDataProducerWithRetry();
   
   const consumeData = async (dataProducerId) => {
     const mediaSoupSocket = mediaSoupSocketRef.current;
@@ -748,6 +818,12 @@ const VideoCallPage = () => {
   
   const handleDataConsumer = async (data) => {
     try {
+      // Check if we already have this data consumer
+      if (dataConsumersRef.current.has(data.dataConsumerId)) {
+        console.log('Data consumer already exists:', data.dataConsumerId);
+        return;
+      }
+      
       const dataConsumer = await consumerTransportRef.current.consumeData({
         id: data.dataConsumerId,
         dataProducerId: data.dataProducerId,
@@ -783,8 +859,13 @@ const VideoCallPage = () => {
       });
       
       console.log('Data consumer created and listening for messages');
+      
+      // Add a small delay to prevent race conditions
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
     } catch (error) {
       console.error('Error handling data consumer:', error);
+      // Don't re-throw the error to prevent stopping other data consumers
     }
   };
 
@@ -897,73 +978,73 @@ const VideoCallPage = () => {
   };
 
   const sendMessage = () => {
-    if (newMessage.trim() && dataProducerRef.current) {
-      // Check if data channel is open
-      if (dataProducerRef.current.readyState !== 'open') {
-        console.warn('=== DATA CHANNEL NOT READY ===', {
-          readyState: dataProducerRef.current.readyState,
-          message: 'Data channel is not open yet. Please wait a moment and try again.'
-        });
-        return;
-      }
+    if (!newMessage.trim()) {
+      return;
+    }
 
-      // Get current user from store (should have full data now)
-      const currentUser = useAuthStore.getState().user;
-      
-      // Extract name from email if first_name/last_name are not available
-      const displayName = currentUser.first_name && currentUser.last_name 
-        ? `${currentUser.first_name} ${currentUser.last_name}`
-        : currentUser.name || currentUser.email?.split('@')[0] || 'Anonymous User';
-      
-      const messageData = {
-        room: roomId,
-        sessionId: session.id,
-        message: newMessage.trim(),
-        sender: {
-          id: currentUser.id,
-          name: displayName,
-          role: currentUser.role
-        },
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log('=== SENDING MESSAGE VIA DATA CHANNEL ===', {
-        messageData,
-        dataProducerReady: !!dataProducerRef.current,
-        dataChannelState: dataProducerRef.current.readyState,
-        messagesCount: messages.length
-      });
-      
+    // Get current user from store
+    const currentUser = useAuthStore.getState().user;
+    
+    // Extract name from email if first_name/last_name are not available
+    const displayName = currentUser.first_name && currentUser.last_name 
+      ? `${currentUser.first_name} ${currentUser.last_name}`
+      : currentUser.name || currentUser.email?.split('@')[0] || 'Anonymous User';
+    
+    const messageData = {
+      room: roomId,
+      sessionId: session.id,
+      message: newMessage.trim(),
+      sender: {
+        id: currentUser.id,
+        name: displayName,
+        role: currentUser.role
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    // Try data channel first, fallback to socket
+    if (dataProducerRef.current && dataProducerRef.current.readyState === 'open') {
       try {
-        // Send via MediaSoup data channel
+        console.log('=== SENDING MESSAGE VIA DATA CHANNEL ===', {
+          messageData,
+          dataChannelState: dataProducerRef.current.readyState
+        });
+
         dataProducerRef.current.send(JSON.stringify(messageData));
         
-        // Immediately add to local messages for instant feedback
-        const newMsg = {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          sender: messageData.sender,
-          message: messageData.message,
-          timestamp: new Date(),
-          isOwn: true // Mark as own message
-        };
-        
-        console.log('=== ADDING LOCAL MESSAGE ===', newMsg);
-        setMessages(prev => {
-          const updated = [...prev, newMsg];
-          console.log('=== MESSAGES UPDATED ===', { previousCount: prev.length, newCount: updated.length });
-          return updated;
-        });
-        
+        // Add to local messages immediately for better UX
+        setMessages(prevMessages => [...prevMessages, messageData]);
         setNewMessage('');
+        
+        console.log('=== MESSAGE SENT VIA DATA CHANNEL ===');
+        return;
+        
       } catch (error) {
-        console.error('Error sending message via data channel:', error);
+        console.error('=== ERROR SENDING VIA DATA CHANNEL ===', error);
+        // Fall through to socket fallback
+      }
+    }
+
+    // Fallback to MediaSoup socket
+    if (mediaSoupSocketRef.current) {
+      try {
+        console.log('=== SENDING MESSAGE VIA SOCKET FALLBACK ===', messageData);
+        
+        mediaSoupSocketRef.current.emit('chat-message', messageData);
+        
+        // Add to local messages immediately
+        setMessages(prevMessages => [...prevMessages, messageData]);
+        setNewMessage('');
+        
+        console.log('=== MESSAGE SENT VIA SOCKET ===');
+        
+      } catch (error) {
+        console.error('=== ERROR SENDING VIA SOCKET ===', error);
+        alert('Failed to send message. Please try again.');
       }
     } else {
-      console.warn('=== CANNOT SEND MESSAGE ===', {
-        hasMessage: !!newMessage.trim(),
-        hasDataProducer: !!dataProducerRef.current,
-        dataChannelState: dataProducerRef.current?.readyState
-      });
+      console.warn('=== NO COMMUNICATION METHOD AVAILABLE ===');
+      alert('Chat is not ready. Please wait a moment and try again.');
     }
   };
 
@@ -1528,7 +1609,7 @@ const VideoCallPage = () => {
                         <div className="max-w-xs lg:max-w-md">
                           <div className="flex items-center space-x-2 mb-1 justify-end">
                             <span className="text-gray-500 text-xs">
-                              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             <span className="text-gray-300 text-sm font-medium">
                               You
@@ -1560,7 +1641,7 @@ const VideoCallPage = () => {
                               {msg.sender.name}
                             </span>
                             <span className="text-gray-500 text-xs">
-                              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                           <div className="bg-slate-700/50 rounded-2xl rounded-tl-md px-3 py-2">
