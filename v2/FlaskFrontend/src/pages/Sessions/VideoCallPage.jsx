@@ -47,7 +47,8 @@ const VideoCallPage = () => {
     toggleScreenShare,
     sendMessage: sendChatMessage,
     cleanup,
-    initialize
+    initialize,
+    connectVideoRef
   } = useMediaSoup(roomId, session, setMessages, setParticipants);
 
   useEffect(() => {
@@ -67,6 +68,14 @@ const VideoCallPage = () => {
       initialize();
     }
   }, [session, initialize]);
+
+  // Connect video stream when component is ready and no longer loading
+  useEffect(() => {
+    console.log('Video connection effect:', { loading, hasConnectVideoRef: !!connectVideoRef });
+    if (!loading && connectVideoRef) {
+      connectVideoRef();
+    }
+  }, [loading, connectVideoRef]);
 
   const initializeSession = async () => {
     try {
@@ -193,8 +202,8 @@ const VideoCallPage = () => {
       <ConnectionStatus 
         session={session}
         connectionStatus={connectionStatus}
-        participants={participants}
-        navigate={navigate}
+        participantCount={participants.length}
+        onGoBack={() => navigate('/sessions')}
       />
 
       {/* Main video area */}
@@ -237,7 +246,7 @@ const VideoCallPage = () => {
           messages={messages}
           newMessage={newMessage}
           setNewMessage={setNewMessage}
-          sendMessage={sendMessage}
+          onSendMessage={sendMessage}
           onClose={() => setIsChatOpen(false)}
         />
       </div>
@@ -248,11 +257,11 @@ const VideoCallPage = () => {
         isAudioEnabled={isAudioEnabled}
         isScreenSharing={isScreenSharing}
         isChatOpen={isChatOpen}
-        toggleVideo={toggleVideo}
-        toggleAudio={toggleAudio}
-        toggleScreenShare={toggleScreenShare}
-        toggleChat={() => setIsChatOpen(!isChatOpen)}
-        endSession={endSession}
+        onToggleVideo={toggleVideo}
+        onToggleAudio={toggleAudio}
+        onToggleScreenShare={toggleScreenShare}
+        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        onEndSession={endSession}
         messageCount={messages.length}
       />
 

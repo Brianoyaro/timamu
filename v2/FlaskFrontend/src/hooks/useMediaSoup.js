@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import * as mediasoupClient from 'mediasoup-client';
+import { useAuthStore } from '../stores/authStore';
 
-export const useMediaSoup = () => {
+export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
   // Refs for MediaSoup
   const mediaSoupSocketRef = useRef(null);
   const deviceRef = useRef(null);
@@ -14,12 +15,17 @@ export const useMediaSoup = () => {
   const dataConsumersRef = useRef(new Map());
   
   // Media refs
+  const localVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const screenShareRef = useRef(null);
   
   // State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [participants, setParticipants] = useState([]);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const connectToMediaSoup = useCallback(async (roomId) => {
     try {
@@ -94,6 +100,139 @@ export const useMediaSoup = () => {
     }
   }, []);
 
+  const initialize = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      console.log('=== INITIALIZING MEDIASOUP ===');
+      
+      // Connect to MediaSoup server
+      await connectToMediaSoup(roomId);
+      
+      // Get user media
+      const stream = await getUserMedia();
+      
+      // Store stream for later video element setup
+      console.log('Media stream stored, will connect to video element when available');
+      
+      setLoading(false);
+      console.log('=== MEDIASOUP INITIALIZATION COMPLETE ===');
+    } catch (err) {
+      console.error('=== MEDIASOUP INITIALIZATION ERROR ===', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [roomId, connectToMediaSoup, getUserMedia]);
+
+  // Separate effect to connect video when ref becomes available
+  const connectVideoRef = useCallback(() => {
+    console.log('connectVideoRef called:', {
+      hasVideoRef: !!localVideoRef.current,
+      hasStream: !!localStreamRef.current,
+      streamTracks: localStreamRef.current?.getTracks()?.length || 0
+    });
+    
+    if (localVideoRef.current && localStreamRef.current) {
+      console.log('Connecting video stream to video element');
+      localVideoRef.current.srcObject = localStreamRef.current;
+      localVideoRef.current.muted = true;
+      localVideoRef.current.play().catch(err => {
+        console.error('Error playing video:', err);
+      });
+      console.log('Video element setup complete');
+    } else {
+      console.log('Cannot connect video - missing ref or stream');
+    }
+  }, []);
+
+  const toggleVideo = useCallback(() => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoEnabled(videoTrack.enabled);
+      }
+    }
+  }, []);
+
+  const toggleAudio = useCallback(() => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsAudioEnabled(audioTrack.enabled);
+      }
+    }
+  }, []);
+
+  const toggleScreenShare = useCallback(async () => {
+    try {
+      if (!isScreenSharing) {
+        // Start screen sharing
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const videoTrack = screenStream.getVideoTracks()[0];
+        
+        // Update local video
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = screenStream;
+        }
+        
+        // Listen for screen share end
+        videoTrack.addEventListener('ended', () => {
+          setIsScreenSharing(false);
+          // Restore camera
+          if (localVideoRef.current && localStreamRef.current) {
+            localVideoRef.current.srcObject = localStreamRef.current;
+          }
+        });
+        
+        setIsScreenSharing(true);
+        screenShareRef.current = screenStream;
+      } else {
+        // Stop screen sharing
+        if (screenShareRef.current) {
+          screenShareRef.current.getTracks().forEach(track => track.stop());
+          screenShareRef.current = null;
+        }
+        
+        // Restore camera
+        if (localVideoRef.current && localStreamRef.current) {
+          localVideoRef.current.srcObject = localStreamRef.current;
+        }
+        
+        setIsScreenSharing(false);
+      }
+    } catch (error) {
+      console.error('Error toggling screen share:', error);
+    }
+  }, [isScreenSharing]);
+
+  const sendMessage = useCallback((messageText, session, user) => {
+    if (!messageText.trim() || !session || !user) {
+      return;
+    }
+
+    // For now, just add to local messages - socket implementation would go here
+    const messageData = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      room: roomId,
+      sessionId: session.id,
+      message: messageText.trim(),
+      sender: {
+        id: user.id,
+        name: user.first_name && user.last_name 
+          ? `${user.first_name} ${user.last_name}`
+          : user.name || user.email?.split('@')[0] || 'Anonymous User',
+        role: user.role
+      },
+      timestamp: new Date().toISOString(),
+      isOwn: true
+    };
+
+    setMessages(prev => [...prev, messageData]);
+    console.log('Message sent:', messageData);
+  }, [roomId, setMessages]);
+
   const cleanup = useCallback(() => {
     // Stop all media tracks
     if (localStreamRef.current) {
@@ -142,30 +281,28 @@ export const useMediaSoup = () => {
     }
     
     setConnectionStatus('disconnected');
-    setParticipants([]);
   }, []);
 
   return {
     // Refs
-    mediaSoupSocketRef,
-    deviceRef,
-    producerTransportRef,
-    consumerTransportRef,
-    producersRef,
-    consumersRef,
-    dataProducerRef,
-    dataConsumersRef,
-    localStreamRef,
-    screenShareRef,
+    localVideoRef,
+    localStream: localStreamRef.current,
     
     // State
+    loading,
+    error,
     connectionStatus,
-    participants,
-    setParticipants,
+    isVideoEnabled,
+    isAudioEnabled,
+    isScreenSharing,
     
     // Methods
-    connectToMediaSoup,
-    getUserMedia,
+    initialize,
+    connectVideoRef,
+    toggleVideo,
+    toggleAudio,
+    toggleScreenShare,
+    sendMessage,
     cleanup
   };
 };
