@@ -455,6 +455,26 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Chat message fallback for when data channels fail
+  socket.on('chat-message', (messageData) => {
+    try {
+      console.log('=== CHAT MESSAGE VIA SOCKET ===', {
+        from: socket.id,
+        room: socket.roomId,
+        message: messageData.message
+      });
+      
+      // Broadcast the message to all other participants in the room
+      socket.to(socket.roomId).emit('chat-message', messageData);
+      
+      console.log('=== CHAT MESSAGE BROADCASTED ===');
+      
+    } catch (error) {
+      console.error('Error handling chat message:', error);
+      socket.emit('error', { message: 'Failed to send chat message' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
     
