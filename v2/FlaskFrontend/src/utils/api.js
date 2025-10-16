@@ -7,7 +7,7 @@ const api = axios.create({
   },
 });
 
-// Add a request interceptor to add auth token to requests
+// Enhanced request interceptor with smart token management
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -33,7 +33,7 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle common errors
+// Smart response interceptor with intelligent error handling and automatic token refresh
 api.interceptors.response.use(
   (response) => {
     console.log(`[DEBUG API] Response from ${response.config.url}:`, {
@@ -52,21 +52,31 @@ api.interceptors.response.use(
       message: error.message
     });
 
-    // Handle 401 Unauthorized errors (token expired)
+    // Handle 401 Unauthorized errors - smart token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       console.warn(`[DEBUG API] 401 Unauthorized error detected for ${originalRequest.url}`);
       originalRequest._retry = true;
       
-      // Try to refresh the token first
-      const currentToken = localStorage.getItem('token');
-      if (currentToken && !originalRequest.url.includes('/auth/verify') && !originalRequest.url.includes('/auth/me')) {
+      // Only try refresh if we have a refresh token and this isn't already an auth endpoint
+      const refreshToken = localStorage.getItem('refresh_token');
+      const isAuthEndpoint = originalRequest.url.includes('/auth/');
+      
+      if (refreshToken && !isAuthEndpoint) {
         try {
           console.log(`[DEBUG API] Attempting to refresh token...`);
-          const refreshResponse = await api.post('/auth/refresh', { refresh_token: currentToken });
-          const { access_token } = refreshResponse.data;
+          const refreshResponse = await axios.post(
+            `${api.defaults.baseURL}/auth/refresh`, 
+            { refresh_token: refreshToken },
+            { headers: { 'Content-Type': 'application/json' } }
+          );
           
-          // Update token in localStorage
+          const { access_token, refresh_token: newRefreshToken } = refreshResponse.data;
+          
+          // Update tokens in localStorage
           localStorage.setItem('token', access_token);
+          if (newRefreshToken) {
+            localStorage.setItem('refresh_token', newRefreshToken);
+          }
           
           // Update the original request with new token
           originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
@@ -76,29 +86,32 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch (refreshError) {
           console.error(`[DEBUG API] Token refresh failed:`, refreshError);
-          // If refresh fails, clear token and redirect to login
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return Promise.reject(refreshError);
+          
+          // Only clear tokens on actual auth failures (not network errors)
+          if (refreshError.response?.status === 401 || refreshError.response?.status === 403) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            console.log(`[DEBUG API] Auth tokens cleared due to refresh failure`);
+          }
         }
-      } else {
-        // No token or this is already a verify/me request failing, redirect to login
-        console.log(`[DEBUG API] No token available or auth request failed, redirecting to login page`);
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+      } else if (!refreshToken) {
+        console.log(`[DEBUG API] No refresh token available for retry`);
       }
-      
-      return Promise.reject(error);
     }
     
-    // Handle 403 Forbidden errors (insufficient permissions)
+    // Handle other errors gracefully without clearing auth state
     if (error.response?.status === 403) {
-      console.warn(`[DEBUG API] 403 Forbidden error detected for ${originalRequest.url}. User might not have the right role.`);
+      console.warn(`[DEBUG API] 403 Forbidden error detected for ${originalRequest.url}. User might not have sufficient privileges.`);
     }
     
-    // Handle server errors
     if (error.response?.status >= 500) {
       console.error(`[DEBUG API] Server error ${error.response.status} for ${originalRequest.url}`);
+    }
+
+    // Handle network errors
+    if (!error.response) {
+      console.error(`[DEBUG API] Network error for ${originalRequest.url}:`, error.message);
     }
 
     return Promise.reject(error);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useToastStore } from '../../stores/toastStore';
+import { enhancedLogin } from '../../utils/authUtils';
 import PasswordInput from '../../components/common/PasswordInput';
 
 const LoginPage = () => {
@@ -65,7 +66,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Before we try to login, set loading and clear any existing toasts
+      // Show loading toast
       const toastId = addToast({
         message: 'Logging in...',
         type: 'info',
@@ -73,50 +74,41 @@ const LoginPage = () => {
         dismissible: true
       });
       
-      await login(formData.email, formData.password, rememberMe);
+      // Use enhanced login with better error handling
+      const result = await enhancedLogin(formData.email, formData.password, rememberMe);
       
-      // Add a success toast message
-      addToast({
-        message: 'Login successful! Redirecting to dashboard...',
-        type: 'success',
-        duration: 5000,
-        dismissible: true
-      });
-      
-      // Use a timeout to ensure the toast message is displayed before redirecting
-      // This sets a flag so that our useEffect doesn't also try to navigate
-      setRedirectScheduled(true);
-      setTimeout(() => navigate('/dashboard'), 2000);
+      if (result.success) {
+        // Add a success toast message
+        addToast({
+          message: 'Login successful! Redirecting to dashboard...',
+          type: 'success',
+          duration: 5000,
+          dismissible: true
+        });
+        
+        // Navigate to intended location or dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        setRedirectScheduled(true);
+        setTimeout(() => navigate(from, { replace: true }), 2000);
+      } else {
+        // Enhanced login already provides user-friendly error messages
+        addToast({
+          message: result.error,
+          type: 'error',
+          duration: 6000,
+          dismissible: true
+        });
+      }
     } catch (err) {
       console.error('Login error:', err);
       
-      // Extract the most specific error message available
-      let errorMessage;
-      if (err.response?.data?.error) {
-        // If API returns an error object with an error property
-        errorMessage = err.response.data.error;
-      } else if (err.response?.data?.message) {
-        // If API returns an error object with a message property
-        errorMessage = err.response.data.message;
-      } else if (err.response?.status === 401) {
-        // Specific message for unauthorized (invalid credentials)
-        errorMessage = 'Invalid email or password. Please try again.';
-      } else if (err.response?.status === 404) {
-        // Specific message for not found
-        errorMessage = 'User not found. Please check your email address.';
-      } else if (err.message) {
-        // Use error message property if available
-        errorMessage = err.message;
-      } else {
-        // Generic fallback
-        errorMessage = 'Failed to login. Please check your credentials and try again.';
-      }
-      
+      // Fallback error handling for unexpected errors
+      const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
       addToast({
         message: errorMessage,
         type: 'error',
-        duration: 10000, // Longer duration for error messages
-        dismissible: true // Ensure it's dismissible
+        duration: 6000,
+        dismissible: true
       });
     } finally {
       setIsLoading(false);

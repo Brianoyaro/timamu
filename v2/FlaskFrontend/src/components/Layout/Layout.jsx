@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { enhancedLogout } from '../../utils/authUtils';
 import ToastContainer from '../common/ToastContainer';
 
 const Layout = () => {
@@ -8,9 +9,8 @@ const Layout = () => {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
-  const logout = useAuthStore((state) => state.logout);
-  const loadUser = useAuthStore((state) => state.loadUser);
   const initialize = useAuthStore((state) => state.initialize);
+  const loadUser = useAuthStore((state) => state.loadUser);
   const token = useAuthStore((state) => state.token);
   
   const navigate = useNavigate();
@@ -22,15 +22,26 @@ const Layout = () => {
     }
   }, [isInitialized, initialize]);
 
+  // Load user data if we're authenticated but missing user info
   useEffect(() => {
-    if (isInitialized && isAuthenticated && !user) {
-      loadUser();
+    if (isInitialized && isAuthenticated && !user && token) {
+      console.log('[Layout] Loading missing user data...');
+      loadUser().catch(error => {
+        console.warn('[Layout] Failed to load user data:', error);
+        // Don't force logout here - let other components handle it gracefully
+      });
     }
-  }, [isInitialized, isAuthenticated, user, loadUser]);
+  }, [isInitialized, isAuthenticated, user, token, loadUser]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await enhancedLogout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, navigate to login
+      navigate('/login');
+    }
   };
 
   const toggleMobileMenu = () => {

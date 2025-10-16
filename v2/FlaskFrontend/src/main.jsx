@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 
-// Auth Store
+// Auth Store and Utilities
 import { useAuthStore } from './stores/authStore.js';
+import { initializeAuth, cleanupAuth } from './utils/authUtils.js';
 
 // Layout
 import Layout from './components/Layout/Layout.jsx';
@@ -35,12 +36,61 @@ import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import ProfilePage from './pages/Profile/ProfilePage';
 
 const App = () => {
-  const { initialize } = useAuthStore();
+  const { isInitialized } = useAuthStore();
 
   useEffect(() => {
-    // Initialize auth store on app start
-    initialize();
-  }, []);
+    // Initialize enhanced authentication system
+    console.log('[App] Initializing application with enhanced authentication...');
+    
+    let isInitializing = false;
+    
+    const initApp = async () => {
+      if (isInitializing) {
+        console.log('[App] Initialization already in progress, skipping...');
+        return;
+      }
+      
+      isInitializing = true;
+      
+      try {
+        await initializeAuth();
+        console.log('[App] Application initialization completed');
+      } catch (error) {
+        console.error('[App] Application initialization failed:', error);
+      } finally {
+        isInitializing = false;
+      }
+    };
+
+    initApp();
+
+    // Setup cleanup for when app unmounts
+    const handleBeforeUnload = () => {
+      console.log('[App] Cleaning up application...');
+      cleanupAuth();
+    };
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      handleBeforeUnload();
+    };
+  }, []); // Empty dependency array to run only once
+
+  // Show loading screen during initialization
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+          <h2 className="text-xl font-semibold text-gray-700">Starting Timamu</h2>
+          <p className="text-gray-500">Please wait...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
