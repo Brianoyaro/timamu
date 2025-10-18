@@ -104,9 +104,9 @@ async function initializeMediaSoup() {
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
   
-  socket.on('join-room', async (data) => {
+  socket.on('join-room', async (data, callback) => {
     try {
-      const { roomId } = data;
+      const { roomId, userId, displayName } = data;
       socket.roomId = roomId;
       
       // Create room if it doesn't exist
@@ -119,6 +119,8 @@ io.on('connection', (socket) => {
       // Add participant to room
       room.participants.set(socket.id, {
         socketId: socket.id,
+        userId: userId,
+        displayName: displayName || 'Unknown user',
         producers: new Map(),
         consumers: new Map(),
         dataProducers: new Map(),
@@ -129,23 +131,35 @@ io.on('connection', (socket) => {
       socket.join(roomId);
       
       // Send router RTP capabilities
-      socket.emit('room-joined', {
-        rtpCapabilities: router.rtpCapabilities,
-      });
+      if (callback) {
+        callback({
+          rtpCapabilities: router.rtpCapabilities,
+        });
+      } else {
+        socket.emit('room-joined', {
+          rtpCapabilities: router.rtpCapabilities,
+        });
+      }
       
       // Notify other participants
       socket.to(roomId).emit('participant-joined', {
         socketId: socket.id,
+        userId: userId,
+        displayName: displayName || 'Unknown user'
       });
       
       console.log(`Socket ${socket.id} joined room ${roomId}`);
     } catch (error) {
       console.error('Error joining room:', error);
-      socket.emit('error', { message: 'Failed to join room' });
+      if (callback) {
+        callback({ error: 'Failed to join room' });
+      } else {
+        socket.emit('error', { message: 'Failed to join room' });
+      }
     }
   });
 
-  socket.on('create-transport', async (data) => {
+  socket.on('create-transport', async (data, callback) => {
     try {
       const { direction } = data; // 'send' or 'recv'
       
@@ -162,21 +176,33 @@ io.on('connection', (socket) => {
         }
       });
       
-      socket.emit('transport-created', {
+      const transportData = {
         transportId: transport.id,
         iceParameters: transport.iceParameters,
         iceCandidates: transport.iceCandidates,
         dtlsParameters: transport.dtlsParameters,
         sctpParameters: transport.sctpParameters,
-      });
+      };
+      
+      if (callback) {
+        callback(transportData);
+      } else {
+        socket.emit('transport-created', transportData);
+      }
+      
+      console.log(`Transport created for ${socket.id}, direction: ${direction}`);
       
     } catch (error) {
       console.error('Error creating transport:', error);
-      socket.emit('error', { message: 'Failed to create transport' });
+      if (callback) {
+        callback({ error: 'Failed to create transport' });
+      } else {
+        socket.emit('error', { message: 'Failed to create transport' });
+      }
     }
   });
 
-  socket.on('connect-transport', async (data) => {
+  socket.on('connect-transport', async (data, callback) => {
     try {
       const { transportId, dtlsParameters } = data;
       
@@ -188,17 +214,28 @@ io.on('connection', (socket) => {
       }
       
       await transport.connect({ dtlsParameters });
-      socket.emit('transport-connected');
+      
+      if (callback) {
+        callback({ connected: true });
+      } else {
+        socket.emit('transport-connected');
+      }
+      
+      console.log(`Transport ${transportId} connected for ${socket.id}`);
       
     } catch (error) {
       console.error('Error connecting transport:', error);
-      socket.emit('error', { message: 'Failed to connect transport' });
+      if (callback) {
+        callback({ error: 'Failed to connect transport' });
+      } else {
+        socket.emit('error', { message: 'Failed to connect transport' });
+      }
     }
   });
 
-  socket.on('produce', async (data) => {
+  socket.on('produce', async (data, callback) => {
     try {
-      const { transportId, kind, rtpParameters } = data;
+      const { transportId, kind, rtpParameters, appData } = data;
       
       const participant = getParticipant(socket);
       const transport = participant?.transports.get(transportId);
@@ -210,6 +247,7 @@ io.on('connection', (socket) => {
       const producer = await transport.produce({
         kind,
         rtpParameters,
+        appData
       });
       
       participant.producers.set(producer.id, producer);
@@ -225,13 +263,23 @@ io.on('connection', (socket) => {
         kind,
       });
       
-      socket.emit('produced', {
-        producerId: producer.id,
-      });
+      if (callback) {
+        callback({ producerId: producer.id });
+      } else {
+        socket.emit('produced', {
+          producerId: producer.id,
+        });
+      }
+      
+      console.log(`Producer ${producer.id} created for ${socket.id}, kind: ${kind}`);
       
     } catch (error) {
       console.error('Error producing:', error);
-      socket.emit('error', { message: 'Failed to produce media' });
+      if (callback) {
+        callback({ error: 'Failed to produce media' });
+      } else {
+        socket.emit('error', { message: 'Failed to produce media' });
+      }
     }
   });
 
@@ -294,7 +342,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('consume', async (data) => {
+  socket.on('consume', async (data, callback) => {
     try {
       const { transportId, producerId, rtpCapabilities } = data;
       
@@ -326,17 +374,29 @@ io.on('connection', (socket) => {
         socket.emit('consumer-closed', { consumerId: consumer.id });
       });
       
-      socket.emit('consumed', {
+      const consumerData = {
         consumerId: consumer.id,
         producerId,
         kind: consumer.kind,
         rtpParameters: consumer.rtpParameters,
         paused: consumer.paused,
-      });
+      };
+      
+      if (callback) {
+        callback(consumerData);
+      } else {
+        socket.emit('consumed', consumerData);
+      }
+      
+      console.log(`Consumer ${consumer.id} created for ${socket.id}, kind: ${consumer.kind}`);
       
     } catch (error) {
       console.error('Error consuming:', error);
-      socket.emit('error', { message: 'Failed to consume media' });
+      if (callback) {
+        callback({ error: 'Failed to consume media' });
+      } else {
+        socket.emit('error', { message: 'Failed to consume media' });
+      }
     }
   });
 
@@ -381,7 +441,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('resume-consumer', async (data) => {
+  socket.on('resume-consumer', async (data, callback) => {
     try {
       const { consumerId } = data;
       
@@ -393,18 +453,36 @@ io.on('connection', (socket) => {
       }
       
       await consumer.resume();
-      socket.emit('consumer-resumed', { consumerId });
+      
+      if (callback) {
+        callback({ resumed: true, consumerId });
+      } else {
+        socket.emit('consumer-resumed', { consumerId });
+      }
+      
+      console.log(`Consumer ${consumerId} resumed for ${socket.id}`);
       
     } catch (error) {
       console.error('Error resuming consumer:', error);
-      socket.emit('error', { message: 'Failed to resume consumer' });
+      if (callback) {
+        callback({ error: 'Failed to resume consumer' });
+      } else {
+        socket.emit('error', { message: 'Failed to resume consumer' });
+      }
     }
   });
 
-  socket.on('get-producers', () => {
+  socket.on('get-producers', (data, callback) => {
     try {
       const room = rooms.get(socket.roomId);
-      if (!room) return;
+      if (!room) {
+        if (callback) {
+          callback({ producers: [] });
+        } else {
+          socket.emit('producers-list', { producers: [] });
+        }
+        return;
+      }
       
       const producers = [];
       
@@ -420,18 +498,35 @@ io.on('connection', (socket) => {
         }
       }
       
-      socket.emit('producers-list', { producers });
+      if (callback) {
+        callback({ producers });
+      } else {
+        socket.emit('producers-list', { producers });
+      }
+      
+      console.log(`Got ${producers.length} producers for ${socket.id}`);
       
     } catch (error) {
       console.error('Error getting producers:', error);
-      socket.emit('error', { message: 'Failed to get producers' });
+      if (callback) {
+        callback({ error: 'Failed to get producers' });
+      } else {
+        socket.emit('error', { message: 'Failed to get producers' });
+      }
     }
   });
 
-  socket.on('get-data-producers', () => {
+  socket.on('get-data-producers', (data, callback) => {
     try {
       const room = rooms.get(socket.roomId);
-      if (!room) return;
+      if (!room) {
+        if (callback) {
+          callback({ dataProducers: [] });
+        } else {
+          socket.emit('data-producers-list', { dataProducers: [] });
+        }
+        return;
+      }
       
       const dataProducers = [];
       
@@ -447,11 +542,21 @@ io.on('connection', (socket) => {
         }
       }
       
-      socket.emit('data-producers-list', { dataProducers });
+      if (callback) {
+        callback({ dataProducers });
+      } else {
+        socket.emit('data-producers-list', { dataProducers });
+      }
+      
+      console.log(`Got ${dataProducers.length} data producers for ${socket.id}`);
       
     } catch (error) {
       console.error('Error getting data producers:', error);
-      socket.emit('error', { message: 'Failed to get data producers' });
+      if (callback) {
+        callback({ error: 'Failed to get data producers' });
+      } else {
+        socket.emit('error', { message: 'Failed to get data producers' });
+      }
     }
   });
 

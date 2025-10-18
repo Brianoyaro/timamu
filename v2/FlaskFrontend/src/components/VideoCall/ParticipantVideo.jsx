@@ -14,9 +14,16 @@ const ParticipantVideo = ({
 
   useEffect(() => {
     if (videoRef.current && stream) {
+      console.log('Setting stream to video element for participant:', participant?.socketId || 'local');
       videoRef.current.srcObject = stream;
+      
+      // If video autoplay fails, catch the error
+      videoRef.current.play().catch(err => {
+        console.error('Error playing remote video:', err);
+        setVideoError(true);
+      });
     }
-  }, [stream]);
+  }, [stream, participant]);
 
   const handleVideoError = () => {
     setVideoError(true);
