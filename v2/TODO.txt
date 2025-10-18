@@ -7,6 +7,9 @@ Implement the messaging functionality which is evident in the patient/therapist 
 
 I should implement google OAuth.
 
++ is sessionpage, the link for schedule a new session shouldbe visible to patients only.
++ why is it that for sessionpage, when i click all, complete, upcoming, cancelled, I get wrong count correspondnig to each e.g assuming i have 21 sessions but only 3 cancelled or completed, when i click on cancelled it displays  for [all, complete, cancelled, upcomming]
+
 I should configure, complete and wind-up on the email sending logic
 
 ++++++++++++++++++++

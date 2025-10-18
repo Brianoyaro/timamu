@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTokenValidator } from '../../hooks/useTokenValidator';
+import { useSessionStore } from '../../stores/sessionStore';
 import api from '../../utils/api';
+
+// Components
+import SessionCard from '../../components/Sessions/SessionCard';
 
 // Icons
 import { 
@@ -27,8 +31,6 @@ import {
 
 const PatientDashboard = ({ stats, user }) => {
   const navigate = useNavigate();
-  const [todaysSessions, setTodaysSessions] = useState([]);
-  const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
@@ -37,6 +39,15 @@ const PatientDashboard = ({ stats, user }) => {
     upcomingCount: 0,
     thisWeekCount: 0
   });
+  
+  // Use the global session store instead of local state
+  const { 
+    sessions, 
+    todaySessions, 
+    upcomingSessions, 
+    fetchSessions, 
+    loading: sessionsLoading 
+  } = useSessionStore();
 
   // Validate token
   useTokenValidator(300000);
@@ -49,52 +60,18 @@ const PatientDashboard = ({ stats, user }) => {
     try {
       setLoading(true);
       
-      // Load today's sessions
-      const today = new Date().toISOString().split('T')[0];
-      const sessionsResponse = await api.get('/sessions/', {
-        params: { 
-          status: 'scheduled',
-          date: today
-        }
+      // Use the global session store to fetch sessions
+      await fetchSessions({ 
+        status: 'all',
+        include_old: true
       });
       
-      const allSessions = Array.isArray(sessionsResponse.data) 
-        ? sessionsResponse.data 
-        : sessionsResponse.data.sessions || [];
-      
-      // Filter today's sessions
-      const todaysSessionsFiltered = allSessions.filter(session => {
-        const sessionDate = new Date(session.scheduled_at).toDateString();
-        const today = new Date().toDateString();
-        return sessionDate === today;
-      });
-      
-      setTodaysSessions(todaysSessionsFiltered);
-      
-      // Get upcoming sessions (next 7 days)
-      const upcoming = allSessions.filter(session => {
-        const sessionDate = new Date(session.scheduled_at);
-        const today = new Date();
-        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-        return sessionDate > today && sessionDate <= nextWeek;
-      });
-      
-      setUpcomingSessions(upcoming);
-      
-      // Calculate dashboard stats
-      const allSessionsResponse = await api.get('/sessions/', {
-        params: { include_old: true }
-      });
-      
-      const allSessionsData = Array.isArray(allSessionsResponse.data) 
-        ? allSessionsResponse.data 
-        : allSessionsResponse.data.sessions || [];
-      
+      // Calculate dashboard stats using the global store's data
       setDashboardStats({
-        totalSessions: allSessionsData.length,
-        completedSessions: allSessionsData.filter(s => s.status === 'completed').length,
-        upcomingCount: upcoming.length,
-        thisWeekCount: todaysSessionsFiltered.length + upcoming.length
+        totalSessions: sessions.length,
+        completedSessions: sessions.filter(s => s.status === 'completed').length,
+        upcomingCount: upcomingSessions.length,
+        thisWeekCount: todaySessions.length + upcomingSessions.length
       });
       
     } catch (error) {
@@ -104,44 +81,7 @@ const PatientDashboard = ({ stats, user }) => {
     }
   };
 
-  const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getTimeUntilSession = (scheduledAt) => {
-    const now = new Date();
-    const sessionTime = new Date(scheduledAt);
-    const diffMs = sessionTime - now;
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (diffHours > 0) {
-      return `in ${diffHours}h ${diffMinutes}m`;
-    } else if (diffMinutes > 0) {
-      return `in ${diffMinutes}m`;
-    } else if (diffMinutes >= -30) {
-      return 'Available to join';
-    } else {
-      return 'Session passed';
-    }
-  };
-
-  const canJoinSession = (scheduledAt) => {
-    // Allow joining anytime (removed time restrictions for testing)
-    return true;
-  };
+  // These utility functions are now handled by the SessionCard component
 
   const quickActions = [
     {
@@ -185,7 +125,7 @@ const PatientDashboard = ({ stats, user }) => {
     return colors[color] || colors.gray;
   };
 
-  if (loading) {
+  if (loading || sessionsLoading) {
     return (
       <div className="flex justify-center items-center min-h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -293,49 +233,14 @@ const PatientDashboard = ({ stats, user }) => {
               </div>
               
               <div className="p-6">
-                {todaysSessions.length > 0 ? (
+                {todaySessions.length > 0 ? (
                   <div className="space-y-4">
-                    {todaysSessions.map((session) => (
-                      <div key={session.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                              <FiVideo className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{session.title}</h3>
-                              <p className="text-sm text-gray-600">
-                                {formatTime(session.scheduled_at)} • {session.duration} minutes
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Dr. {session.therapist_name}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-blue-600">
-                              {getTimeUntilSession(session.scheduled_at)}
-                            </span>
-                            {canJoinSession(session.scheduled_at) ? (
-                              <button
-                                onClick={() => navigate(`/video-call/${session.room_id}`)}
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                              >
-                                <FiVideo className="h-4 w-4" />
-                                Join
-                              </button>
-                            ) : (
-                              <Link
-                                to={`/sessions/${session.id}`}
-                                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                              >
-                                Details
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                    {todaySessions.map((session) => (
+                      <SessionCard 
+                        key={session.id} 
+                        session={session} 
+                        compact={true}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -372,25 +277,12 @@ const PatientDashboard = ({ stats, user }) => {
                 {upcomingSessions.length > 0 ? (
                   <div className="space-y-3">
                     {upcomingSessions.slice(0, 3).map((session) => (
-                      <div key={session.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <FiUser className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{session.title}</p>
-                            <p className="text-sm text-gray-600">
-                              {formatDate(session.scheduled_at)} at {formatTime(session.scheduled_at)}
-                            </p>
-                          </div>
-                        </div>
-                        <Link
-                          to={`/sessions/${session.id}`}
-                          className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                        >
-                          View
-                        </Link>
-                      </div>
+                      <SessionCard 
+                        key={session.id} 
+                        session={session} 
+                        compact={true} 
+                        miniView={true}
+                      />
                     ))}
                     {upcomingSessions.length > 3 && (
                       <div className="text-center pt-3">

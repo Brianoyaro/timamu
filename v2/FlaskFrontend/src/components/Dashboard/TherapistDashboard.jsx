@@ -1,5 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSessionStore } from '../../stores/sessionStore';
+
+// Components
+import SessionCard from '../../components/Sessions/SessionCard';
 import { 
   FaUserMd, 
   FaCalendarDay, 
@@ -30,6 +34,21 @@ import {
 const TherapistDashboard = ({ stats, user }) => {
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('today');
+  const { 
+    sessions, 
+    todaySessions, 
+    upcomingSessions, 
+    fetchSessions, 
+    loading: sessionsLoading 
+  } = useSessionStore();
+  
+  useEffect(() => {
+    // Fetch sessions when the component mounts
+    fetchSessions({ 
+      status: 'all',
+      include_old: true
+    });
+  }, []);
 
   // Get current time and date for real-time display
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -41,8 +60,8 @@ const TherapistDashboard = ({ stats, user }) => {
   });
 
   // Calculate stats
-  const todaySessionsCount = stats.sessions?.today?.length || 0;
-  const upcomingSessionsCount = stats.sessions?.upcoming?.length || 0;
+  const todaySessionsCount = todaySessions?.length || 0;
+  const upcomingSessionsCount = upcomingSessions?.length || 0;
   const totalPatientsCount = stats.stats?.total_patients || 0;
   const unreadNotifications = stats.notifications?.filter(n => !n.read)?.length || 0;
 
@@ -126,46 +145,24 @@ const TherapistDashboard = ({ stats, user }) => {
             </div>
           </div>
 
-          {stats.sessions?.today && stats.sessions.today.length > 0 ? (
+          {todaySessions && todaySessions.length > 0 ? (
             <div className="grid gap-4">
-              {stats.sessions.today.map((session, index) => (
-                <div key={session.id} className="bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-md transition-all duration-200 overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                          <FaClock className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{session.patient_name}</h3>
-                          <p className="text-sm text-gray-600">Session #{session.id}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm font-medium text-blue-600">{session.time}</span>
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                              {session.status || 'Scheduled'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => navigate(`/sessions/${session.id}`)}
-                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                        >
-                          <HiOutlineVideoCamera className="w-4 h-4 mr-2" />
-                          Join Session
-                        </button>
-                        <button
-                          onClick={() => navigate(`/patients/${session.patient_id}`)}
-                          className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                        >
-                          <FaEye className="w-4 h-4 mr-2" />
-                          View Patient
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {todaySessions.map((session) => (
+                <SessionCard 
+                  key={session.id}
+                  session={session}
+                  compact={true}
+                  therapistView={true}
+                  extraActions={
+                    <button
+                      onClick={() => navigate(`/patients/${session.patient_id}`)}
+                      className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      <FaEye className="w-4 h-4 mr-2" />
+                      View Patient
+                    </button>
+                  }
+                />
               ))}
             </div>
           ) : (
