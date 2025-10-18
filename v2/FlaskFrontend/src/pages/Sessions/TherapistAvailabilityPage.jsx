@@ -102,7 +102,8 @@ const TherapistAvailabilityPage = () => {
   const loadAvailability = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/therapists/availability');
+      // Updated endpoint to use the new availability route
+      const response = await api.get('/availability/my-availability');
       const availabilityData = response.data.availability || {};
       
       // Convert new slot-based availability data to calendar events
@@ -251,7 +252,8 @@ const TherapistAvailabilityPage = () => {
         availability[dateKey] = consolidatedSlots;
       });
       
-      await api.post('/therapists/availability', { availability });
+      // Updated endpoint to use the new availability route
+      await api.post('/availability/my-availability', { availability });
       setMessage('Availability saved successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -408,7 +410,8 @@ const TherapistAvailabilityPage = () => {
       
       console.log('Unbooking slot:', { availabilityId, slotIndex, selectedEvent });
       
-      const response = await api.post(`/therapists/availability/${availabilityId}/slots/${slotIndex}/unbook`);
+      // Use the new dedicated availability endpoint for unbooking slots
+      const response = await api.post(`/availability/${availabilityId}/slots/${slotIndex}/unbook`);
       
       console.log('Unbook response:', response.data);
       

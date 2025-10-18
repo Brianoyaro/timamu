@@ -234,6 +234,9 @@ const VideoCallPage = () => {
               <ParticipantVideo
                 key={participant.socketId}
                 participant={participant}
+                stream={participant.stream}
+                isVideoEnabled={participant.videoEnabled}
+                isAudioEnabled={participant.audioEnabled}
                 className="w-48 h-36"
               />
             ))}
@@ -248,6 +251,7 @@ const VideoCallPage = () => {
           setNewMessage={setNewMessage}
           onSendMessage={sendMessage}
           onClose={() => setIsChatOpen(false)}
+          className="w-full md:w-96 h-full"
         />
       </div>
 

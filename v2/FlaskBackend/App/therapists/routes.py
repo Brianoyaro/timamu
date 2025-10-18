@@ -68,11 +68,18 @@ def get_therapist_detail(therapist_id):
 @therapists_bp.route('/availability', methods=['GET'])
 @jwt_required()
 def get_availability():
-    """Get therapist's availability schedule using new availability model"""
-    logger.debug("[GET /availability] Endpoint accessed")
+    """Redirect to the new availability endpoint"""
+    logger.debug("[GET /availability] Endpoint accessed - redirecting to new route")
     current_user_id = get_jwt_identity()
-    logger.debug(f"[GET /availability] Current user ID: {current_user_id}")
     
+    # Import redirect function
+    from flask import redirect, url_for
+    
+    # Redirect to the new endpoint
+    return redirect(url_for('availability.get_my_availability'))
+    
+    # The code below is kept for reference but not used
+    """
     user = User.query.get(current_user_id)
     logger.debug(f"[GET /availability] User retrieved: {user is not None}, Role: {user.role if user else 'None'}")
     
@@ -150,13 +157,24 @@ def get_availability():
         'availability': availability_data,
         'timezone': therapist_profile.timezone
     })
+    """
 
 
 @therapists_bp.route('/availability', methods=['POST'])
 @jwt_required()
 def update_availability():
-    """Update therapist's availability schedule using new availability model"""
-    logger.debug("[POST /availability] Endpoint accessed for updating availability")
+    """Redirect to the new availability endpoint"""
+    logger.debug("[POST /availability] Endpoint accessed - redirecting to new route")
+    
+    # Forward the request to the new endpoint
+    from flask import redirect, url_for
+    from ..routes.availability import update_my_availability
+    
+    # Return the result of the new endpoint
+    return update_my_availability()
+    
+    # The code below is kept for reference but not used
+    """
     current_user_id = get_jwt_identity()
     logger.debug(f"[POST /availability] Current user ID: {current_user_id}")
     
@@ -284,6 +302,7 @@ def update_availability():
         db.session.rollback()
         logger.error(f"[POST /availability] Failed to save availability: {str(e)}", exc_info=True)
         return jsonify({'error': f'Failed to update availability: {str(e)}'}), 500
+    """
 
 
 # Debug endpoint to check therapist profile data !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -332,7 +351,17 @@ def debug_therapist_profile():
 @therapists_bp.route('/<int:therapist_id>/availability', methods=['GET'])
 @jwt_required()
 def get_therapist_availability(therapist_id):
-    """Get specific therapist's availability for booking using new availability model"""
+    """Redirect to the new availability endpoint"""
+    logger.debug(f"[GET /{therapist_id}/availability] Endpoint accessed - redirecting to new route")
+    
+    # Import redirect function
+    from flask import redirect, url_for
+    
+    # Redirect to the new endpoint
+    return redirect(url_for('availability.get_therapist_availability', therapist_id=therapist_id))
+    
+    # The code below is kept for reference but not used
+    """
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
@@ -408,6 +437,7 @@ def get_therapist_availability(therapist_id):
         'timezone': therapist_profile.timezone,
         'accepts_emergency': therapist_profile.accepts_emergency
     })
+    """
 
 '''
 This section contains endpoints to book and unbook individual slots within an availability block, I should ensure that these endpoints correctly handle the booking logic, including checking if a slot is available, updating the booked slots list, and managing concurrency issues.
@@ -415,101 +445,97 @@ This section contains endpoints to book and unbook individual slots within an av
 @therapists_bp.route('/availability/<int:availability_id>/slots/<int:slot_index>/book', methods=['POST'])
 @jwt_required()
 def book_slot(availability_id, slot_index):
-    """Book a specific time slot within an availability block"""
-    logger.debug(f"[POST /book_slot] Booking slot {slot_index} in availability {availability_id}")
+    """Book a session using the new availability/booking system"""
+    logger.debug(f"[POST /book_slot] Redirecting to new booking endpoint")
     
+    # We need to use the new book endpoint instead
+    from flask import request, redirect, url_for, jsonify
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
     
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
+    # Get the current request data
+    data = request.get_json() or {}
     
-    # Get the availability slot
+    # Get the availability to find the therapist
     from ..models import TherapistAvailability
     availability_slot = TherapistAvailability.query.get(availability_id)
     
     if not availability_slot:
         return jsonify({'error': 'Availability slot not found'}), 404
     
-    # Check if the specific slot is available
-    if not availability_slot.is_slot_available(slot_index):
-        return jsonify({'error': 'Slot is not available'}), 400
+    # Get the therapist profile and user ID
+    therapist_profile = availability_slot.therapist_profile
+    therapist_id = therapist_profile.user_id
     
-    try:
-        # Book the slot
-        if availability_slot.book_slot(slot_index):
-            db.session.commit()
-            logger.debug(f"[POST /book_slot] Successfully booked slot {slot_index}")
-            
-            return jsonify({
-                'message': 'Slot booked successfully',
-                'availability_id': availability_id,
-                'slot_index': slot_index,
-                'booked_slots': availability_slot.booked_slots,
-                'available_slots': availability_slot.get_available_slots()
-            })
-        else:
-            return jsonify({'error': 'Failed to book slot'}), 400
-            
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"[POST /book_slot] Error booking slot: {str(e)}")
-        return jsonify({'error': f'Failed to book slot: {str(e)}'}), 500
-
+    # Create booking data for the new endpoint
+    booking_data = {
+        'therapist_id': therapist_id,
+        'availability_id': availability_id,
+        'slot_index': slot_index,
+        'title': data.get('title', 'Therapy Session'),
+        'session_type': data.get('session_type', 'individual'),
+        'notes': data.get('notes', ''),
+        'is_emergency': data.get('is_emergency', False),
+        'duration': data.get('duration', 60)
+    }
+    
+    # Use the new endpoint directly with modified request
+    from flask import current_app
+    with current_app.test_request_context(
+        '/api/availability/book',
+        method='POST',
+        json=booking_data,
+        headers={k: v for k, v in request.headers.items() if k != 'Content-Length'}
+    ):
+        from ..routes.availability import book_session
+        return book_session()
 
 @therapists_bp.route('/availability/<int:availability_id>/slots/<int:slot_index>/unbook', methods=['POST'])
 @jwt_required()
 def unbook_slot(availability_id, slot_index):
-    """Unbook a specific time slot within an availability block"""
-    logger.debug(f"[POST /unbook_slot] Unbooking slot {slot_index} in availability {availability_id}")
+    """Redirect to the cancel booking endpoint"""
+    logger.debug(f"[POST /unbook_slot] Redirecting to cancel booking endpoint")
     
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    # This is more complex - we need to find the session associated with this slot
+    from ..models import Session, TherapistAvailability
     
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    # Get the availability slot
-    from ..models import TherapistAvailability
-    availability_slot = TherapistAvailability.query.get(availability_id)
-    
-    if not availability_slot:
+    availability = TherapistAvailability.query.get(availability_id)
+    if not availability:
         return jsonify({'error': 'Availability slot not found'}), 404
     
-    # Check authorization - only therapist or admin can unbook
-    therapist_profile = TherapistProfile.query.filter_by(id=availability_slot.therapist_profile_id).first()
-    if not therapist_profile:
-        return jsonify({'error': 'Therapist profile not found'}), 404
+    # Find session associated with this slot
+    session = Session.query.filter_by(
+        availability_id=availability_id,
+        slot_index=slot_index
+    ).first()
     
-    if user.role.upper() not in ['ADMIN'] and therapist_profile.user_id != current_user_id:
-        return jsonify({'error': 'Unauthorized to unbook this slot'}), 403
+    if not session:
+        # If no session found, just unbook the slot directly
+        try:
+            availability.unbook_slot(slot_index)
+            db.session.commit()
+            return jsonify({
+                'message': 'Slot unbooked successfully',
+                'availability_id': availability_id,
+                'slot_index': slot_index
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Failed to unbook slot: {str(e)}'}), 500
     
-    try:
-        # Log before unbooking
-        logger.debug(f"[POST /unbook_slot] Before unbook - booked_slots: {availability_slot.booked_slots}")
-        
-        # Unbook the slot
-        result = availability_slot.unbook_slot(slot_index)
-        
-        # Log after unbooking but before commit
-        logger.debug(f"[POST /unbook_slot] After unbook - booked_slots: {availability_slot.booked_slots}, result: {result}")
-        
-        db.session.commit()
-        logger.debug(f"[POST /unbook_slot] Successfully unbooked slot {slot_index}")
-        
-        return jsonify({
-            'message': 'Slot unbooked successfully',
-            'availability_id': availability_id,
-            'slot_index': slot_index,
-            'booked_slots': availability_slot.booked_slots,
-            'available_slots': availability_slot.get_available_slots()
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"[POST /unbook_slot] Error unbooking slot: {str(e)}")
-        return jsonify({'error': f'Failed to unbook slot: {str(e)}'}), 500
-
+    # If session found, redirect to cancel booking endpoint
+    from flask import request, redirect, url_for
+    data = request.get_json() or {}
+    
+    # Use the cancel booking endpoint directly
+    from flask import current_app
+    with current_app.test_request_context(
+        f'/api/availability/cancel-booking/{session.id}',
+        method='POST',
+        json={'reason': data.get('reason', 'Cancelled by therapist')},
+        headers={k: v for k, v in request.headers.items() if k != 'Content-Length'}
+    ):
+        from ..routes.availability import cancel_booking
+        return cancel_booking(session.id)
 
 @therapists_bp.route('/availability/<int:availability_id>/slots', methods=['GET'])
 @jwt_required()
@@ -568,73 +594,15 @@ def get_availability_slots(availability_id):
 @therapists_bp.route('/<int:therapist_id>/available-slots', methods=['GET'])
 @jwt_required()
 def get_available_slots_for_booking(therapist_id):
-    """Get all available individual slots for a therapist within a date range"""
-    logger.debug(f"[GET /available-slots] Getting available slots for therapist {therapist_id}")
+    """Redirect to the new available-slots endpoint"""
+    logger.debug(f"[GET /{therapist_id}/available-slots] Redirecting to new route")
     
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    from flask import request, redirect, url_for
     
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
+    # Forward the query parameters
+    query_string = request.query_string.decode()
+    if query_string:
+        query_string = '?' + query_string
     
-    # Get query parameters
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    if not start_date:
-        return jsonify({'error': 'start_date parameter is required (YYYY-MM-DD format)'}), 400
-    
-    try:
-        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else start_date_obj
-    except ValueError:
-        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
-    
-    # Get therapist profile
-    therapist_profile = TherapistProfile.query.filter_by(user_id=therapist_id).first()
-    if not therapist_profile:
-        return jsonify({'error': 'Therapist not found'}), 404
-    
-    if not therapist_profile.is_approved:
-        return jsonify({'error': 'Therapist is not approved'}), 404
-    
-    # Get availability slots within date range
-    from ..models import TherapistAvailability
-    availability_slots = TherapistAvailability.query.filter(
-        TherapistAvailability.therapist_profile_id == therapist_profile.id,
-        TherapistAvailability.date >= start_date_obj,
-        TherapistAvailability.date <= end_date_obj,
-        TherapistAvailability.is_available == True
-    ).order_by(TherapistAvailability.date, TherapistAvailability.start_time).all()
-    
-    # Collect all available individual slots
-    available_slots = []
-    
-    for availability_slot in availability_slots:
-        available_slot_indices = availability_slot.get_available_slots()
-        
-        for slot_index in available_slot_indices:
-            slot_start = datetime.combine(availability_slot.date, availability_slot.start_time) + timedelta(hours=slot_index)
-            slot_end = slot_start + timedelta(hours=1)
-            
-            available_slots.append({
-                'availability_id': availability_slot.id,
-                'slot_index': slot_index,
-                'date': availability_slot.date.strftime('%Y-%m-%d'),
-                'start_datetime': slot_start.isoformat(),
-                'end_datetime': slot_end.isoformat(),
-                'start_time': slot_start.time().strftime('%H:%M'),
-                'end_time': slot_end.time().strftime('%H:%M'),
-                'timezone': availability_slot.timezone
-            })
-    
-    return jsonify({
-        'therapist_id': therapist_id,
-        'date_range': {
-            'start_date': start_date,
-            'end_date': end_date or start_date
-        },
-        'available_slots': available_slots,
-        'total_available': len(available_slots),
-        'timezone': therapist_profile.timezone
-    })
+    # Redirect to the new endpoint
+    return redirect(url_for('availability.get_available_slots', therapist_id=therapist_id) + query_string)

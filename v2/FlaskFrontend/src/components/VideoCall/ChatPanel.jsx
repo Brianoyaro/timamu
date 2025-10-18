@@ -29,7 +29,7 @@ const ChatPanel = ({
   if (!isOpen) return null;
 
   return (
-    <div className={`bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col ${className}`}>
+    <div className={`bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col h-full max-h-screen ${className}`}>
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
         <h3 className="text-white font-semibold text-lg">Session Chat</h3>
@@ -44,7 +44,7 @@ const ChatPanel = ({
       {/* Messages Container */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 h-full max-h-[calc(100vh-160px)]"
       >
         {messages.length === 0 ? (
           <div className="text-center py-8">
