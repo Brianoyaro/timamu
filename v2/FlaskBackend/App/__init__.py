@@ -6,7 +6,11 @@ from .extensions import db, migrate, bcrypt, mail, oauth, jwt
 def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
-    CORS(app)
+    #CORS(app)
+    # ✅ Restrict CORS to your frontend domain for all API routes
+    CORS(app, resources={
+        r"/api/*": {"origins": ["https://timamu-v2-flaskfrontend.onrender.com"]}
+    })
     
     # Initialize extensions
     db.init_app(app)
