@@ -492,6 +492,7 @@ io.on('connection', (socket) => {
             producers.push({
               producerId,
               socketId,
+              userId: participant.userId,
               kind: producer.kind,
             });
           }
@@ -512,6 +513,47 @@ io.on('connection', (socket) => {
         callback({ error: 'Failed to get producers' });
       } else {
         socket.emit('error', { message: 'Failed to get producers' });
+      }
+    }
+  });
+  
+  // New handler to get all participants in a room
+  socket.on('get-participants', (data, callback) => {
+    try {
+      const room = rooms.get(socket.roomId);
+      if (!room) {
+        if (callback) {
+          callback({ participants: [] });
+        } else {
+          socket.emit('participants-list', { participants: [] });
+        }
+        return;
+      }
+      
+      const participants = [];
+      
+      for (const [socketId, participant] of room.participants) {
+        participants.push({
+          socketId,
+          userId: participant.userId,
+          displayName: participant.displayName
+        });
+      }
+      
+      if (callback) {
+        callback({ participants });
+      } else {
+        socket.emit('participants-list', { participants });
+      }
+      
+      console.log(`Got ${participants.length} participants for ${socket.id}`);
+      
+    } catch (error) {
+      console.error('Error getting participants:', error);
+      if (callback) {
+        callback({ error: 'Failed to get participants' });
+      } else {
+        socket.emit('error', { message: 'Failed to get participants' });
       }
     }
   });
@@ -569,14 +611,59 @@ io.on('connection', (socket) => {
         message: messageData.message
       });
       
+      // Ensure the message is marked as not the recipient's own message
+      const messageForRecipients = {
+        ...messageData,
+        isOwn: false,
+        fromSocketId: socket.id // Add the socket ID to identify the sender
+      };
+      
       // Broadcast the message to all other participants in the room
-      socket.to(socket.roomId).emit('chat-message', messageData);
+      socket.to(socket.roomId).emit('chat-message', messageForRecipients);
       
       console.log('=== CHAT MESSAGE BROADCASTED ===');
       
     } catch (error) {
       console.error('Error handling chat message:', error);
       socket.emit('error', { message: 'Failed to send chat message' });
+    }
+  });
+  
+  // Get participant info by socket ID
+  socket.on('get-participant-info', (data, callback) => {
+    try {
+      const { socketId } = data;
+      const room = rooms.get(socket.roomId);
+      
+      if (!room) {
+        if (callback) callback({ error: 'Room not found' });
+        return;
+      }
+      
+      const participant = room.participants.get(socketId);
+      
+      if (!participant) {
+        if (callback) callback({ error: 'Participant not found' });
+        return;
+      }
+      
+      if (callback) {
+        callback({
+          participant: {
+            socketId,
+            userId: participant.userId,
+            displayName: participant.displayName
+          }
+        });
+      }
+      
+      console.log(`Got participant info for ${socketId} in room ${socket.roomId}`);
+      
+    } catch (error) {
+      console.error('Error getting participant info:', error);
+      if (callback) {
+        callback({ error: 'Failed to get participant info' });
+      }
     }
   });
 

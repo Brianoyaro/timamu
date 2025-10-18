@@ -251,6 +251,7 @@ const VideoCallPage = () => {
           setNewMessage={setNewMessage}
           onSendMessage={sendMessage}
           onClose={() => setIsChatOpen(false)}
+          className="w-full md:w-96 h-full"
         />
       </div>
 

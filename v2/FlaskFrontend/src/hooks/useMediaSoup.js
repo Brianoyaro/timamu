@@ -31,7 +31,7 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
   // Auth store
   const user = useAuthStore((state) => state.user);
 
-  const connectToMediaSoup = useCallback(async (roomId) => {
+  const  connectToMediaSoup = useCallback(async (roomId) => {
     try {
       const mediaSoupUrl = import.meta.env.VITE_MEDIASOUP_URL || 'http://localhost:3001';
       console.log('Connecting to MediaSoup server at:', mediaSoupUrl);
@@ -369,6 +369,13 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
   const consumeRemoteProducer = useCallback(async (producerId, kind, socketId) => {
     try {
       console.log(`=== CONSUMING REMOTE PRODUCER: ${kind} from ${socketId} ===`);
+      
+      // Skip if this is our own socket ID
+      if (mediaSoupSocketRef.current && mediaSoupSocketRef.current.id === socketId) {
+        console.log(`Skipping our own producer: ${producerId}`);
+        return;
+      }
+      
       if (!consumerTransportRef.current || !deviceRef.current) {
         console.error('Cannot consume - transport or device not ready');
         return;
@@ -423,6 +430,21 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
       
       console.log(`Consumer created for ${kind} producer ${producerId}`);
       
+      // Get participant info
+      let participantInfo = null;
+      try {
+        participantInfo = await new Promise((resolve) => {
+          mediaSoupSocket.emit('get-participant-info', { socketId }, (response) => {
+            resolve(response.participant || null);
+          });
+          
+          // Set a timeout in case the server doesn't respond
+          setTimeout(() => resolve(null), 3000);
+        });
+      } catch (error) {
+        console.error('Error getting participant info:', error);
+      }
+      
       // Update participants list with new stream
       if (kind === 'video' || kind === 'audio') {
         setRoomParticipants((prevParticipants) => {
@@ -432,6 +454,8 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
             // Add new participant
             const newParticipant = {
               socketId,
+              userId: participantInfo?.userId,
+              name: participantInfo?.displayName || 'Unknown Participant',
               stream: new MediaStream(),
               videoEnabled: kind === 'video',
               audioEnabled: kind === 'audio'
@@ -526,9 +550,21 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
           if (response?.producers?.length) {
             console.log(`Found ${response.producers.length} existing producers`);
             
-            // Consume each producer
-            response.producers.forEach(({ producerId, kind, socketId }) => {
-              consumeRemoteProducer(producerId, kind, socketId);
+            // Get information about socket IDs and user IDs
+            mediaSoupSocket.emit('get-participants', {}, (participantsResponse) => {
+              const participants = participantsResponse?.participants || [];
+              
+              // Consume each producer from other participants (not our own)
+              response.producers.forEach(({ producerId, kind, socketId, userId }) => {
+                // Skip consuming our own producers
+                const participantInfo = participants.find(p => p.socketId === socketId);
+                if (participantInfo && participantInfo.userId === user?.id) {
+                  console.log(`Skipping our own producer: ${producerId}`);
+                  return;
+                }
+                
+                consumeRemoteProducer(producerId, kind, socketId);
+              });
             });
           } else {
             console.log('No existing producers found');
@@ -562,8 +598,14 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
     if (!mediaSoupSocket) return;
     
     // New participant joined
-    mediaSoupSocket.on('participant-joined', ({ socketId }) => {
-      console.log('New participant joined:', socketId);
+    mediaSoupSocket.on('participant-joined', ({ socketId, userId, displayName }) => {
+      console.log('New participant joined:', socketId, userId, displayName);
+      
+      // Skip if this is our own join event
+      if (userId === user?.id) {
+        console.log('Ignoring our own join event');
+        return;
+      }
       
       // Add to participants list
       setRoomParticipants(prevParticipants => {
@@ -572,6 +614,8 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
             ...prevParticipants,
             {
               socketId,
+              userId,
+              name: displayName,
               stream: new MediaStream(),
               videoEnabled: false,
               audioEnabled: false
@@ -618,14 +662,20 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
     // Chat message
     mediaSoupSocket.on('chat-message', (messageData) => {
       console.log('Received chat message:', messageData);
-      // Add received message to messages list
-      setMessages(prev => [
-        ...prev,
-        {
-          ...messageData,
-          isOwn: false
-        }
-      ]);
+      
+      // Check if this is our own message bouncing back in any way
+      // There are two ways to identify our own messages:
+      // 1. By the sender.id field (user ID)
+      // 2. By the fromSocketId field (socket ID)
+      const isOwnMessageByUserId = messageData.sender?.id === user?.id;
+      const isOwnMessageBySocketId = messageData.fromSocketId === mediaSoupSocket.id;
+      
+      if (!isOwnMessageByUserId && !isOwnMessageBySocketId) {
+        // Only add messages from other participants
+        setMessages(prev => [...prev, messageData]);
+      } else {
+        console.log('Skipping our own message:', messageData);
+      }
     });
     
     // Error handling
@@ -833,8 +883,14 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
       isOwn: true
     };
 
-    // First add message to local state
+    // First add message to local state - this is the only copy for the sender
     setMessages(prev => [...prev, messageData]);
+    
+    // For other participants, send without isOwn flag
+    const messageDataForOthers = {
+      ...messageData,
+      isOwn: false // Other participants will receive this as not their own message
+    };
     
     // Try to send via data channel first
     const dataProducer = dataProducerRef.current;
@@ -842,7 +898,7 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
     
     if (dataProducer && dataProducer.readyState === 'open') {
       try {
-        dataProducer.send(JSON.stringify(messageData));
+        dataProducer.send(JSON.stringify(messageDataForOthers));
         sentViaDataChannel = true;
       } catch (error) {
         console.error('Error sending message via data channel:', error);
@@ -851,7 +907,7 @@ export const useMediaSoup = (roomId, session, setMessages, setParticipants) => {
     
     // Fallback to socket.io if data channel fails
     if (!sentViaDataChannel && mediaSoupSocketRef.current) {
-      mediaSoupSocketRef.current.emit('chat-message', messageData);
+      mediaSoupSocketRef.current.emit('chat-message', messageDataForOthers);
     }
     
     console.log('Message sent:', messageData);
