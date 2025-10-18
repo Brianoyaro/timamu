@@ -38,6 +38,7 @@ const ScheduleSessionPage = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [patientBookings, setPatientBookings] = useState([]);
   const [matchPreferences, setMatchPreferences] = useState({
     specialization: '',
     language: 'English',
@@ -75,7 +76,13 @@ const ScheduleSessionPage = () => {
   }, [therapists, filters]);
 
   useEffect(() => {
-    loadAvailableTherapists();
+    const fetchInitialData = async () => {
+      await loadAvailableTherapists();
+      const bookings = await loadPatientBookings();
+      setPatientBookings(bookings);
+    };
+    
+    fetchInitialData();
   }, []);
 
   // Handle URL parameters for pre-selecting therapist and view
@@ -95,7 +102,7 @@ const ScheduleSessionPage = () => {
   const loadAvailableTherapists = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/sessions/available-therapists');
+      const response = await api.get('/availability/therapists');
       // Enhance therapist data with additional display properties
       const enhancedTherapists = response.data.map(therapist => ({
         ...therapist,
@@ -128,6 +135,17 @@ const ScheduleSessionPage = () => {
       setLoading(false);
     }
   };
+  
+  // Load patient's existing bookings
+  const loadPatientBookings = async () => {
+    try {
+      const response = await api.get('/availability/patient-bookings');
+      return response.data.bookings;
+    } catch (error) {
+      console.error('Error loading patient bookings:', error);
+      return [];
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -153,7 +171,7 @@ const ScheduleSessionPage = () => {
       const date = moment(sessionData.scheduled_at).format('YYYY-MM-DD');
       const time = moment(sessionData.scheduled_at).format('HH:mm');
       
-      const availabilityCheck = await api.post('/sessions/check-availability', {
+      const availabilityCheck = await api.post('/availability/check', {
         therapist_id: parseInt(selectedTherapist),
         date: date,
         time: time
@@ -165,12 +183,23 @@ const ScheduleSessionPage = () => {
         return;
       }
 
-      const scheduleData = {
-        ...sessionData,
-        therapist_id: parseInt(selectedTherapist)
+      // Get availability_id and slot_index from the availability check response
+      const { availability_id, slot_index } = availabilityCheck.data;
+      
+      // Prepare booking data
+      const bookingData = {
+        therapist_id: parseInt(selectedTherapist),
+        availability_id: availability_id,
+        slot_index: slot_index,
+        title: sessionData.title,
+        session_type: sessionData.session_type,
+        duration: parseInt(sessionData.duration),
+        notes: sessionData.notes,
+        timezone: sessionData.timezone
       };
 
-      const response = await api.post('/sessions/schedule', scheduleData);
+      // Book using the availability endpoint
+      const response = await api.post('/availability/book', bookingData);
 
       setMessage('Session scheduled successfully! The time slot has been booked and confirmation emails have been sent.');
       setShowConfirmModal(false);
@@ -239,7 +268,7 @@ const ScheduleSessionPage = () => {
       
       for (const therapist of therapists) {
         try {
-          const slotsResponse = await api.post('/sessions/available-slots', {
+          const slotsResponse = await api.post('/availability/slots', {
             therapist_id: therapist.id,
             start_date: today,
             end_date: nextWeek
@@ -475,6 +504,33 @@ const ScheduleSessionPage = () => {
         />
       </div>
     );
+  };
+
+  // Handle cancelling a booked session !!!!!!!!!!!!!!!!!!!!!!!!SHOULD BE IN SESSIONS PAGE !!!!!!!!!!!!!!!!!!!!
+  const handleCancelSession = async (sessionId) => {
+    if (!sessionId) return;
+    
+    setLoading(true);
+    setMessage('');
+    
+    try {
+      const response = await api.post(`/availability/cancel-booking/${sessionId}`, {
+        reason: 'Cancelled by patient through scheduling interface'
+      });
+      
+      setMessage('Session cancelled successfully.');
+      
+      // Reload therapists to get updated availability
+      setTimeout(() => {
+        loadAvailableTherapists();
+      }, 1000);
+    } catch (error) {
+      console.error('Error cancelling session:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to cancel session';
+      setMessage(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (user?.role?.toUpperCase() !== 'PATIENT') {

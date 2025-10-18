@@ -39,8 +39,9 @@ def create_app():
     from .files import files_bp
     from .messages import messages_bp
     from .dashboard import dashboard_bp
+    from .availability import availability_bp
     # from .test_routes import test_bp
-    from .routes.availability import availability_bp # WE'RE NOT USING THESE YET, BUT THEY WILL BE USEFUL LATER
+    #from .routes.availability import availability_bp # Now using these for proper availability management
     
     import logging
     logger = logging.getLogger(__name__)
@@ -52,13 +53,13 @@ def create_app():
     logger.debug(f"Auth blueprint rules: {[rule.rule for rule in app.url_map.iter_rules() if rule.endpoint.startswith('auth')]}")
     
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(therapists_bp, url_prefix='/api/therapists')
+    app.register_blueprint(therapists_bp, url_prefix='/api/therapists') # since we're moving to /api/availability, we don't need this here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     app.register_blueprint(patients_bp, url_prefix='/api/patients')
     app.register_blueprint(sessions_bp, url_prefix='/api/sessions')
     app.register_blueprint(files_bp, url_prefix='/api/files')
     app.register_blueprint(messages_bp, url_prefix='/api/messages')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-    app.register_blueprint(availability_bp)  # Availability routes
+    app.register_blueprint(availability_bp, url_prefix='/api/availability')  # Register availability routes with prefix defined in blueprint
     # app.register_blueprint(test_bp)  # Test routes at root level
     
     logger.info("All blueprints registered successfully")
