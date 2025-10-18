@@ -4,7 +4,7 @@ from datetime import datetime
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(128), nullable=False)
+    password = db.Column(db.String(128), nullable=True)  # Nullable for OAuth users
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     role = db.Column(db.String(20))
@@ -13,6 +13,10 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     phone = db.Column(db.String(20))
     gender = db.Column(db.String(20))
+    # OAuth fields
+    google_id = db.Column(db.String(100), unique=True, nullable=True)
+    profile_image = db.Column(db.String(255), nullable=True)
+    email_verified = db.Column(db.Boolean, default=False)
     # date_of_birth = db.Column(db.Date)
     therapist_profile = db.relationship('TherapistProfile', backref='user', uselist=False)
     patient_profile = db.relationship('PatientProfile', backref='user', uselist=False)

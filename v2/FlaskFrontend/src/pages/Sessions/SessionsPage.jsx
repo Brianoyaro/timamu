@@ -50,8 +50,14 @@ const SessionsPage = () => {
         setRefreshing(true);
       }
       
+      // Map frontend filter values to what the backend API expects
+      let backendStatus = 'all';
+      if (filter === 'upcoming') backendStatus = 'active';
+      else if (filter === 'completed') backendStatus = 'completed';
+      else if (filter === 'cancelled') backendStatus = 'cancelled';
+      
       await fetchSessions({ 
-        status: filter === 'all' ? 'all' : filter,
+        status: backendStatus,
         include_old: filter === 'all'
       });
     } catch (error) {
@@ -67,13 +73,9 @@ const SessionsPage = () => {
     navigate(`/sessions/${session.id}`);
   };
 
-  const filteredSessions = sessions.filter(session => {
-    if (filter === 'all') return true;
-    if (filter === 'upcoming') return ['scheduled', 'started'].includes(session.status);
-    if (filter === 'completed') return session.status === 'completed';
-    if (filter === 'cancelled') return ['cancelled', 'no_show', 'forfeited'].includes(session.status);
-    return true;
-  });
+  // Since we're already filtering on the backend, we shouldn't need to filter again
+  // unless we have custom filtering needs beyond what the API provides
+  const filteredSessions = sessions;
 
   if (loading) {
     return (
@@ -151,9 +153,10 @@ const SessionsPage = () => {
                 { key: 'cancelled', label: 'Cancelled', icon: FiXCircle }
               ].map((tab) => {
                 const Icon = tab.icon;
+                // Calculate count using the same logic as the backend API
                 const count = sessions.filter(s => {
                   if (tab.key === 'all') return true;
-                  if (tab.key === 'upcoming') return ['scheduled', 'started'].includes(s.status);
+                  if (tab.key === 'upcoming') return ['scheduled', 'started'].includes(s.status); // Maps to 'active' in backend
                   if (tab.key === 'completed') return s.status === 'completed';
                   if (tab.key === 'cancelled') return ['cancelled', 'no_show', 'forfeited'].includes(s.status);
                   return true;
