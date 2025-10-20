@@ -2,7 +2,7 @@ from flask_mail import Message
 from flask import current_app, render_template_string
 from ..extensions import mail
 from datetime import datetime, timedelta
-from icalendar import Calendar, Event
+from icalendar import Calendar, Event, Alarm
 import uuid
 
 def send_email(to_email, subject, body):
@@ -59,22 +59,25 @@ The Timamu Team
         
         # Add reminders
         # 24 hour reminder
-        alarm1 = event.add('valarm')
+        alarm1 = Alarm()
         alarm1.add('action', 'DISPLAY')
         alarm1.add('description', 'Therapy session reminder - 24 hours')
         alarm1.add('trigger', timedelta(days=-1))
+        event.add_component(alarm1)
         
         # 1 hour reminder
-        alarm2 = event.add('valarm')
+        alarm2 = Alarm()
         alarm2.add('action', 'DISPLAY')
         alarm2.add('description', 'Therapy session starting in 1 hour')
         alarm2.add('trigger', timedelta(hours=-1))
+        event.add_component(alarm2)
         
         # 15 minute reminder
-        alarm3 = event.add('valarm')
+        alarm3 = Alarm()
         alarm3.add('action', 'DISPLAY')
         alarm3.add('description', 'Therapy session starting in 15 minutes')
         alarm3.add('trigger', timedelta(minutes=-15))
+        event.add_component(alarm3)
         
         # Add event to calendar
         cal.add_component(event)
@@ -84,10 +87,6 @@ The Timamu Team
     except Exception as e:
         current_app.logger.error(f"Failed to generate .ics calendar: {str(e)}")
         return None
-    mail.send(msg)
-
-
-    mail.send(msg)
 
 
 def send_welcome_email(user_email, first_name):
