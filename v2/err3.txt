@@ -1,0 +1,25 @@
+++++++++++++++backend logs+++++++++++++++++
+DEBUG:App.availability.routes:[POST /check] Availability check result: {'available': True, 'therapist_id': 22, 'date': '2025-10-20', 'time': '10:00', 'availability_id': 317, 'slot_index': 1, 'slot_details': {'start_time': '09:00', 'end_time': '17:00', 'total_slots': 8, 'available_slots': [0, 1, 2, 3, 4, 5, 6, 7], 'booked_slots': []}}
+127.0.0.1 - - [18/Oct/2025:20:20:03 +0000] "POST /api/availability/check HTTP/1.1" 200 359 "https://timamu-v2-flaskfrontend.onrender.com/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+127.0.0.1 - - [18/Oct/2025:20:20:03 +0000] "OPTIONS /api/availability/book HTTP/1.1" 200 0 "https://timamu-v2-flaskfrontend.onrender.com/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+DEBUG:App.availability.routes:[POST /book] Booking session for user: 21
+DEBUG:App.availability.routes:[POST /book] Received data: {'therapist_id': 22, 'availability_id': 317, 'slot_index': 1, 'title': 'Session with Brian Mokua', 'session_type': 'individual', 'duration': 60, 'notes': '', 'timezone': 'Africa/Nairobi'}
+DEBUG:App.availability.routes:[POST /book] Successfully booked session 40
+INFO:root:AUDIT: book_session by brianoyaro2000@gmail.com on session (40) status=success
+ERROR:App:Failed to generate .ics calendar: Component.add() missing 1 required positional argument: 'value'
+
+
+###################
+schedule:1 Access to XMLHttpRequest at 'https://timamu-v2-flaskbackend.onrender.com/api/availability/book' from origin 'https://timamu-v2-flaskfrontend.onrender.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+
+PROPOSED FIX
+from flask import Flask
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+CORS(app, resources={
+    r"/api/*": {"origins": ["https://timamu-v2-flaskfrontend.onrender.com"]}
+})
+
