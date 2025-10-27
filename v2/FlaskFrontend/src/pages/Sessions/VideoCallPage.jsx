@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
 import {
   LiveKitRoom,
   VideoConference,
-  useToken
+  ControlBar,
+  RoomAudioRenderer,
+  useTracks,
+  PreJoin
 } from "@livekit/components-react";
+import { Track } from 'livekit-client';
 import "@livekit/components-styles";
 
 const VideoCallPage = () => {
@@ -21,10 +25,32 @@ const VideoCallPage = () => {
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [preJoinComplete, setPreJoinComplete] = useState(false);
+  const [devicePermissionsGranted, setDevicePermissionsGranted] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(true);
 
   useEffect(() => {
     initializeSession();
   }, [roomId]);
+  
+  // Request device permissions before joining
+  const requestDevicePermissions = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true,
+        audio: true 
+      });
+      // Stop the stream after getting permissions
+      stream.getTracks().forEach(track => track.stop());
+      setDevicePermissionsGranted(true);
+      return true;
+    } catch (err) {
+      console.error('Failed to get device permissions:', err);
+      setError('Please grant camera and microphone permissions to join the session.');
+      return false;
+    }
+  }, []);
 
   const initializeSession = async () => {
     try {
@@ -133,19 +159,62 @@ const VideoCallPage = () => {
     );
   }
 
+  // Handle pre-join completion
+  const handlePreJoinComplete = async ({ audioEnabled, videoEnabled }) => {
+    setAudioEnabled(audioEnabled);
+    setVideoEnabled(videoEnabled);
+    setPreJoinComplete(true);
+  };
+
+  // Render pre-join screen
+  if (tokenData && !preJoinComplete) {
+    return (
+      <div className="h-screen bg-gray-900">
+        <PreJoin
+          onError={(err) => setError(err.message)}
+          onComplete={handlePreJoinComplete}
+          defaults={{
+            username: `${user.first_name} ${user.last_name}`,
+            videoEnabled: true,
+            audioEnabled: true,
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gray-900">
-      <LiveKitRoom
-        token={tokenData.token}
-        serverUrl={tokenData.url}
-        connect={true}
-        onConnected={() => console.log("✅ Connected to room")}
-        onDisconnected={handleDisconnect}
-        data-lk-theme="default"
-        style={{ height: "100vh" }}
-      >
-        <VideoConference />
-      </LiveKitRoom>
+      {!devicePermissionsGranted ? (
+        <div className="flex flex-col items-center justify-center h-full text-white">
+          <h2 className="text-2xl mb-4">Device Permissions Required</h2>
+          <p className="mb-4">Please allow access to your camera and microphone to join the session.</p>
+          <button
+            onClick={requestDevicePermissions}
+            className="bg-blue-600 px-5 py-2 rounded hover:bg-blue-700"
+          >
+            Grant Permissions
+          </button>
+        </div>
+      ) : (
+        <LiveKitRoom
+          token={tokenData.token}
+          serverUrl={tokenData.url}
+          connect={true}
+          onConnected={() => console.log("✅ Connected to room")}
+          onDisconnected={handleDisconnect}
+          onError={(err) => setError(err.message)}
+          // Audio/video settings
+          audio={audioEnabled}
+          video={videoEnabled}
+          data-lk-theme="default"
+          style={{ height: "100vh" }}
+        >
+          <VideoConference />
+          <RoomAudioRenderer />
+          <ControlBar />
+        </LiveKitRoom>
+      )}
     </div>
   );
 };
