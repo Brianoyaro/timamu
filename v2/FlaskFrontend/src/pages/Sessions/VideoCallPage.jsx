@@ -8,7 +8,7 @@ import {
   ControlBar,
   RoomAudioRenderer,
   useTracks,
-  PreJoin
+  PreJoin,
 } from "@livekit/components-react";
 import { Track } from 'livekit-client';
 import "@livekit/components-styles";
@@ -87,7 +87,7 @@ const VideoCallPage = () => {
       setSession(currentSession);
 
       // LiveKit URL
-      const liveKitUrl = process.env.LIVE_KIT_URL;
+      const liveKitUrl = import.meta.env.VITE_LIVE_KIT_URL;
       const endpoint = liveKitUrl + '/token';
       // Get LiveKit token
       const tokenResponse = await fetch(endpoint, {
@@ -166,19 +166,60 @@ const VideoCallPage = () => {
     setPreJoinComplete(true);
   };
 
-  // Render pre-join screen
+  // Render simple pre-join screen (custom) to avoid incompatibilities with upstream PreJoin props
   if (tokenData && !preJoinComplete) {
+    const handleJoinClick = async () => {
+      // Ensure device permissions before joining
+      const ok = await requestDevicePermissions();
+      if (!ok) return;
+      // Apply audio/video defaults and complete pre-join
+      setAudioEnabled(!!audioEnabled);
+      setVideoEnabled(!!videoEnabled);
+      setPreJoinComplete(true);
+    };
+
     return (
-      <div className="h-screen bg-gray-900">
-        <PreJoin
-          onError={(err) => setError(err.message)}
-          onComplete={handlePreJoinComplete}
-          defaults={{
-            username: `${user.first_name} ${user.last_name}`,
-            videoEnabled: true,
-            audioEnabled: true,
-          }}
-        />
+      <div className="h-screen bg-gray-900 flex items-center justify-center">
+        <div className="bg-white/5 p-6 rounded-lg text-white w-full max-w-md">
+          <h2 className="text-xl font-semibold mb-4">Pre-join: {user?.first_name} {user?.last_name}</h2>
+          <p className="text-sm mb-4">Check your camera and microphone before joining.</p>
+
+          <div className="flex items-center gap-4 mb-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={audioEnabled}
+                onChange={(e) => setAudioEnabled(e.target.checked)}
+              />
+              <span className="text-sm">Microphone</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={videoEnabled}
+                onChange={(e) => setVideoEnabled(e.target.checked)}
+              />
+              <span className="text-sm">Camera</span>
+            </label>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleJoinClick}
+              className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Join Session
+            </button>
+
+            <button
+              onClick={requestDevicePermissions}
+              className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Test Devices
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -212,7 +253,6 @@ const VideoCallPage = () => {
         >
           <VideoConference />
           <RoomAudioRenderer />
-          <ControlBar />
         </LiveKitRoom>
       )}
     </div>
