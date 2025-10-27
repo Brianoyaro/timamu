@@ -263,8 +263,25 @@ const VideoCallPage = () => {
           data-lk-theme="default"
           style={{ height: "100vh" }}
         >
-          <VideoConference />
+          <VideoConference
+            className="h-full"
+            // Enable screen sharing
+            enableScreenShare={true}
+            // Show more participants in the grid
+            showParticipantNames={true}
+            participantCount="all"
+            // Default to gallery view for multiple participants
+            layout="grid"
+          />
           <RoomAudioRenderer />
+          <ControlBar
+            controls={{
+              microphone: true,
+              camera: true,
+              screenShare: true,
+              leave: true,
+            }}
+          />
         </LiveKitRoom>
       )}
     </div>
