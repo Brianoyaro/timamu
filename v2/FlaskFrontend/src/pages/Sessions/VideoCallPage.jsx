@@ -9,7 +9,6 @@ import {
   ControlBar,
   RoomAudioRenderer,
   useTracks,
-  PreJoin,
 } from "@livekit/components-react";
 import { Track } from 'livekit-client';
 import "@livekit/components-styles";
@@ -57,14 +56,14 @@ const VideoCallPage = () => {
     try {
       setLoading(true);
       console.log('=== INITIALIZING SESSION ===');
-      
+
       if (!isAuthenticated) {
         throw new Error('Not authenticated');
       }
 
       // Ensure we have complete user data
       let currentUser = user;
-      if (!currentUser || !currentUser.first_name) {
+      if (!currentUser || (!currentUser.first_name && !currentUser.firstName && !currentUser.name)) {
         currentUser = await loadUser();
         if (!currentUser) {
           throw new Error('Failed to load user data');
@@ -87,43 +86,57 @@ const VideoCallPage = () => {
 
       setSession(currentSession);
 
-      // Get LiveKit token from MediaSoup server
-      const liveKitUrl = import.meta.env.VITE_LIVE_KIT_URL;
-          
-      console.log('[VideoCall] Requesting LiveKit token from:', liveKitUrl);
+      // LiveKit helper server URL
+      const tokenServer = import.meta.env.VITE_LIVE_KIT_URL || 'http://localhost:8000';
+      console.log('[VideoCall] Requesting LiveKit token from:', tokenServer);
 
-      // Create axios instance for LiveKit
       const liveKitApi = axios.create({
-        baseURL: liveKitUrl,
+        baseURL: tokenServer,
         headers: { 'Content-Type': 'application/json' }
       });
 
-      // Get LiveKit token
-      let data;
-      let { data: liveKitData } = await liveKitApi.post('/token', {
-        participantName: `${currentUser.first_name} ${currentUser.last_name}`,
-        roomName: roomId
-      });
-	    console.log(liveKitData);
+      // Extract a display name from available sources
+      let displayName = '';
+      
+      // Try user's name fields first
+      const firstName = currentUser?.first_name ?? currentUser?.firstName ?? currentUser?.given_name ?? '';
+      const lastName = currentUser?.last_name ?? currentUser?.lastName ?? currentUser?.family_name ?? '';
+      if (firstName || lastName) {
+        displayName = `${firstName} ${lastName}`.trim();
+      }
+      
+      // If no name fields, try to extract from email
+      if (!displayName && currentUser?.email) {
+        // Extract the part before @ and convert to title case
+        const emailName = currentUser.email.split('@')[0]
+          .split(/[._-]/)
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ');
+        displayName = emailName;
+      }
+      
+      // Final fallback
+      displayName = displayName || currentUser?.name || 'Anonymous';
+      
+      console.log('[VideoCall] Using display name:', displayName, 'for user:', currentUser);
 
-      if (!liveKitData?.token || !liveKitData?.url) {
+      // Request token with display name
+      const { data: liveKitData } = await liveKitApi.post('/token', {
+        participantName: displayName,
+        roomName: roomId,
+      });
+
+      if (!liveKitData || !liveKitData.token || !liveKitData.url) {
+        console.error('[VideoCall] invalid token response:', liveKitData);
         throw new Error('Invalid LiveKit token response');
       }
 
+      // Store token; don't mark `joined` true until the room confirms connection
       setTokenData(liveKitData);
-      setJoined(true);
-
-      if (liveKitData?.token && liveKitData?.url) {
-        setTokenData(liveKitData);
-        setJoined(true);
-      } else {
-        throw new Error('Failed to get LiveKit token');
-      }
-
       setLoading(false);
     } catch (err) {
       console.error('Failed to initialize session:', err);
-      setError(err.message);
+      setError(err.message || String(err));
       setLoading(false);
     }
   };
@@ -157,7 +170,7 @@ const VideoCallPage = () => {
     );
   }
 
-  if (!tokenData || !joined) {
+  if (!tokenData) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
         <h2 className="text-2xl mb-4">Failed to join session</h2>
@@ -236,6 +249,25 @@ const VideoCallPage = () => {
     );
   }
 
+  // Monitor remote media streams
+  const StreamDebug = () => {
+    // Get all camera and microphone tracks
+    const tracks = useTracks([
+      Track.Source.Camera,
+      Track.Source.Microphone,
+    ]);
+    
+    React.useEffect(() => {
+      // Log only when remote tracks change
+      const remoteTrackCount = tracks.filter(track => !track.participant.isLocal).length;
+      if (remoteTrackCount > 0) {
+        console.log(`✅ Receiving ${remoteTrackCount} remote media tracks`);
+      }
+    }, [tracks]);
+
+    return null; // No UI, just monitoring
+  };
+
   return (
     <div className="h-screen bg-gray-900">
       {!devicePermissionsGranted ? (
@@ -254,34 +286,43 @@ const VideoCallPage = () => {
           token={tokenData.token}
           serverUrl={tokenData.url}
           connect={true}
-          onConnected={() => console.log("✅ Connected to room")}
           onDisconnected={handleDisconnect}
-          onError={(err) => setError(err.message)}
-          // Audio/video settings
+          onError={(err) => setError(err?.message || String(err))}
           audio={audioEnabled}
           video={videoEnabled}
           data-lk-theme="default"
           style={{ height: "100vh" }}
         >
-          <VideoConference
-            className="h-full"
-            // Enable screen sharing
-            enableScreenShare={true}
-            // Show more participants in the grid
-            showParticipantNames={true}
-            participantCount="all"
-            // Default to gallery view for multiple participants
-            layout="grid"
-          />
+          <div className="h-full flex flex-col">
+            <StreamDebug />
+            <VideoConference
+              style={{
+                // Focus on grid layout optimized for video streams
+                gridTemplate: 'repeat(auto-fit, minmax(40%, 1fr))',
+                gap: '1rem',
+                padding: '1rem',
+              }}
+            />
+            {/* Using VideoConference's built-in controls instead
+            <ControlBar
+              controls={{
+                microphone: true,
+                camera: true,
+                leave: true,
+              }}
+              style={{
+                position: 'fixed',
+                bottom: '1rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.5)',
+                borderRadius: '2rem',
+                padding: '0.5rem',
+              }}
+            />
+            */}
+          </div>
           <RoomAudioRenderer />
-          <ControlBar
-            controls={{
-              microphone: true,
-              camera: true,
-              screenShare: true,
-              leave: true,
-            }}
-          />
         </LiveKitRoom>
       )}
     </div>
