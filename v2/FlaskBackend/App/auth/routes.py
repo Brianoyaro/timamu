@@ -184,10 +184,53 @@ def register():
         db.session.add(new_refresh_token)
         db.session.commit()
         
+        # Get complete profile data
+        profile_data = None
+        if data.get('role') == 'PATIENT':
+            patient_profile = PatientProfile.query.filter_by(user_id=user.id).first()
+            if patient_profile:
+                profile_data = {
+                    'date_of_birth': patient_profile.date_of_birth.isoformat() if patient_profile.date_of_birth else None,
+                    'medical_history': patient_profile.medical_history,
+                    'emergency_contact': patient_profile.emergency_contact,
+                    'preferred_language': patient_profile.preferred_language,
+                    'timezone': patient_profile.timezone,
+                    'phone': patient_profile.phone,
+                    'address': patient_profile.address,
+                    'isComplete': bool(patient_profile.date_of_birth and patient_profile.phone and patient_profile.emergency_contact)
+                }
+        elif data.get('role') == 'THERAPIST':
+            therapist_profile = TherapistProfile.query.filter_by(user_id=user.id).first()
+            if therapist_profile:
+                profile_data = {
+                    'license_number': therapist_profile.license_number,
+                    'specializations': therapist_profile.specializations,
+                    'languages': therapist_profile.languages,
+                    'experience': therapist_profile.experience,
+                    'education': therapist_profile.education,
+                    'bio': therapist_profile.bio,
+                    'is_approved': therapist_profile.is_approved,
+                    'timezone': therapist_profile.timezone,
+                    'accepts_emergency': therapist_profile.accepts_emergency,
+                    'isComplete': bool(therapist_profile.license_number and therapist_profile.bio and therapist_profile.specializations)
+                }
+
         create_audit_log('REGISTER', user.id, user.email, 'AUTH', status='SUCCESS')
         logging.info(f'Registration successful for {user.email}')
         logger.debug("=== REGISTER ROUTE COMPLETED SUCCESSFULLY ===")
-        return jsonify({'access_token': access_token, 'refresh_token': refresh_token, 'user': {'id': user.id, 'email': user.email, 'role': user.role}})
+        return jsonify({
+            'access_token': access_token, 
+            'refresh_token': refresh_token, 
+            'user': {
+                'id': user.id, 
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role,
+                'is_verified': user.is_verified,
+                'profile': profile_data
+            }
+        })
     
     except Exception as e:
         logger.error(f"Exception in register route: {str(e)}")

@@ -87,7 +87,7 @@ const VideoCallPage = () => {
       setSession(currentSession);
 
       // LiveKit URL
-      const liveKitUrl = process.env.LIVE_KIT_URL || 'http://localhost:8000';
+      const liveKitUrl = process.env.LIVE_KIT_URL;
       const endpoint = liveKitUrl + '/token';
       // Get LiveKit token
       const tokenResponse = await fetch(endpoint, {
