@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../utils/api';
+import axios from 'axios';
 import {
   LiveKitRoom,
   VideoConference,
@@ -86,23 +87,34 @@ const VideoCallPage = () => {
 
       setSession(currentSession);
 
-      // LiveKit URL
+      // Get LiveKit token from MediaSoup server
       const liveKitUrl = import.meta.env.VITE_LIVE_KIT_URL;
-      const endpoint = liveKitUrl + '/token';
-      // Get LiveKit token
-      const tokenResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          participantName: `${currentUser.first_name} ${currentUser.last_name}`,
-          roomName: roomId
-        }),
+          
+      console.log('[VideoCall] Requesting LiveKit token from:', liveKitUrl);
+
+      // Create axios instance for LiveKit
+      const liveKitApi = axios.create({
+        baseURL: liveKitUrl,
+        headers: { 'Content-Type': 'application/json' }
       });
 
-      const data = await tokenResponse.json();
+      // Get LiveKit token
+      let data;
+      let { data: liveKitData } = await liveKitApi.post('/token', {
+        participantName: `${currentUser.first_name} ${currentUser.last_name}`,
+        roomName: roomId
+      });
+	    console.log(liveKitData);
 
-      if (data?.token && data?.url) {
-        setTokenData(data);
+      if (!liveKitData?.token || !liveKitData?.url) {
+        throw new Error('Invalid LiveKit token response');
+      }
+
+      setTokenData(liveKitData);
+      setJoined(true);
+
+      if (liveKitData?.token && liveKitData?.url) {
+        setTokenData(liveKitData);
         setJoined(true);
       } else {
         throw new Error('Failed to get LiveKit token');
