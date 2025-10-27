@@ -60,8 +60,11 @@ const VideoCallPage = () => {
 
       setSession(currentSession);
 
+      // LiveKit URL
+      const liveKitUrl = process.env.LIVE_KIT_URL || 'http://localhost:8000';
+      const endpoint = livekitUrl + '/token';
       // Get LiveKit token
-      const tokenResponse = await fetch("http://localhost:8000/token", {
+      const tokenResponse = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
