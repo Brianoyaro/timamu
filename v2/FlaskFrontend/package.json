@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.15",
+    "@livekit/components-styles": "^1.1.6",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "mediasoup-client": "^3.7.32",

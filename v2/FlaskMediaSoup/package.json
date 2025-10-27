@@ -8,16 +8,22 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "mediasoup": "^3.12.16",
-    "socket.io": "^4.7.4",
-    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "livekit-server-sdk": "^2.14.0",
+    "mediasoup": "^3.12.16",
+    "socket.io": "^4.7.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
-  "keywords": ["mediasoup", "webrtc", "video", "timamu"],
+  "keywords": [
+    "mediasoup",
+    "webrtc",
+    "video",
+    "timamu"
+  ],
   "author": "Timamu Team",
   "license": "MIT"
 }
