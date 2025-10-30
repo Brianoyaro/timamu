@@ -428,12 +428,16 @@ def join_session(session_id):
     if session.status in ['cancelled', 'completed', 'no_show', 'forfeited']:
         return jsonify({'error': f'Cannot join session with status: {session.status}'}), 400
     
-    # Check timing and enforce attendance window (REMOVED 15-minute constraint for testing)
+    # Check timing with more flexible windows
     now = datetime.utcnow()
-    grace_period_end = session.scheduled_at + timedelta(minutes=30)   # 30 minutes after start
-    absolute_deadline = session.scheduled_at + timedelta(hours=1)     # 1 hour max (for emergencies)
+    # Allow joining up to 24 hours before the session
+    join_window_start = session.scheduled_at - timedelta(hours=24)
+    # Grace period of 30 minutes after scheduled time
+    grace_period_end = session.scheduled_at + timedelta(minutes=30)
+    # Maximum session length of 1 hour
+    absolute_deadline = session.scheduled_at + timedelta(hours=1)
     
-    # Allow joining anytime before grace period ends (removed 15-minute restriction)
+    # Allow joining within the expanded window
     
     # If session is past the grace period, mark as forfeited/no-show
     if now > grace_period_end and session.status == 'scheduled':
@@ -895,3 +899,57 @@ def get_session_status(session_id):
             'absolute_deadline': absolute_deadline.isoformat()
         }
     })
+
+
+@sessions_bp.route('/<int:session_id>/leave', methods=['POST'])
+@jwt_required()
+def leave_session(session_id):
+    """Record when a participant leaves the session and update session status if needed"""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    # Check permissions
+    if current_user_id not in [session.patient_id, session.therapist_id]:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    now = datetime.utcnow()
+    
+    # Update participant record
+    participant = SessionParticipant.query.filter_by(
+        session_id=session_id,
+        user_id=current_user_id
+    ).first()
+    
+    if participant:
+        participant.left_at = now
+    
+    # Check if both participants have left
+    all_participants = SessionParticipant.query.filter_by(session_id=session_id).all()
+    all_left = all(p.left_at is not None for p in all_participants)
+    both_joined = len(all_participants) == 2
+    
+    # If both participants joined and both have left, mark session as completed
+    if both_joined and all_left and session.status == 'started':
+        session.status = 'completed'
+        session.ended_at = now
+        session.updated_at = now
+        
+        # Calculate actual duration
+        if session.started_at:
+            latest_left = max(p.left_at for p in all_participants)
+            duration_minutes = int((latest_left - session.started_at).total_seconds() / 60)
+            session.actual_duration = duration_minutes
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'message': 'Session left successfully',
+            'session_status': session.status
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update session: {str(e)}'}), 500

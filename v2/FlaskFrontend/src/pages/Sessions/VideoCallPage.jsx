@@ -141,7 +141,15 @@ const VideoCallPage = () => {
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
+    if (session?.id) {
+      try {
+        // Notify backend that user has left the session
+        await api.post(`/sessions/${session.id}/leave`);
+      } catch (err) {
+        console.error('Failed to update session status:', err);
+      }
+    }
     setJoined(false);
     setTokenData(null);
     navigate('/sessions');
