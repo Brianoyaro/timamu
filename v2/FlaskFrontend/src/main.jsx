@@ -29,6 +29,10 @@ import VideoCallPage from './pages/Sessions/VideoCallPage.jsx';
 // Therapist Pages
 import TherapistDetailPage from './pages/Therapists/TherapistDetailPage.jsx';
 
+// Patient Pages
+import PatientListPage from './pages/Patients/PatientListPage.jsx';
+import PatientDetailPage from './pages/Patients/PatientDetailPage.jsx';
+
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 
@@ -111,6 +115,12 @@ const App = () => {
             <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
             <Route path="therapists/:therapistId" element={<TherapistDetailPage />} />
             <Route path="video-call/:roomId" element={<VideoCallPage />} />
+
+            {/* Patient management routes - only accessible by therapists */}
+            <Route element={<ProtectedRoute requiredRole="THERAPIST" />}>
+              <Route path="patients" element={<PatientListPage />} />
+              <Route path="patients/:patientId" element={<PatientDetailPage />} />
+            </Route>
           </Route>
 
           {/* Admin routes */}

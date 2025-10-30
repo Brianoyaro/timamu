@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SessionStatusBadge from './SessionStatusBadge';
 import SessionTimer from './SessionTimer';
 import { useSessionStore } from '../../stores/sessionStore';
-import { FiCalendar, FiClock, FiUser, FiVideo, FiEye, FiX } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUser, FiVideo, FiEye, FiX, FiStar } from 'react-icons/fi';
 
 const SessionCard = ({ 
   session, 
@@ -170,6 +170,16 @@ const SessionCard = ({
               <FiVideo className="h-4 w-4" />
               Join Session
             </button>
+          )}
+          
+          {session.status === 'completed' && !session.has_review && !therapistView && (
+            <Link
+              to={`/therapists/${session.therapist_id}?review=true`}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <FiStar className="h-4 w-4" />
+              Write Review
+            </Link>
           )}
           
           {canCancel && (
