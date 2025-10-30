@@ -6,6 +6,7 @@ import api from '../../utils/api';
 
 // Components
 import SessionCard from '../../components/Sessions/SessionCard';
+import WellnessTip from './WellnessTip';
 
 // Icons
 import { 
@@ -340,23 +341,7 @@ const PatientDashboard = ({ stats, user }) => {
             </div>
 
             {/* Wellness Tips */}
-            <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border border-green-200">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <FiStar className="h-5 w-5 text-green-600" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">Wellness Tip</h2>
-                </div>
-                <p className="text-gray-700 mb-4">
-                  "Take 5 minutes today to practice deep breathing. It can help reduce stress and improve your mood."
-                </p>
-                <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                  <FiCheckCircle className="h-4 w-4" />
-                  Try it now
-                </div>
-              </div>
-            </div>
+            <WellnessTip />
 
             {/* Support */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
