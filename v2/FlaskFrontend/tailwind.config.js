@@ -37,4 +37,12 @@ export default {
     },
   },
   plugins: [],
+  safelist: [
+    {
+      pattern: /(bg|text|border)-(blue|purple|pink|yellow|green|indigo|teal)-(50|100|200|600|900)/,
+    },
+    {
+      pattern: /hover:bg-(blue|purple|pink|yellow|green|indigo|teal)-100/,
+    }
+  ]
 }

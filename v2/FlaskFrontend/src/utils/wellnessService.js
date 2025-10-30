@@ -99,11 +99,11 @@ class WellnessService {
         const colors = {
             'mindfulness': 'blue',
             'stress-management': 'purple',
-            'self-care': 'pink',
+            'self-care': 'indigo', // Changed from pink to indigo for better Tailwind support
             'emotional-wellness': 'yellow',
             'healthy-habits': 'green',
-            'social-connection': 'indigo',
-            'sleep-hygiene': 'blue',
+            'social-connection': 'blue',
+            'sleep-hygiene': 'purple',
             'anxiety-management': 'teal'
         };
         
