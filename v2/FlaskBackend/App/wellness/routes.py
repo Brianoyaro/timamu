@@ -99,7 +99,7 @@ def get_fallback_tip():
 
 @wellness_bp.route('/tips', methods=['GET'])
 @jwt_required()
-async def get_wellness_tip():
+def get_wellness_tip():
     """Get a personalized wellness tip"""
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
@@ -117,7 +117,7 @@ async def get_wellness_tip():
         }
         
         # Generate new tip
-        tip = await get_ai_wellness_tip(user_info)
+        tip = get_ai_wellness_tip(user_info)
         if not tip:
             tip = get_fallback_tip()
         
@@ -130,7 +130,7 @@ async def get_wellness_tip():
 
 @wellness_bp.route('/tips/refresh', methods=['POST'])
 @jwt_required()
-async def refresh_wellness_tip():
+def refresh_wellness_tip():
     """Force refresh the wellness tip"""
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
@@ -141,7 +141,7 @@ async def refresh_wellness_tip():
     }
     
     # Generate new tip
-    tip = await get_ai_wellness_tip(user_info)
+    tip = get_ai_wellness_tip(user_info)
     if not tip:
         tip = get_fallback_tip()
     
