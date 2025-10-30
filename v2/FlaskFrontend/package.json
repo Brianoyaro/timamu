@@ -10,8 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@livekit/components-react": "^2.9.15",
     "@livekit/components-styles": "^1.1.6",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
+    "@mui/x-charts": "^8.16.0",
+    "@mui/x-data-grid": "^8.16.0",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "mediasoup-client": "^3.7.32",

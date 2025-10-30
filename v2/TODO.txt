@@ -1,0 +1,3 @@
+Access to XMLHttpRequest at 'http://localhost:5000/api/patients' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+
+

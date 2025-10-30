@@ -45,7 +45,7 @@ def list_patients():
                     'email': patient.email,
                     'first_name': patient.first_name,
                     'last_name': patient.last_name,
-                    'phone': profile.phone if profile else None,
+                    'phone': patient.phone,  # phone is on User model
                     'address': profile.address if profile else None,
                     'created_at': patient.created_at.isoformat() if patient.created_at else None
                 }
@@ -113,7 +113,7 @@ def get_patient_detail(patient_id):
             'last_name': patient.last_name,
             'profile': {
                 'date_of_birth': profile.date_of_birth.isoformat() if profile and profile.date_of_birth else None,
-                'phone': profile.phone if profile else None,
+                'phone': patient.phone,  # phone is on User model
                 'address': profile.address if profile else None,
                 'emergency_contact': profile.emergency_contact if profile else None,
                 'preferred_language': profile.preferred_language if profile else None,
@@ -121,7 +121,8 @@ def get_patient_detail(patient_id):
             } if profile else None,
             'sessions': sessions_data,
             'created_at': patient.created_at.isoformat() if patient.created_at else None,
-            'updated_at': patient.updated_at.isoformat() if patient.updated_at else None
+            # User model may not have an `updated_at` field; use getattr to avoid AttributeError
+            'updated_at': getattr(patient, 'updated_at', None).isoformat() if getattr(patient, 'updated_at', None) else None
         }
 
         return jsonify(patient_data)
