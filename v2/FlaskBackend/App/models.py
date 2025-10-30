@@ -344,3 +344,105 @@ class RefreshToken(db.Model):
     refresh_token = db.Column(db.String(512), unique=True, nullable=False)  # Increased to 512 for long JWT tokens
     revoked = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref='refresh_tokens')
+
+class ConversationThread(db.Model):
+    """A conversation thread between two users (patient-therapist)"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Participants
+    patient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    therapist_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_message_at = db.Column(db.DateTime)  # For sorting threads
+    
+    # Status
+    is_archived = db.Column(db.Boolean, default=False)  # For hiding/archiving conversations
+    patient_archived = db.Column(db.Boolean, default=False)  # Allow each user to archive independently
+    therapist_archived = db.Column(db.Boolean, default=False)
+    
+    # Optional session context
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'))
+    
+    # Relationships
+    patient = db.relationship('User', foreign_keys=[patient_id], backref='patient_conversations')
+    therapist = db.relationship('User', foreign_keys=[therapist_id], backref='therapist_conversations')
+    session = db.relationship('Session', backref='conversation_threads')
+    messages = db.relationship('ThreadMessage', backref='thread', lazy='dynamic', order_by='ThreadMessage.created_at')
+    
+    def mark_read_for_user(self, user_id):
+        """Mark all messages in thread as read for given user"""
+        unread = ThreadMessage.query.filter(
+            ThreadMessage.thread_id == self.id,
+            ThreadMessage.receiver_id == user_id,
+            ThreadMessage.is_read == False
+        ).all()
+        
+        for msg in unread:
+            msg.is_read = True
+            msg.read_at = datetime.utcnow()
+        
+        db.session.commit()
+    
+    def get_unread_count(self, user_id):
+        """Get number of unread messages for given user"""
+        return ThreadMessage.query.filter(
+            ThreadMessage.thread_id == self.id,
+            ThreadMessage.receiver_id == user_id,
+            ThreadMessage.is_read == False
+        ).count()
+
+class ThreadMessage(db.Model):
+    """A message within a conversation thread"""
+    id = db.Column(db.Integer, primary_key=True)
+    thread_id = db.Column(db.Integer, db.ForeignKey('conversation_thread.id'), nullable=False)
+    
+    # Sender and receiver
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Content
+    content = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(20), default='text')  # text, image, file, system
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
+    read_at = db.Column(db.DateTime)
+    
+    # For edited messages
+    is_edited = db.Column(db.Boolean, default=False)
+    edit_history = db.Column(db.JSON)  # Store previous versions if needed
+    
+    # For rich content
+    attachments = db.Column(db.JSON)  # Store file IDs or metadata
+    
+    # Relationships
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_thread_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_thread_messages')
+    
+    def mark_read(self):
+        """Mark message as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = datetime.utcnow()
+            db.session.commit()
+            
+    def to_dict(self):
+        """Convert message to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'thread_id': self.thread_id,
+            'sender_id': self.sender_id,
+            'receiver_id': self.receiver_id,
+            'content': self.content,
+            'message_type': self.message_type,
+            'created_at': self.created_at.isoformat(),
+            'is_read': self.is_read,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'is_edited': self.is_edited,
+            'attachments': self.attachments
+        }
