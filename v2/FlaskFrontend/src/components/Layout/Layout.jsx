@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import useMessageStore from '../../stores/messageStore';
 import { enhancedLogout } from '../../utils/authUtils';
 import ToastContainer from '../common/ToastContainer';
 
 const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
+  const unreadCount = useMessageStore((state) => state.unreadCount);
+  const fetchUnreadCount = useMessageStore((state) => state.fetchUnreadCount);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const initialize = useAuthStore((state) => state.initialize);
@@ -20,7 +23,8 @@ const Layout = () => {
     if (!isInitialized) {
       initialize();
     }
-  }, [isInitialized, initialize]);
+    fetchUnreadCount();
+  }, [isInitialized, initialize, fetchUnreadCount]);
 
   // Load user data if we're authenticated but missing user info
   useEffect(() => {
@@ -88,6 +92,19 @@ const Layout = () => {
                     className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
                     Dashboard
+                  </Link>
+                )}
+                {isAuthenticated && (
+                  <Link
+                    to="/messages"
+                    className="relative border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Messages
+                    {unreadCount > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 )}
                 
@@ -202,6 +219,20 @@ const Layout = () => {
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
               >
                 Dashboard
+              </Link>
+            )}
+            {isAuthenticated && (
+              <Link
+                to="/messages"
+                onClick={closeMobileMenu}
+                className="relative block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              >
+                Messages
+                {unreadCount > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             )}
             {isAuthenticated && (

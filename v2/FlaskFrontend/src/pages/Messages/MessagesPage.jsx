@@ -12,8 +12,8 @@ import {
 export default function MessagesPage() {
   const navigate = useNavigate();
   const {
-    conversations,
-    messages,
+    conversations = [], // Provide default empty array
+    messages = [], // Provide default empty array
     currentConversation,
     fetchConversations,
     fetchMessages,
@@ -54,7 +54,7 @@ export default function MessagesPage() {
   };
 
   const loadMessages = async () => {
-    if (!currentConversation) return;
+    if (!currentConversation?.id) return;
     try {
       await fetchMessages(currentConversation.id, page);
     } catch (error) {
@@ -62,15 +62,19 @@ export default function MessagesPage() {
     }
   };
 
-  const handleSelectConversation = (conversation) => {
+  const handleSelectConversation = async (conversation) => {
     setCurrentConversation(conversation);
     clearMessages();
     setPage(1);
+    // Fetch messages for the selected conversation
+    if (conversation?.id) {
+      await fetchMessages(conversation.id, 1);
+    }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() && !fileInputRef.current?.files?.length) return;
+    if (!currentConversation?.id || (!newMessage.trim() && !fileInputRef.current?.files?.length)) return;
 
     try {
       let attachments = null;
@@ -79,9 +83,9 @@ export default function MessagesPage() {
         // This is a placeholder - implement actual file upload logic
         attachments = {
           files: Array.from(fileInputRef.current.files).map(file => ({
-            name: file.name,
-            type: file.type,
-            size: file.size
+            name: file.name || 'Unknown file',
+            type: file.type || 'application/octet-stream',
+            size: file.size || 0
           }))
         };
       }
@@ -136,8 +140,8 @@ export default function MessagesPage() {
             </div>
           ) : (
             conversations.map((conversation) => {
-              // Skip if conversation is invalid
-              if (!conversation || !conversation.participant) return null;
+              // Skip if conversation is invalid or missing required properties
+              if (!conversation?.id || !conversation?.participant) return null;
               const otherParticipant = conversation.participant;
               const isSelected = currentConversation?.id === conversation.id;
               
@@ -216,8 +220,11 @@ export default function MessagesPage() {
 
             {/* Messages List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => {
-                const isSentByMe = message.sender.id === user.id;
+              {messages?.map((message) => {
+                // Skip invalid messages
+                if (!message?.id || !message?.sender) return null;
+                
+                const isSentByMe = message.sender?.id === user?.id;
                 
                 return (
                   <div
@@ -231,8 +238,8 @@ export default function MessagesPage() {
                           : 'bg-white text-gray-900 shadow-sm'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      {message.attachments && (
+                      <p className="text-sm">{message.content || ''}</p>
+                      {message.attachments?.files?.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {message.attachments.files.map((file, index) => (
                             <div
@@ -242,7 +249,7 @@ export default function MessagesPage() {
                               }`}
                             >
                               <AttachmentIcon className="h-4 w-4 mr-1" />
-                              <span>{file.name}</span>
+                              <span>{file?.name || 'Unknown file'}</span>
                             </div>
                           ))}
                         </div>
@@ -252,7 +259,7 @@ export default function MessagesPage() {
                           isSentByMe ? 'text-indigo-100' : 'text-gray-500'
                         }`}
                       >
-                        {formatMessageTime(message.created_at)}
+                        {message.created_at ? formatMessageTime(message.created_at) : ''}
                       </div>
                     </div>
                   </div>
