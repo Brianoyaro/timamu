@@ -52,7 +52,19 @@ export default function MessagesPage() {
       const response = await api.get(`/messages/conversations/${threadId}/messages`, {
         params: { page, perPage }
       });
-      setMessages(response.data.messages || []);
+      // Map messages to inject sender object for rendering
+      const msgs = (response.data.messages || []).map(msg => {
+        let sender = null;
+        if (msg.sender_id === user?.id) {
+          sender = user;
+        } else if (currentConversation?.participant && msg.sender_id === currentConversation.participant.id) {
+          sender = currentConversation.participant;
+        } else {
+          sender = { id: msg.sender_id, name: 'Unknown', role: 'user' };
+        }
+        return { ...msg, sender };
+      });
+      setMessages(msgs);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
