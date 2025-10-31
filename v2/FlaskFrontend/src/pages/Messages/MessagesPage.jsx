@@ -116,9 +116,11 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)]">
       {/* Conversations List */}
-      <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto">
+      <div className={`${
+        currentConversation ? 'hidden md:block' : 'block'
+      } md:w-1/3 border-r border-gray-200 bg-white overflow-y-auto`}>
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
         </div>
@@ -128,38 +130,38 @@ export default function MessagesPage() {
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             </div>
-          ) : conversations.length === 0 ? (
+          ) : !conversations || conversations.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               No conversations yet
             </div>
           ) : (
             conversations.map((conversation) => {
+              // Skip if conversation is invalid
+              if (!conversation || !conversation.participant) return null;
               const otherParticipant = conversation.participant;
               const isSelected = currentConversation?.id === conversation.id;
               
               return (
                 <button
-                  key={conversation.id}
-                  onClick={() => handleSelectConversation(conversation)}
-                  className={`w-full p-4 hover:bg-gray-50 flex items-start transition-colors ${
-                    isSelected ? 'bg-indigo-50' : ''
-                  }`}
-                >
-                  <div className="relative flex-shrink-0">
-                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
-                      {otherParticipant.name.charAt(0)}
-                    </div>
-                    {conversation.unread_count > 0 && (
-                      <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-xs text-white">{conversation.unread_count}</span>
-                      </div>
-                    )}
+              key={conversation.id}
+              onClick={() => handleSelectConversation(conversation)}
+              className={`w-full p-4 hover:bg-gray-50 flex items-start transition-colors ${
+                isSelected ? 'bg-indigo-50' : ''
+              }`}
+            >
+              <div className="relative flex-shrink-0">
+                <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                  {otherParticipant?.name?.charAt(0) || '?'}
+                </div>
+                {conversation.unread_count > 0 && (
+                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-white">{conversation.unread_count}</span>
                   </div>
-                  
-                  <div className="ml-3 flex-1 overflow-hidden">
+                )}
+              </div>                  <div className="ml-3 flex-1 overflow-hidden">
                     <div className="flex justify-between items-baseline">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {otherParticipant.name}
+                        {otherParticipant?.name || 'Unknown'}
                       </p>
                       {conversation.last_message_at && (
                         <p className="text-xs text-gray-500">
@@ -169,7 +171,7 @@ export default function MessagesPage() {
                     </div>
                     {conversation.last_message && (
                       <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message.content}
+                        {conversation.last_message.content || ''}
                       </p>
                     )}
                   </div>
@@ -182,21 +184,31 @@ export default function MessagesPage() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className={`${
+        !currentConversation ? 'hidden md:flex' : 'flex'
+      } flex-1 flex-col bg-gray-50`}>
         {currentConversation ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b border-gray-200 bg-white">
               <div className="flex items-center">
+                <button 
+                  onClick={() => setCurrentConversation(null)} 
+                  className="md:hidden mr-2 p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
-                  {currentConversation.participant.name.charAt(0)}
+                  {currentConversation.participant?.name?.charAt(0) || '?'}
                 </div>
                 <div className="ml-3">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {currentConversation.participant.name}
+                    {currentConversation.participant?.name || 'Unknown'}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {currentConversation.participant.role.toLowerCase()}
+                    {currentConversation.participant?.role?.toLowerCase() || 'user'}
                   </p>
                 </div>
               </div>
