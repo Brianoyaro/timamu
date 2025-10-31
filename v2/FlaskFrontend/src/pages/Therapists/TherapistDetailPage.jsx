@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useTokenValidator } from '../../hooks/useTokenValidator';
+import useMessageStore from '../../stores/messageStore';
+import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import ReviewModal from '../../components/Reviews/ReviewModal';
 
@@ -128,9 +130,18 @@ const TherapistDetailPage = () => {
     navigate(`/sessions/schedule?therapist=${therapistId}&view=calendar`);
   };
 
-  const handleSendMessage = () => {
-    // In a real app, this would open a messaging interface
-    alert('Messaging feature coming soon!');
+  const { startConversation } = useMessageStore();
+  
+  const handleSendMessage = async () => {
+    try {
+      // Start a conversation with this therapist
+      const threadId = await startConversation(therapistId);
+      // Navigate to the messages page
+      navigate('/messages');
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast.error('Failed to start conversation');
+    }
   };
 
   if (loading) {

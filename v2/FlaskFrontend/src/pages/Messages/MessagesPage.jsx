@@ -1,0 +1,296 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useMessageStore from '../../stores/messageStore';
+import { useAuthStore } from '../../stores/authStore';
+import { format, formatDistance } from 'date-fns';
+import { 
+  HiOutlinePaperClip as AttachmentIcon,
+  HiOutlineUpload as SendIcon,
+  HiChevronRight as ArrowIcon
+} from 'react-icons/hi';
+
+export default function MessagesPage() {
+  const navigate = useNavigate();
+  const {
+    conversations,
+    messages,
+    currentConversation,
+    fetchConversations,
+    fetchMessages,
+    sendMessage,
+    setCurrentConversation,
+    clearMessages,
+  } = useMessageStore();
+  const user = useAuthStore(state => state.user);
+  const [newMessage, setNewMessage] = useState('');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (currentConversation) {
+      loadMessages();
+    }
+  }, [currentConversation, page]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadConversations = async () => {
+    setLoading(true);
+    try {
+      await fetchConversations();
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMessages = async () => {
+    if (!currentConversation) return;
+    try {
+      await fetchMessages(currentConversation.id, page);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleSelectConversation = (conversation) => {
+    setCurrentConversation(conversation);
+    clearMessages();
+    setPage(1);
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() && !fileInputRef.current?.files?.length) return;
+
+    try {
+      let attachments = null;
+      if (fileInputRef.current?.files?.length) {
+        // Handle file upload and get attachment metadata
+        // This is a placeholder - implement actual file upload logic
+        attachments = {
+          files: Array.from(fileInputRef.current.files).map(file => ({
+            name: file.name,
+            type: file.type,
+            size: file.size
+          }))
+        };
+      }
+
+      await sendMessage(currentConversation.id, newMessage, attachments);
+      setNewMessage('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const formatMessageTime = (date) => {
+    const messageDate = new Date(date);
+    const now = new Date();
+    
+    if (messageDate.toDateString() === now.toDateString()) {
+      return format(messageDate, 'HH:mm');
+    }
+    
+    if (now.getTime() - messageDate.getTime() < 7 * 24 * 60 * 60 * 1000) {
+      return formatDistance(messageDate, now, { addSuffix: true });
+    }
+    
+    return format(messageDate, 'MMM d, yyyy');
+  };
+
+  return (
+    <div className="flex h-[calc(100vh-64px)]">
+      {/* Conversations List */}
+      <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto">
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              No conversations yet
+            </div>
+          ) : (
+            conversations.map((conversation) => {
+              const otherParticipant = conversation.participant;
+              const isSelected = currentConversation?.id === conversation.id;
+              
+              return (
+                <button
+                  key={conversation.id}
+                  onClick={() => handleSelectConversation(conversation)}
+                  className={`w-full p-4 hover:bg-gray-50 flex items-start transition-colors ${
+                    isSelected ? 'bg-indigo-50' : ''
+                  }`}
+                >
+                  <div className="relative flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                      {otherParticipant.name.charAt(0)}
+                    </div>
+                    {conversation.unread_count > 0 && (
+                      <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-white">{conversation.unread_count}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="ml-3 flex-1 overflow-hidden">
+                    <div className="flex justify-between items-baseline">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {otherParticipant.name}
+                      </p>
+                      {conversation.last_message_at && (
+                        <p className="text-xs text-gray-500">
+                          {formatMessageTime(conversation.last_message_at)}
+                        </p>
+                      )}
+                    </div>
+                    {conversation.last_message && (
+                      <p className="text-sm text-gray-500 truncate">
+                        {conversation.last_message.content}
+                      </p>
+                    )}
+                  </div>
+                  <ArrowIcon className="ml-2 h-5 w-5 text-gray-400" />
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 flex flex-col bg-gray-50">
+        {currentConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                  {currentConversation.participant.name.charAt(0)}
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {currentConversation.participant.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {currentConversation.participant.role.toLowerCase()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => {
+                const isSentByMe = message.sender.id === user.id;
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                        isSentByMe
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-gray-900 shadow-sm'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      {message.attachments && (
+                        <div className="mt-2 space-y-1">
+                          {message.attachments.files.map((file, index) => (
+                            <div
+                              key={index}
+                              className={`flex items-center text-xs ${
+                                isSentByMe ? 'text-indigo-100' : 'text-gray-500'
+                              }`}
+                            >
+                              <AttachmentIcon className="h-4 w-4 mr-1" />
+                              <span>{file.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div
+                        className={`text-xs mt-1 ${
+                          isSentByMe ? 'text-indigo-100' : 'text-gray-500'
+                        }`}
+                      >
+                        {formatMessageTime(message.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 bg-white border-t border-gray-200">
+              <form onSubmit={handleSendMessage} className="flex items-center space-x-4">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  multiple
+                  onChange={() => {}} // Handle file selection if needed
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
+                >
+                  <AttachmentIcon className="h-5 w-5" />
+                </button>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim() && !fileInputRef.current?.files?.length}
+                  className="p-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <SendIcon className="h-5 w-5" />
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-gray-500">Select a conversation to start messaging</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

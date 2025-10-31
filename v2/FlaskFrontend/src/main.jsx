@@ -16,6 +16,7 @@ import LandingPage from './pages/LandingPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import LoginPage from './pages/Auth/LoginPage.jsx';
 import RegisterPage from './pages/Auth/RegisterPage.jsx';
+import MessagesPage from './pages/Messages/MessagesPage.jsx';
 
 // Dashboard Pages
 import DashboardPage from './pages/Dashboard/DashboardPage.jsx';
@@ -119,6 +120,7 @@ const App = () => {
             <Route path="sessions/schedule" element={<ScheduleSessionPage />} />
             <Route path="sessions/availability" element={<TherapistAvailabilityPage />} />
             <Route path="therapists/:therapistId" element={<TherapistDetailPage />} />
+            <Route path="messages" element={<MessagesPage />} />
             <Route path="video-call/:roomId" element={<VideoCallPage />} />
 
             {/* Patient management routes - only accessible by therapists */}

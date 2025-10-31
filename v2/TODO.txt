@@ -1,3 +1,11 @@
+**************
+view patients error
+
 Access to XMLHttpRequest at 'http://localhost:5000/api/patients' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
 
+*******************
+messageStore.js:16  GET http://localhost:5173/api/messages/conversations 401 (UNAUTHORIZED)
 
+PATIENT CLICKS SEND MESSAGE
+POST http://localhost:5173/api/messages/conversations 401 (UNAUTHORIZED)
+TherapistDetailPage.jsx:142 Error starting conversation: 

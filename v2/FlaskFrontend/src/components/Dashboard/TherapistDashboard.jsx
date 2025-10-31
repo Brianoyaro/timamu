@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useSessionStore } from '../../stores/sessionStore';
+import useUnreadMessages from '../../hooks/useUnreadMessages';
 
 // Components
 import SessionCard from '../../components/Sessions/SessionCard';
@@ -41,6 +42,7 @@ const TherapistDashboard = ({ stats, user }) => {
     fetchSessions, 
     loading: sessionsLoading 
   } = useSessionStore();
+  const unreadCount = useUnreadMessages();
   
   useEffect(() => {
     // Fetch sessions when the component mounts
@@ -295,9 +297,14 @@ const TherapistDashboard = ({ stats, user }) => {
               </button>
 
               <button
-                onClick={() => navigate('/messaging')}
-                className="group p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200/50 hover:from-green-100 hover:to-emerald-100 hover:border-green-300/50 transition-all duration-200"
+                onClick={() => navigate('/messages')}
+                className="group relative p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200/50 hover:from-green-100 hover:to-emerald-100 hover:border-green-300/50 transition-all duration-200"
               >
+                {unreadCount > 0 && (
+                  <div className="absolute top-4 right-4 h-6 w-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-white">{unreadCount}</span>
+                  </div>
+                )}
                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <HiOutlineChatAlt2 className="w-6 h-6 text-white" />
                 </div>
