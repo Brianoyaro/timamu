@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../utils/api';
+import useMessageStore from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { format, formatDistance } from 'date-fns';
 import { 
@@ -11,10 +11,17 @@ import {
 
 export default function MessagesPage() {
   const navigate = useNavigate();
+  const {
+    conversations = [], // Provide default empty array
+    messages = [], // Provide default empty array
+    currentConversation,
+    fetchConversations,
+    fetchMessages,
+    sendMessage,
+    setCurrentConversation,
+    clearMessages,
+  } = useMessageStore();
   const user = useAuthStore(state => state.user);
-  const [conversations, setConversations] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [currentConversation, setCurrentConversation] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -22,47 +29,44 @@ export default function MessagesPage() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/messages/conversations');
-        const data = response.data;
-        const convs = Array.isArray(data)
-          ? data
-          : data?.messages || data?.conversations || data?.items || data?.data || [];
-        setConversations(convs);
-      } catch (error) {
-        console.error('Error loading conversations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchConversations();
+    loadConversations();
   }, []);
 
   useEffect(() => {
-    if (currentConversation?.id) {
-      fetchMessages(currentConversation.id, page);
+    if (currentConversation) {
+      loadMessages();
     }
   }, [currentConversation, page]);
 
-  const fetchMessages = async (threadId, page = 1, perPage = 20) => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadConversations = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/messages/conversations/${threadId}/messages`, {
-        params: { page, perPage }
-      });
-      setMessages(response.data.messages || []);
+      await fetchConversations();
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error loading conversations:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadMessages = async () => {
+    if (!currentConversation?.id) return;
+    try {
+      await fetchMessages(currentConversation.id, page);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
   const handleSelectConversation = async (conversation) => {
     setCurrentConversation(conversation);
+    clearMessages();
     setPage(1);
+    // Fetch messages for the selected conversation
     if (conversation?.id) {
       await fetchMessages(conversation.id, 1);
     }
@@ -71,9 +75,12 @@ export default function MessagesPage() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!currentConversation?.id || (!newMessage.trim() && !fileInputRef.current?.files?.length)) return;
+
     try {
       let attachments = null;
       if (fileInputRef.current?.files?.length) {
+        // Handle file upload and get attachment metadata
+        // This is a placeholder - implement actual file upload logic
         attachments = {
           files: Array.from(fileInputRef.current.files).map(file => ({
             name: file.name || 'Unknown file',
@@ -82,12 +89,8 @@ export default function MessagesPage() {
           }))
         };
       }
-      const response = await api.post(`/messages/conversations/${currentConversation.id}/messages`, {
-        content: newMessage,
-        attachments,
-        message_type: attachments ? 'file' : 'text'
-      });
-      setMessages([response.data, ...messages]);
+
+      await sendMessage(currentConversation.id, newMessage, attachments);
       setNewMessage('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -100,10 +103,6 @@ export default function MessagesPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const formatMessageTime = (date) => {
     const messageDate = new Date(date);
@@ -233,21 +232,13 @@ export default function MessagesPage() {
                     className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-2xl px-4 py-2 mb-2 shadow-md text-sm break-words ${
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
                         isSentByMe
-                          ? 'bg-indigo-600 text-white ml-8'
-                          : 'bg-white text-gray-900 mr-8 border border-gray-200'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-gray-900 shadow-sm'
                       }`}
                     >
-                      <div className="flex items-center mb-1">
-                        {!isSentByMe && (
-                          <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold mr-2">
-                            {message.sender?.name?.charAt(0) || '?'}
-                          </div>
-                        )}
-                        <span>{message.sender?.name || 'Unknown'}</span>
-                      </div>
-                      <p>{message.content || ''}</p>
+                      <p className="text-sm">{message.content || ''}</p>
                       {message.attachments?.files?.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {message.attachments.files.map((file, index) => (
@@ -264,7 +255,7 @@ export default function MessagesPage() {
                         </div>
                       )}
                       <div
-                        className={`text-xs mt-1 text-right ${
+                        className={`text-xs mt-1 ${
                           isSentByMe ? 'text-indigo-100' : 'text-gray-500'
                         }`}
                       >
