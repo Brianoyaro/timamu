@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
+import useMessageStore from '../../stores/messageStore';
 import { format, formatDistance } from 'date-fns';
 import { 
   HiOutlinePaperClip as AttachmentIcon,
@@ -12,30 +13,23 @@ import {
 export default function MessagesPage() {
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
-  const [conversations, setConversations] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [currentConversation, setCurrentConversation] = useState(null);
+  const messageStore = useMessageStore();
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const { 
+    conversations, 
+    currentConversation, 
+    messages, 
+    isLoading: loading,
+    fetchConversations,
+    fetchMessages,
+    setCurrentConversation,
+    fetchUnreadCount
+  } = messageStore;
+
   useEffect(() => {
-    const fetchConversations = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/messages/conversations');
-        const data = response.data;
-        const convs = Array.isArray(data)
-          ? data
-          : data?.messages || data?.conversations || data?.items || data?.data || [];
-        setConversations(convs);
-      } catch (error) {
-        console.error('Error loading conversations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchConversations();
   }, []);
 
@@ -45,30 +39,8 @@ export default function MessagesPage() {
     }
   }, [currentConversation]);
 
-    const fetchMessages = async (threadId) => {
-    setLoading(true);
-    try {
-      const response = await api.get(`/messages/conversations/${threadId}/messages`);
-      // Map and sort messages chronologically
-      const msgs = (response.data.messages || [])
-        .map(msg => ({
-          ...msg,
-          isSentByMe: msg.sender_id === user?.id
-        }))
-        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Oldest to newest
-      setMessages(msgs);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSelectConversation = async (conversation) => {
     setCurrentConversation(conversation);
-    if (conversation?.id) {
-      await fetchMessages(conversation.id);
-    }
   };
 
   const handleSendMessage = async (e) => {
@@ -85,16 +57,15 @@ export default function MessagesPage() {
           }))
         };
       }
-      const response = await api.post(`/messages/conversations/${currentConversation.id}/messages`, {
-        content: newMessage,
-        attachments,
-        message_type: attachments ? 'file' : 'text'
-      });
-      setMessages([...messages, response.data]);
+      await messageStore.sendMessage(currentConversation.id, newMessage, attachments);
       setNewMessage('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      // Refresh messages to ensure correct order
+      await messageStore.fetchMessages(currentConversation.id);
+      // Update conversations list to show latest message
+      await messageStore.fetchConversations();
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -177,9 +148,12 @@ export default function MessagesPage() {
                         </p>
                       )}
                     </div>
-                    {conversation.last_message && (
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message.content || ''}
+                    {conversation.recent_message && (
+                      <p className={`text-sm truncate ${conversation.unread_count > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                        {user.id === conversation.recent_message.sender_id ? 'You: ' : ''}
+                        {conversation.recent_message.content || 
+                         (conversation.recent_message.attachments?.files?.length ? 
+                          '📎 Attachment' : '')}
                       </p>
                     )}
                   </div>
@@ -224,8 +198,8 @@ export default function MessagesPage() {
 
             {/* Messages List */}
             <div className="flex-1 overflow-y-auto bg-[#efeae2] p-4">
-              <div className="space-y-1">
-                {messages?.map((message) => {
+              <div className="space-y-1 flex flex-col-reverse">
+                {messages?.slice().reverse().map((message) => {
                   if (!message?.id) return null;
                   
                   const isSentByMe = message.sender_id === user?.id;

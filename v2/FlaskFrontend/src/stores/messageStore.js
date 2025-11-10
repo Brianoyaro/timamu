@@ -34,7 +34,8 @@ const useMessageStore = create((set, get) => ({
       const response = await api.get(`/messages/conversations/${threadId}/messages`, {
         params: { page, perPage }
       });
-      set({ messages: response.data.messages, isLoading: false });
+      // Messages are already sorted newest to oldest from the backend
+      set({ messages: response.data.messages || [], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
       toast.error('Failed to load messages');
@@ -53,12 +54,13 @@ const useMessageStore = create((set, get) => ({
       const messages = get().messages;
       set({ messages: [response.data, ...messages] });
       
-      // Update conversation's last message
+      // Update conversation's last message and recent message
       const conversations = get().conversations.map(conv => {
         if (conv.id === threadId) {
           return {
             ...conv,
             last_message: response.data,
+            recent_message: response.data,
             last_message_at: response.data.created_at
           };
         }
@@ -109,8 +111,32 @@ const useMessageStore = create((set, get) => ({
     }
   },
 
-  setCurrentConversation: (conversation) => {
+  setCurrentConversation: async (conversation) => {
     set({ currentConversation: conversation });
+
+    if (conversation?.id && conversation?.unread_count > 0) {
+      try {
+        // First mark the messages as read in UI
+        const conversations = get().conversations.map(conv => 
+          conv.id === conversation.id ? { ...conv, unread_count: 0 } : conv
+        );
+        const totalUnreadCount = Math.max(0, get().unreadCount - conversation.unread_count);
+        set({ conversations, unreadCount: totalUnreadCount });
+
+        // Then make the API call to persist the change
+        await api.post(`/messages/conversations/${conversation.id}/mark-read`);
+      } catch (error) {
+        console.error('Failed to mark conversation as read:', error);
+        // Revert the UI changes if the API call fails
+        const conversations = get().conversations.map(conv => 
+          conv.id === conversation.id ? { ...conv, unread_count: conversation.unread_count } : conv
+        );
+        set({ 
+          conversations,
+          unreadCount: get().unreadCount + conversation.unread_count
+        });
+      }
+    }
   },
 
   clearMessages: () => {

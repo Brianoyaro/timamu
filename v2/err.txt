@@ -1,0 +1,9 @@
+installHook.js:1 Error sending message: ReferenceError: setMessages is not defined
+    at handleSendMessage (MessagesPage.jsx:65:7)
+
+﻿
+
+
+clicking send message doesn't send unless I refersh the page. Also, the messages are reversed where the oldest are dispalyed bellow. This is not like in modern chat applications like whatsapp.
+
+Also the banner doesn't go away when I click on the message with unread count unless I refresh the page.

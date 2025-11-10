@@ -81,9 +81,6 @@ def get_messages(thread_id):
             .order_by(ThreadMessage.created_at.desc())\
             .paginate(page=page, per_page=per_page, error_out=False)
         
-        # Mark messages as read
-        thread.mark_read_for_user(current_user_id)
-        
         return jsonify({
             'messages': [msg.to_dict() for msg in messages.items],
             'total': messages.total,
@@ -138,6 +135,33 @@ def send_message(thread_id):
         
     except Exception as e:
         logger.error(f"Error in send_message: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@messages_bp.route('/conversations/<int:thread_id>/mark-read', methods=['POST'])
+@jwt_required()
+def mark_thread_read(thread_id):
+    """Mark all messages in a thread as read for the current user"""
+    try:
+        current_user_id = get_jwt_identity()
+        thread = ConversationThread.query.get_or_404(thread_id)
+        
+        # Check access
+        if current_user_id not in [thread.patient_id, thread.therapist_id]:
+            return jsonify({'error': 'Unauthorized access'}), 403
+            
+        # Mark messages as read
+        ThreadMessage.query.filter(
+            ThreadMessage.thread_id == thread_id,
+            ThreadMessage.receiver_id == current_user_id,
+            ThreadMessage.is_read == False
+        ).update({'is_read': True})
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Messages marked as read'})
+        
+    except Exception as e:
+        logger.error(f"Error in mark_thread_read: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
 @messages_bp.route('/conversations/<int:thread_id>/archive', methods=['POST'])
