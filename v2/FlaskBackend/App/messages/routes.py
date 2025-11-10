@@ -73,19 +73,13 @@ def get_messages(thread_id):
         if current_user_id not in [thread.patient_id, thread.therapist_id]:
             return jsonify({'error': 'Unauthorized access'}), 403
         
-        # Get messages with pagination
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        
+        # Get all messages for the thread
         messages = ThreadMessage.query.filter_by(thread_id=thread_id)\
             .order_by(ThreadMessage.created_at.desc())\
-            .paginate(page=page, per_page=per_page, error_out=False)
+            .all()
         
         return jsonify({
-            'messages': [msg.to_dict() for msg in messages.items],
-            'total': messages.total,
-            'pages': messages.pages,
-            'current_page': messages.page
+            'messages': [msg.to_dict() for msg in messages]
         })
         
     except Exception as e:

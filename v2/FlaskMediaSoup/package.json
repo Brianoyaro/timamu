@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "flask-mediasoup-server",
   "version": "1.0.0",
   "description": "Simple MediaSoup server for Timamu video calls",

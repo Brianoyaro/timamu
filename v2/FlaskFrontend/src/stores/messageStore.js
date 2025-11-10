@@ -28,12 +28,10 @@ const useMessageStore = create((set, get) => ({
     }
   },
 
-  fetchMessages: async (threadId, page = 1, perPage = 20) => {
+  fetchMessages: async (threadId) => {
     try {
       set({ isLoading: true });
-      const response = await api.get(`/messages/conversations/${threadId}/messages`, {
-        params: { page, perPage }
-      });
+      const response = await api.get(`/messages/conversations/${threadId}/messages`);
       // Messages are already sorted newest to oldest from the backend
       set({ messages: response.data.messages || [], isLoading: false });
     } catch (error) {
