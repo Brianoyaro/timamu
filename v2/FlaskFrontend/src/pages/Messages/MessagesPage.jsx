@@ -16,7 +16,6 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [newMessage, setNewMessage] = useState('');
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -42,28 +41,21 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (currentConversation?.id) {
-      fetchMessages(currentConversation.id, page);
+      fetchMessages(currentConversation.id);
     }
-  }, [currentConversation, page]);
+  }, [currentConversation]);
 
-  const fetchMessages = async (threadId, page = 1, perPage = 20) => {
+    const fetchMessages = async (threadId) => {
     setLoading(true);
     try {
-      const response = await api.get(`/messages/conversations/${threadId}/messages`, {
-        params: { page, perPage }
-      });
-      // Map messages to inject sender object for rendering
-      const msgs = (response.data.messages || []).map(msg => {
-        let sender = null;
-        if (msg.sender_id === user?.id) {
-          sender = user;
-        } else if (currentConversation?.participant && msg.sender_id === currentConversation.participant.id) {
-          sender = currentConversation.participant;
-        } else {
-          sender = { id: msg.sender_id, name: 'Unknown', role: 'user' };
-        }
-        return { ...msg, sender };
-      });
+      const response = await api.get(`/messages/conversations/${threadId}/messages`);
+      // Map and sort messages chronologically
+      const msgs = (response.data.messages || [])
+        .map(msg => ({
+          ...msg,
+          isSentByMe: msg.sender_id === user?.id
+        }))
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Oldest to newest
       setMessages(msgs);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -74,9 +66,8 @@ export default function MessagesPage() {
 
   const handleSelectConversation = async (conversation) => {
     setCurrentConversation(conversation);
-    setPage(1);
     if (conversation?.id) {
-      await fetchMessages(conversation.id, 1);
+      await fetchMessages(conversation.id);
     }
   };
 
@@ -99,7 +90,7 @@ export default function MessagesPage() {
         attachments,
         message_type: attachments ? 'file' : 'text'
       });
-      setMessages([response.data, ...messages]);
+      setMessages([...messages, response.data]);
       setNewMessage('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -232,77 +223,64 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages?.map((message) => {
-                // Skip invalid messages
-                if (!message?.id || !message?.sender) return null;
-                
-                const isSentByMe = message.sender?.id === user?.id;
-                
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
-                  >
+            <div className="flex-1 overflow-y-auto bg-[#efeae2] p-4">
+              <div className="space-y-1">
+                {messages?.map((message) => {
+                  if (!message?.id) return null;
+                  
+                  const isSentByMe = message.sender_id === user?.id;
+                  
+                  return (
                     <div
-                      className={`max-w-[70%] rounded-2xl px-4 py-2 mb-2 shadow-md text-sm break-words ${
-                        isSentByMe
-                          ? 'bg-indigo-600 text-white ml-8'
-                          : 'bg-white text-gray-900 mr-8 border border-gray-200'
-                      }`}
+                      key={message.id}
+                      className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className="flex items-center mb-1">
-                        {!isSentByMe && (
-                          <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold mr-2">
-                            {message.sender?.name?.charAt(0) || '?'}
-                          </div>
-                        )}
-                        <span>{message.sender?.name || 'Unknown'}</span>
-                      </div>
-                      <p>{message.content || ''}</p>
-                      {message.attachments?.files?.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {message.attachments.files.map((file, index) => (
-                            <div
-                              key={index}
-                              className={`flex items-center text-xs ${
-                                isSentByMe ? 'text-indigo-100' : 'text-gray-500'
-                              }`}
-                            >
-                              <AttachmentIcon className="h-4 w-4 mr-1" />
-                              <span>{file?.name || 'Unknown file'}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                       <div
-                        className={`text-xs mt-1 text-right ${
-                          isSentByMe ? 'text-indigo-100' : 'text-gray-500'
+                        className={`relative max-w-[65%] rounded-lg px-3 py-2 shadow-sm ${
+                          isSentByMe
+                            ? 'bg-[#dcf8c6] text-black rounded-tr-none'
+                            : 'bg-white text-black rounded-tl-none'
                         }`}
                       >
-                        {message.created_at ? formatMessageTime(message.created_at) : ''}
+                        <p className="text-sm whitespace-pre-wrap">{message.content || ''}</p>
+                        {message.attachments?.files?.length > 0 && (
+                          <div className="mt-1 space-y-1">
+                            {message.attachments.files.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center text-xs text-gray-600"
+                              >
+                                <AttachmentIcon className="h-4 w-4 mr-1" />
+                                <span>{file?.name || 'File'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-[10px] mt-1 text-right text-gray-500">
+                          {message.created_at ? formatMessageTime(message.created_at) : ''}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
-
+            
             {/* Message Input */}
-            <div className="p-4 bg-white border-t border-gray-200">
-              <form onSubmit={handleSendMessage} className="flex items-center space-x-4">
+            <div className="px-4 py-2 bg-[#f0f0f0]">
+              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
                 <input
                   type="file"
                   ref={fileInputRef}
                   className="hidden"
                   multiple
-                  onChange={() => {}} // Handle file selection if needed
+                  onChange={() => {}}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
+                  className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   <AttachmentIcon className="h-5 w-5" />
                 </button>
@@ -310,13 +288,13 @@ export default function MessagesPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Type a message"
+                  className="flex-1 px-4 py-2 bg-white rounded-full focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!newMessage.trim() && !fileInputRef.current?.files?.length}
-                  className="p-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-white bg-[#25D366] rounded-full hover:bg-[#1fa855] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SendIcon className="h-5 w-5" />
                 </button>
