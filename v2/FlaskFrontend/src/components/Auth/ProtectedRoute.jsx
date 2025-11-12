@@ -89,7 +89,7 @@ const ProtectedRoute = ({ requiredRole = null }) => {
 
   // Check role requirements
   if (requiredRole && user?.role !== requiredRole) {
-    console.log('[ProtectedRoute] Insufficient role, redirecting to dashboard');
+    console.log(`[ProtectedRoute] Role mismatch: required='${requiredRole}', user='${user?.role}', redirecting to dashboard`);
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -67,14 +67,22 @@ const DashboardPage = () => {
     return <PatientDashboard stats={stats} user={user} />;
   } else if (user?.role === 'THERAPIST') {
     return <TherapistDashboard stats={stats} user={user} />;
-  } else if (user?.role === 'ADMIN') {
+  } else if (user?.role === 'ADMIN' || user?.role === 'admin') {
+    console.log('[DashboardPage] Rendering AdminDashboard for user role:', user.role);
     return <AdminDashboard stats={stats} user={user} />;
   }
 
+  console.log('[DashboardPage] Unknown user role:', user?.role);
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Welcome to Timamu</h1>
-      <p>Your role is not configured correctly. Please contact support.</p>
+      <p>Your role ({user?.role}) is not configured correctly. Please contact support.</p>
+      <div className="mt-4 p-4 bg-gray-100 rounded">
+        <h3 className="font-bold">Debug Info:</h3>
+        <p>User ID: {user?.id}</p>
+        <p>User Role: {user?.role}</p>
+        <p>User Email: {user?.email}</p>
+      </div>
     </div>
   );
 };

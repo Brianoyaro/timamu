@@ -1,224 +1,129 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-} from '@mui/material';
-import {
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
-import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
+import api from '../../utils/api';
 
-export default function TherapistVerification() {
-  const [therapists, setTherapists] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedTherapist, setSelectedTherapist] = useState(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-
-  const fetchTherapists = async () => {
-    try {
-      const response = await axios.get('/api/admin/therapists/pending');
-      setTherapists(response.data);
-    } catch (error) {
-      console.error('Error fetching therapists:', error);
-      // Handle error state
-    } finally {
-      setLoading(false);
-    }
-  };
+const TherapistVerification = () => {
+  const [pendingTherapists, setPendingTherapists] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState({});
 
   useEffect(() => {
-    fetchTherapists();
+    fetchPendingTherapists();
   }, []);
 
-  const handleVerify = async (id) => {
+  const fetchPendingTherapists = async () => {
     try {
-      await axios.post(`/api/admin/therapists/${id}/verify`);
-      fetchTherapists(); // Refresh the list
+      setIsLoading(true);
+      const response = await api.get('/admin/therapists/pending');
+      setPendingTherapists(response.data);
+    } catch (error) {
+      console.error('Error fetching pending therapists:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerify = async (therapistId) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [`verify_${therapistId}`]: true }));
+      await api.post(`/admin/therapists/${therapistId}/verify`);
+      setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
+      alert('Therapist verified successfully!');
     } catch (error) {
       console.error('Error verifying therapist:', error);
-      // Handle error state
+      alert('Failed to verify therapist.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`verify_${therapistId}`]: false }));
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (therapistId) => {
+    const reason = prompt('Please provide a reason for rejection (optional):');
+    if (reason === null) return;
+    
     try {
-      await axios.post(`/api/admin/therapists/${selectedTherapist.id}/reject`, {
-        reason: rejectReason,
-      });
-      setRejectDialogOpen(false);
-      setRejectReason('');
-      fetchTherapists(); // Refresh the list
+      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: true }));
+      await api.post(`/admin/therapists/${therapistId}/reject`, { reason });
+      setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
+      alert('Therapist application rejected.');
     } catch (error) {
       console.error('Error rejecting therapist:', error);
-      // Handle error state
+      alert('Failed to reject therapist.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: false }));
     }
   };
 
-  const columns = [
-    { field: 'id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Name', width: 200 },
-    { field: 'email', headerName: 'Email', width: 250 },
-    {
-      field: 'specialization',
-      headerName: 'Specialization',
-      width: 200,
-      renderCell: (params) => (
-        <Chip label={params.value} color="primary" variant="outlined" size="small" />
-      ),
-    },
-    {
-      field: 'submissionDate',
-      headerName: 'Submission Date',
-      width: 200,
-      valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 180,
-      sortable: false,
-      renderCell: (params) => (
-        <Box>
-          <Tooltip title="View Details">
-            <IconButton
-              onClick={() => {
-                setSelectedTherapist(params.row);
-                setDetailsOpen(true);
-              }}
-              size="small"
-            >
-              <VisibilityIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Approve">
-            <IconButton
-              onClick={() => handleVerify(params.row.id)}
-              size="small"
-              color="success"
-            >
-              <CheckCircleIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Reject">
-            <IconButton
-              onClick={() => {
-                setSelectedTherapist(params.row);
-                setRejectDialogOpen(true);
-              }}
-              size="small"
-              color="error"
-            >
-              <CancelIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 4 }}>
-        Therapist Verification
-      </Typography>
-
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <DataGrid
-          rows={therapists}
-          columns={columns}
-          pageSize={10}
-          rowsPerPageOptions={[10, 25, 50]}
-          checkboxSelection
-          disableSelectionOnClick
-          autoHeight
-          loading={loading}
-        />
-      </Paper>
-
-      {/* Details Dialog */}
-      <Dialog
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Therapist Details</DialogTitle>
-        <DialogContent>
-          {selectedTherapist && (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Personal Information
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Name</Typography>
-                  <Typography>{selectedTherapist.name}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Email</Typography>
-                  <Typography>{selectedTherapist.email}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Phone</Typography>
-                  <Typography>{selectedTherapist.phone}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Specialization</Typography>
-                  <Typography>{selectedTherapist.specialization}</Typography>
-                </Grid>
-                {/* Add more details as needed */}
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Reject Dialog */}
-      <Dialog
-        open={rejectDialogOpen}
-        onClose={() => setRejectDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Reject Therapist Application</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Reason for Rejection"
-            type="text"
-            fullWidth
-            multiline
-            rows={4}
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleReject} color="error">
-            Reject
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Therapist Verification</h1>
+      
+      {pendingTherapists.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <p className="text-gray-600">No pending therapist verifications.</p>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {pendingTherapists.map((therapist) => (
+            <div key={therapist.id} className="bg-white rounded-lg shadow p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">{therapist.name}</h3>
+                  <p className="text-gray-600">{therapist.email}</p>
+                  <p className="text-sm text-gray-500">
+                    Applied: {new Date(therapist.submissionDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p><strong>License Number:</strong> {therapist.license_number || 'Not provided'}</p>
+                  <p><strong>Experience:</strong> {therapist.experience || 'Not specified'} years</p>
+                  <p><strong>Education:</strong> {therapist.education || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p><strong>Specializations:</strong> {therapist.specializations?.join(', ') || 'Not specified'}</p>
+                  <p><strong>Languages:</strong> {therapist.languages?.join(', ') || 'Not specified'}</p>
+                </div>
+              </div>
+              
+              {therapist.bio && (
+                <div className="mb-4">
+                  <p><strong>Bio:</strong></p>
+                  <p className="text-gray-700 mt-1">{therapist.bio}</p>
+                </div>
+              )}
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => handleVerify(therapist.id)}
+                  disabled={actionLoading[`verify_${therapist.id}`]}
+                  className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading[`verify_${therapist.id}`] ? 'Verifying...' : 'Verify Therapist'}
+                </button>
+                <button
+                  onClick={() => handleReject(therapist.id)}
+                  disabled={actionLoading[`reject_${therapist.id}`]}
+                  className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading[`reject_${therapist.id}`] ? 'Rejecting...' : 'Reject Application'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default TherapistVerification;

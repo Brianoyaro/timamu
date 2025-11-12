@@ -9,7 +9,6 @@ import { initializeAuth, cleanupAuth } from './utils/authUtils.js';
 
 // Layout
 import Layout from './components/Layout/Layout.jsx';
-import AdminLayout from './components/Admin/AdminLayout.jsx';
 
 // Pages
 import LandingPage from './pages/LandingPage.jsx';
@@ -35,9 +34,15 @@ import TherapistDetailPage from './pages/Therapists/TherapistDetailPage.jsx';
 import PatientListPage from './pages/Patients/PatientListPage.jsx';
 import PatientDetailPage from './pages/Patients/PatientDetailPage.jsx';
 
-// Admin Pages
+// Admin Components
+import AdminLayout from './components/Admin/AdminLayout.jsx';
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 import TherapistVerification from './pages/Admin/TherapistVerification.jsx';
+import UserManagement from './pages/Admin/UserManagement.jsx';
+import SessionMonitoring from './pages/Admin/SessionMonitoring.jsx';
+import Reports from './pages/Admin/Reports.jsx';
+import Support from './pages/Admin/Support.jsx';
+import Settings from './pages/Admin/Settings.jsx';
 
 // Protected Route
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
@@ -130,16 +135,17 @@ const App = () => {
             </Route>
           </Route>
 
-          {/* Admin routes */}
+          {/* Admin routes - only accessible by admin users */}
           <Route element={<ProtectedRoute requiredRole="admin" />}>
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="therapists" element={<TherapistVerification />} />
-              <Route path="users" element={<div>User Management (Coming Soon)</div>} />
-              <Route path="sessions" element={<div>Session Management (Coming Soon)</div>} />
-              <Route path="reports" element={<div>Reports (Coming Soon)</div>} />
-              <Route path="support" element={<div>Support (Coming Soon)</div>} />
-              <Route path="settings" element={<div>Settings (Coming Soon)</div>} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="sessions" element={<SessionMonitoring />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="support" element={<Support />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Route>
 
