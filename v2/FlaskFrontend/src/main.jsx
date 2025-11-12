@@ -15,6 +15,7 @@ import LandingPage from './pages/LandingPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import LoginPage from './pages/Auth/LoginPage.jsx';
 import RegisterPage from './pages/Auth/RegisterPage.jsx';
+import ProfileSetupPage from './pages/Auth/ProfileSetupPage.jsx';
 import MessagesPage from './pages/Messages/MessagesPage.jsx';
 
 // Dashboard Pages
@@ -115,6 +116,7 @@ const App = () => {
           <Route index element={<LandingPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="profile-setup" element={<ProfileSetupPage />} />
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>

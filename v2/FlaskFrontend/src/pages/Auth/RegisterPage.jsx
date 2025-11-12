@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useToastStore } from '../../stores/toastStore';
 import PasswordInput from '../../components/common/PasswordInput';
-import ProfileSetupModal from '../../components/common/ProfileSetupModal';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -15,41 +14,16 @@ const RegisterPage = () => {
     role: 'PATIENT', // Default role
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectScheduled, setRedirectScheduled] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [registeredUser, setRegisteredUser] = useState(null);
   const navigate = useNavigate();
-  const location = useLocation();
   const register = useAuthStore((state) => state.register);
   const addToast = useToastStore((state) => state.addToast);
 
   useEffect(() => {
-    // check if user is already authenticated
-    if (useAuthStore.getState().isAuthenticated && !redirectScheduled) {
-      setRedirectScheduled(true);
-      const timer = setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
-      
-      return () => clearTimeout(timer);
+    // Redirect if user is already authenticated
+    if (useAuthStore.getState().isAuthenticated) {
+      navigate('/dashboard');
     }
-    
-    // Check if there's any message passed through location state
-    console.log('RegisterPage location state:', location.state);
-    
-    if (location.state?.message) {
-      console.log('Setting toast message from location state:', location.state.message);
-      addToast({
-        message: location.state.message,
-        type: location.state.type || 'info',
-        duration: location.state.type === 'error' ? 10000 : 5000,
-        dismissible: true
-      });
-      
-      // Clear the location state
-      window.history.replaceState({}, document.title);
-    }
-  }, [navigate, location, addToast, redirectScheduled]);
+  }, [navigate]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -85,7 +59,6 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      // Show registering toast
       addToast({
         message: 'Creating your account...',
         type: 'info',
@@ -95,20 +68,23 @@ const RegisterPage = () => {
       
       const response = await register(formData);
       
-      // Extract user information from response
-      const { user } = response;
-      setRegisteredUser(user);
-      
-      // Show success message and open profile setup modal
       addToast({
-        message: 'Account created successfully! Complete your profile to get started.',
+        message: 'Account created successfully! Redirecting to profile setup...',
         type: 'success',
-        duration: 5000,
-        dismissible: true
+        duration: 3000,
+        dismissible: true,
+        action: {
+          label: 'Skip Setup',
+          onClick: () => navigate('/dashboard')
+        }
       });
       
-      // Show profile setup modal instead of redirecting immediately
-      setShowProfileModal(true);
+      // Navigate to dedicated profile setup page
+      setTimeout(() => {
+        navigate('/profile-setup', { 
+          state: { user: response.user, isNewRegistration: true }
+        });
+      }, 1500);
     } catch (err) {
       console.error('Registration error:', err);
       
@@ -149,23 +125,6 @@ const RegisterPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleProfileComplete = () => {
-    // Redirect to dashboard after profile completion
-    setRedirectScheduled(true);
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1000);
-  };
-
-  const handleProfileModalClose = () => {
-    // User chose to skip profile setup
-    setShowProfileModal(false);
-    setRedirectScheduled(true);
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1000);
   };
 
   return (
@@ -305,14 +264,6 @@ const RegisterPage = () => {
           </p>
         </div>
       </div>
-
-      {/* Profile Setup Modal */}
-      <ProfileSetupModal
-        isOpen={showProfileModal}
-        onClose={handleProfileModalClose}
-        user={registeredUser}
-        onProfileComplete={handleProfileComplete}
-      />
     </div>
   );
 };
