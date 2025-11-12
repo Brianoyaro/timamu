@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import Modal from '../../components/common/Modal';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -9,6 +11,13 @@ const UserManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    onConfirm: null
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -37,23 +46,39 @@ const UserManagement = () => {
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     const action = currentStatus ? 'deactivate' : 'activate';
-    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
     
-    try {
-      setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: true }));
-      await api.post(`/admin/users/${userId}/${action}`);
-      
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, is_active: !currentStatus } : user
-      ));
-      
-      alert(`User ${action}d successfully!`);
-    } catch (error) {
-      console.error(`Error ${action}ing user:`, error);
-      alert(`Failed to ${action} user.`);
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: false }));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+      message: `Are you sure you want to ${action} this user account?`,
+      onConfirm: async () => {
+        try {
+          setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: true }));
+          await api.post(`/admin/users/${userId}/${action}`);
+          
+          setUsers(prev => prev.map(user => 
+            user.id === userId ? { ...user, is_active: !currentStatus } : user
+          ));
+          
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Success!',
+            message: `User ${action}d successfully!`
+          });
+        } catch (error) {
+          console.error(`Error ${action}ing user:`, error);
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: `Failed to ${action} user.`
+          });
+        } finally {
+          setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: false }));
+        }
+      }
+    });
   };
 
   return (
@@ -229,6 +254,24 @@ const UserManagement = () => {
           </>
         )}
       </div>
+
+      {/* Modals */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        showCancel={true}
+      />
     </div>
   );
 };

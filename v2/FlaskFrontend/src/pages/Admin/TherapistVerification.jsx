@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import Modal from '../../components/common/Modal';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const TherapistVerification = () => {
   const [pendingTherapists, setPendingTherapists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
+  const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    onConfirm: null,
+    requireReason: false
+  });
 
   useEffect(() => {
     fetchPendingTherapists();
@@ -27,30 +37,55 @@ const TherapistVerification = () => {
       setActionLoading(prev => ({ ...prev, [`verify_${therapistId}`]: true }));
       await api.post(`/admin/therapists/${therapistId}/verify`);
       setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
-      alert('Therapist verified successfully!');
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Success!',
+        message: 'Therapist verified successfully!'
+      });
     } catch (error) {
       console.error('Error verifying therapist:', error);
-      alert('Failed to verify therapist.');
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to verify therapist.'
+      });
     } finally {
       setActionLoading(prev => ({ ...prev, [`verify_${therapistId}`]: false }));
     }
   };
 
   const handleReject = async (therapistId) => {
-    const reason = prompt('Please provide a reason for rejection (optional):');
-    if (reason === null) return;
-    
-    try {
-      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: true }));
-      await api.post(`/admin/therapists/${therapistId}/reject`, { reason });
-      setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
-      alert('Therapist application rejected.');
-    } catch (error) {
-      console.error('Error rejecting therapist:', error);
-      alert('Failed to reject therapist.');
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: false }));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reject Therapist Application',
+      message: 'Are you sure you want to reject this therapist application?',
+      requireReason: true,
+      onConfirm: async (reason) => {
+        try {
+          setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: true }));
+          await api.post(`/admin/therapists/${therapistId}/reject`, { reason });
+          setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Application Rejected',
+            message: 'Therapist application has been rejected.'
+          });
+        } catch (error) {
+          console.error('Error rejecting therapist:', error);
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to reject therapist.'
+          });
+        } finally {
+          setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: false }));
+        }
+      }
+    });
   };
 
   if (isLoading) {
@@ -122,6 +157,24 @@ const TherapistVerification = () => {
           ))}
         </div>
       )}
+
+      {/* Modals */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        requireReason={confirmModal.requireReason}
+      />
     </div>
   );
 };

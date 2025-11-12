@@ -94,27 +94,36 @@ const Layout = () => {
                     Dashboard
                   </Link>
                 )}
-                {isAuthenticated && (
+                {isAuthenticated && (user?.role === 'admin' || user?.role === 'ADMIN') && (
                   <Link
-                    to="/messages"
-                    className="relative border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    to="/admin"
+                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
-                    Messages
-                    {unreadCount > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
-                        {unreadCount}
-                      </span>
-                    )}
+                    Admin Panel
                   </Link>
                 )}
                 
-                {isAuthenticated && (
-                  <Link
-                    to="/sessions"
-                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Sessions
-                  </Link>
+                {isAuthenticated && user?.role !== 'admin' && user?.role !== 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/messages"
+                      className="relative border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Messages
+                      {unreadCount > 0 && (
+                        <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                    
+                    <Link
+                      to="/sessions"
+                      className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Sessions
+                    </Link>
+                  </>
                 )}
                 
                 {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
@@ -123,15 +132,6 @@ const Layout = () => {
                     className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
                     My Availability
-                  </Link>
-                )}
-                
-                {isAuthenticated && user?.role === 'admin' && (
-                  <Link
-                    to="/admin"
-                    className="border-transparent text-gray-900 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Admin
                   </Link>
                 )}
               </div>
@@ -221,29 +221,41 @@ const Layout = () => {
                 Dashboard
               </Link>
             )}
-            {isAuthenticated && (
+            {isAuthenticated && (user?.role === 'admin' || user?.role === 'ADMIN') && (
               <Link
-                to="/messages"
+                to="/admin"
                 onClick={closeMobileMenu}
-                className="relative block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                className="block pl-3 pr-4 py-2 border-l-4 border-indigo-500 text-base font-medium text-indigo-700 bg-indigo-50"
               >
-                Messages
-                {unreadCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
+                Admin Panel
               </Link>
             )}
-            {isAuthenticated && (
-              <Link
-                to="/sessions"
-                onClick={closeMobileMenu}
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-              >
-                Sessions
-              </Link>
+            
+            {isAuthenticated && user?.role !== 'admin' && user?.role !== 'ADMIN' && (
+              <>
+                <Link
+                  to="/messages"
+                  onClick={closeMobileMenu}
+                  className="relative block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                >
+                  Messages
+                  {unreadCount > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Link>
+                
+                <Link
+                  to="/sessions"
+                  onClick={closeMobileMenu}
+                  className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                >
+                  Sessions
+                </Link>
+              </>
             )}
+            
             {isAuthenticated && user?.role?.toUpperCase() === 'THERAPIST' && (
               <Link
                 to="/sessions/availability"
@@ -251,15 +263,6 @@ const Layout = () => {
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
               >
                 My Availability
-              </Link>
-            )}
-            {isAuthenticated && user?.role === 'admin' && (
-              <Link
-                to="/admin"
-                onClick={closeMobileMenu}
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-              >
-                Admin
               </Link>
             )}
             {isAuthenticated ? (

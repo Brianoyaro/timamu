@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import Modal from '../common/Modal';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 const AdminDashboard = ({ stats, user }) => {
   const navigate = useNavigate();
@@ -9,6 +11,14 @@ const AdminDashboard = ({ stats, user }) => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
+  const [modal, setModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    onConfirm: null,
+    requireReason: false
+  });
 
   // Fetch dashboard data
   useEffect(() => {
@@ -42,58 +52,97 @@ const AdminDashboard = ({ stats, user }) => {
       // Update local state
       setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
       
-      // Show success message (you can implement toast notifications)
-      alert('Therapist verified successfully!');
+      // Show success modal
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Success!',
+        message: 'Therapist verified successfully!'
+      });
     } catch (error) {
       console.error('Error verifying therapist:', error);
-      alert('Failed to verify therapist. Please try again.');
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to verify therapist. Please try again.'
+      });
     } finally {
       setActionLoading(prev => ({ ...prev, [`verify_${therapistId}`]: false }));
     }
   };
 
   const handleRejectTherapist = async (therapistId) => {
-    const reason = prompt('Please provide a reason for rejection (optional):');
-    if (reason === null) return; // User cancelled
-    
-    try {
-      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: true }));
-      await api.post(`/admin/therapists/${therapistId}/reject`, { reason });
-      
-      // Update local state
-      setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
-      
-      alert('Therapist application rejected.');
-    } catch (error) {
-      console.error('Error rejecting therapist:', error);
-      alert('Failed to reject therapist. Please try again.');
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: false }));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reject Therapist Application',
+      message: 'Are you sure you want to reject this therapist application?',
+      requireReason: true,
+      onConfirm: async (reason) => {
+        try {
+          setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: true }));
+          await api.post(`/admin/therapists/${therapistId}/reject`, { reason });
+          
+          // Update local state
+          setPendingTherapists(prev => prev.filter(t => t.id !== therapistId));
+          
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Application Rejected',
+            message: 'Therapist application has been rejected.'
+          });
+        } catch (error) {
+          console.error('Error rejecting therapist:', error);
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to reject therapist. Please try again.'
+          });
+        } finally {
+          setActionLoading(prev => ({ ...prev, [`reject_${therapistId}`]: false }));
+        }
+      }
+    });
   };
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     const action = currentStatus ? 'deactivate' : 'activate';
-    const confirmMessage = `Are you sure you want to ${action} this user?`;
     
-    if (!confirm(confirmMessage)) return;
-    
-    try {
-      setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: true }));
-      await api.post(`/admin/users/${userId}/${action}`);
-      
-      // Update local state
-      setRecentUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, is_active: !currentStatus } : user
-      ));
-      
-      alert(`User ${action}d successfully!`);
-    } catch (error) {
-      console.error(`Error ${action}ing user:`, error);
-      alert(`Failed to ${action} user. Please try again.`);
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: false }));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+      message: `Are you sure you want to ${action} this user account?`,
+      onConfirm: async () => {
+        try {
+          setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: true }));
+          await api.post(`/admin/users/${userId}/${action}`);
+          
+          // Update local state
+          setRecentUsers(prev => prev.map(user => 
+            user.id === userId ? { ...user, is_active: !currentStatus } : user
+          ));
+          
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Success!',
+            message: `User ${action}d successfully!`
+          });
+        } catch (error) {
+          console.error(`Error ${action}ing user:`, error);
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: `Failed to ${action} user. Please try again.`
+          });
+        } finally {
+          setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: false }));
+        }
+      }
+    });
   };
 
   const userStats = dashboardStats || stats?.userStats || {
@@ -479,6 +528,24 @@ const AdminDashboard = ({ stats, user }) => {
           )}
         </>
       )}
+
+      {/* Modals */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        requireReason={confirmModal.requireReason}
+      />
     </div>
   );
 };
