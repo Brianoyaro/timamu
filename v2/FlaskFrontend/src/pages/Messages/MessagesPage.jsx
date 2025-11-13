@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
 import useMessageStore from '../../stores/messageStore';
+import MessageInput from '../../components/Messages/MessageInput';
+import MessageAttachments from '../../components/Messages/MessageAttachments';
 import { format, formatDistance } from 'date-fns';
 import { 
-  HiOutlinePaperClip as AttachmentIcon,
-  HiOutlineUpload as SendIcon,
   HiChevronRight as ArrowIcon
 } from 'react-icons/hi';
 
@@ -14,9 +14,7 @@ export default function MessagesPage() {
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const messageStore = useMessageStore();
-  const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
 
   const { 
     conversations, 
@@ -43,31 +41,23 @@ export default function MessagesPage() {
     setCurrentConversation(conversation);
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!currentConversation?.id || (!newMessage.trim() && !fileInputRef.current?.files?.length)) return;
+  const handleSendMessage = async (messageData) => {
+    if (!currentConversation?.id) return;
+    
     try {
-      let attachments = null;
-      if (fileInputRef.current?.files?.length) {
-        attachments = {
-          files: Array.from(fileInputRef.current.files).map(file => ({
-            name: file.name || 'Unknown file',
-            type: file.type || 'application/octet-stream',
-            size: file.size || 0
-          }))
-        };
-      }
-      await messageStore.sendMessage(currentConversation.id, newMessage, attachments);
-      setNewMessage('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      await messageStore.sendMessage(
+        currentConversation.id, 
+        messageData.text, 
+        messageData.attachments ? { files: messageData.attachments } : null
+      );
+      
       // Refresh messages to ensure correct order
       await messageStore.fetchMessages(currentConversation.id);
       // Update conversations list to show latest message
       await messageStore.fetchConversations();
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error; // Let MessageInput handle the error display
     }
   };
 
@@ -218,17 +208,10 @@ export default function MessagesPage() {
                       >
                         <p className="text-sm whitespace-pre-wrap">{message.content || ''}</p>
                         {message.attachments?.files?.length > 0 && (
-                          <div className="mt-1 space-y-1">
-                            {message.attachments.files.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center text-xs text-gray-600"
-                              >
-                                <AttachmentIcon className="h-4 w-4 mr-1" />
-                                <span>{file?.name || 'File'}</span>
-                              </div>
-                            ))}
-                          </div>
+                          <MessageAttachments 
+                            attachments={message.attachments.files} 
+                            compact={true}
+                          />
                         )}
                         <div className="text-[10px] mt-1 text-right text-gray-500">
                           {message.created_at ? formatMessageTime(message.created_at) : ''}
@@ -241,39 +224,12 @@ export default function MessagesPage() {
               </div>
             </div>
             
-            {/* Message Input */}
-            <div className="px-4 py-2 bg-[#f0f0f0]">
-              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  multiple
-                  onChange={() => {}}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  <AttachmentIcon className="h-5 w-5" />
-                </button>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message"
-                  className="flex-1 px-4 py-2 bg-white rounded-full focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim() && !fileInputRef.current?.files?.length}
-                  className="p-2 text-white bg-[#25D366] rounded-full hover:bg-[#1fa855] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <SendIcon className="h-5 w-5" />
-                </button>
-              </form>
-            </div>
+            {/* Enhanced Message Input */}
+            <MessageInput 
+              onSendMessage={handleSendMessage}
+              placeholder="Type a message..."
+              disabled={loading}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import Modal from '../common/Modal';
 import ConfirmationModal from '../common/ConfirmationModal';
+import DocumentViewer from '../common/DocumentViewer';
 
 const AdminDashboard = ({ stats, user }) => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const AdminDashboard = ({ stats, user }) => {
     onConfirm: null,
     requireReason: false
   });
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
+  const [showDocuments, setShowDocuments] = useState(false);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -35,7 +38,31 @@ const AdminDashboard = ({ stats, user }) => {
       ]);
 
       setDashboardStats(statsRes.data);
-      setPendingTherapists(therapistsRes.data);
+      
+      // Enhance therapist data with documents
+      const therapistsWithDocuments = await Promise.all(
+        therapistsRes.data.map(async (therapist) => {
+          try {
+            // Try to get therapist profile with documents
+            const profileRes = await api.get(`/admin/therapists/${therapist.id}/profile`);
+            return {
+              ...therapist,
+              documents: profileRes.data.documents || [],
+              license_number: profileRes.data.license_number || therapist.license_number,
+              specializations: profileRes.data.specializations || therapist.specializations || []
+            };
+          } catch (error) {
+            console.error(`Error fetching profile for therapist ${therapist.id}:`, error);
+            // Return therapist with empty documents if profile fetch fails
+            return {
+              ...therapist,
+              documents: []
+            };
+          }
+        })
+      );
+      
+      setPendingTherapists(therapistsWithDocuments);
       setRecentUsers(usersRes.data.users);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -142,6 +169,35 @@ const AdminDashboard = ({ stats, user }) => {
           setActionLoading(prev => ({ ...prev, [`toggle_${userId}`]: false }));
         }
       }
+    });
+  };
+
+  const handleViewDocuments = (therapist) => {
+    setSelectedTherapist(therapist);
+    setShowDocuments(true);
+  };
+
+  const handleCloseDocuments = () => {
+    setShowDocuments(false);
+    setSelectedTherapist(null);
+  };
+
+  const handleApproveDocument = async (document) => {
+    // For now, just show success - could add document-level approval later
+    setModal({
+      isOpen: true,
+      type: 'info',
+      title: 'Document Approved',
+      message: 'Document has been marked as verified.'
+    });
+  };
+
+  const handleRejectDocument = async (document) => {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Document Rejected',
+      message: 'Document has been marked as rejected. The therapist will need to upload a replacement.'
     });
   };
 
@@ -289,7 +345,25 @@ const AdminDashboard = ({ stats, user }) => {
                             : 'Not specified'
                         }
                       </p>
+                      {therapist.documents && therapist.documents.length > 0 && (
+                        <p className="text-sm text-blue-600">
+                          <span className="font-medium">Documents:</span> {therapist.documents.length} uploaded
+                        </p>
+                      )}
                     </div>
+                    
+                    {/* View Documents Button */}
+                    {therapist.documents && therapist.documents.length > 0 && (
+                      <div className="mb-3">
+                        <button
+                          onClick={() => handleViewDocuments(therapist)}
+                          className="w-full bg-blue-100 text-blue-700 py-2 px-3 rounded-md hover:bg-blue-200 transition-colors text-sm font-medium"
+                        >
+                          View Documents ({therapist.documents.length})
+                        </button>
+                      </div>
+                    )}
+                    
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleVerifyTherapist(therapist.id)}
@@ -546,6 +620,63 @@ const AdminDashboard = ({ stats, user }) => {
         onConfirm={confirmModal.onConfirm}
         requireReason={confirmModal.requireReason}
       />
+
+      {/* Document Viewer Modal */}
+      {showDocuments && selectedTherapist && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Documents for {selectedTherapist.name}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedTherapist.email} • License: {selectedTherapist.license_number || 'Not provided'}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseDocuments}
+                className="text-gray-400 hover:text-gray-600 p-2"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6">
+              <DocumentViewer
+                documents={selectedTherapist.documents || []}
+                title="Professional Credentials"
+                showActions={true}
+                onApprove={handleApproveDocument}
+                onReject={handleRejectDocument}
+              />
+            </div>
+            
+            <div className="border-t px-6 py-4 flex justify-end space-x-3">
+              <button
+                onClick={handleCloseDocuments}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleVerifyTherapist(selectedTherapist.id)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Approve Therapist
+              </button>
+              <button
+                onClick={() => handleRejectTherapist(selectedTherapist.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Reject Application
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

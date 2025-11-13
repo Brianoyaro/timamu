@@ -623,6 +623,8 @@ def update_profile():
                 profile.timezone = data['timezone']
             if 'accepts_emergency' in data:
                 profile.accepts_emergency = data['accepts_emergency']
+            if 'documents' in data:
+                profile.documents = data['documents']
         
         db.session.commit()
         

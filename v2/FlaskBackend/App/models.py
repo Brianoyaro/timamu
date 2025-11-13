@@ -33,6 +33,7 @@ class TherapistProfile(db.Model):
     approved_at = db.Column(db.DateTime) # requires admin approval
     timezone = db.Column(db.String(50), default='UTC')
     accepts_emergency = db.Column(db.Boolean, default=False)
+    documents = db.Column(db.JSON, default=list)  # Store Cloudinary document references
 
 
 class TherapistAvailability(db.Model):

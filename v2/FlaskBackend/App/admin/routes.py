@@ -321,6 +321,7 @@ def get_pending_therapists():
                     'license_number': profile.license_number,
                     'bio': profile.bio,
                     'languages': profile.languages or [],
+                    'documents': profile.documents or [],
                     'submissionDate': user.created_at.isoformat() if user.created_at else None
                 })
 
@@ -328,6 +329,39 @@ def get_pending_therapists():
     except Exception as e:
         logger.error(f"Error in get_pending_therapists: {str(e)}")
         return jsonify([])
+
+@admin_bp.route('/therapists/<int:therapist_id>/profile', methods=['GET'])
+@admin_required
+def get_therapist_profile(therapist_id):
+    """Get detailed therapist profile including documents"""
+    try:
+        user = User.query.get(therapist_id)
+        if not user or user.role not in ['THERAPIST', 'therapist']:
+            return jsonify({'error': 'Therapist not found'}), 404
+
+        profile = TherapistProfile.query.filter_by(user_id=therapist_id).first()
+        if not profile:
+            return jsonify({'error': 'Therapist profile not found'}), 404
+
+        return jsonify({
+            'id': user.id,
+            'name': f"{user.first_name or ''} {user.last_name or ''}".strip() or 'Unknown',
+            'email': user.email,
+            'phone': user.phone,
+            'specializations': profile.specializations or [],
+            'education': profile.education,
+            'experience': profile.experience,
+            'license_number': profile.license_number,
+            'bio': profile.bio,
+            'languages': profile.languages or [],
+            'documents': profile.documents or [],
+            'is_approved': profile.is_approved,
+            'approved_at': profile.approved_at.isoformat() if profile.approved_at else None,
+            'submissionDate': user.created_at.isoformat() if user.created_at else None
+        })
+    except Exception as e:
+        logger.error(f"Error in get_therapist_profile: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @admin_bp.route('/therapists/<int:therapist_id>/verify', methods=['POST'])
 @admin_required

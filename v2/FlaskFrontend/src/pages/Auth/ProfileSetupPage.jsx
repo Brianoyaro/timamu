@@ -13,10 +13,12 @@ import {
   FaCertificate,
   FaArrowRight,
   FaArrowLeft,
-  FaCheckCircle
+  FaCheckCircle,
+  FaUpload
 } from 'react-icons/fa';
 import { useToastStore } from '../../stores/toastStore';
 import { useAuthStore } from '../../stores/authStore';
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
 import api from '../../utils/api';
 
 const ProfileSetupPage = () => {
@@ -49,7 +51,8 @@ const ProfileSetupPage = () => {
     education: '',
     bio: '',
     timezone: 'UTC',
-    acceptsEmergency: false
+    acceptsEmergency: false,
+    documents: [] // For uploaded verification documents
   });
 
   const specializationOptions = [
@@ -94,6 +97,21 @@ const ProfileSetupPage = () => {
     }));
   };
 
+  const handleTherapistDocumentUpload = (documents) => {
+    setTherapistData(prev => ({
+      ...prev,
+      documents: Array.isArray(documents) ? documents : [documents]
+    }));
+  };
+
+  const handleTherapistDocumentError = (error) => {
+    addToast({
+      message: `Document upload failed: ${error}`,
+      type: 'error',
+      duration: 5000
+    });
+  };
+
   const handleSpecializationChange = (specialization) => {
     setTherapistData(prev => ({
       ...prev,
@@ -131,8 +149,14 @@ const ProfileSetupPage = () => {
         education: therapistData.education,
         bio: therapistData.bio,
         timezone: therapistData.timezone,
-        accepts_emergency: therapistData.acceptsEmergency
+        accepts_emergency: therapistData.acceptsEmergency,
+        documents: therapistData.documents // Include uploaded documents
       };
+
+      console.log('Submitting profile data:', profileData);
+      if (user.role === 'THERAPIST') {
+        console.log('Therapist documents being submitted:', therapistData.documents);
+      }
 
       await api.put('/auth/profile', profileData);
       
@@ -183,7 +207,7 @@ const ProfileSetupPage = () => {
     );
   }
 
-  const totalSteps = user.role === 'PATIENT' ? 2 : 3;
+  const totalSteps = user.role === 'PATIENT' ? 2 : 4; // Added document step for therapists
   const isLastStep = currentStep === totalSteps;
 
   return (
@@ -526,6 +550,65 @@ const ProfileSetupPage = () => {
                           </label>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 4 && (
+                  <div className="space-y-8">
+                    <div className="text-center mb-8">
+                      <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                        <FaUpload className="inline w-6 h-6 mr-3 text-blue-600" />
+                        Professional Documents
+                      </h2>
+                      <p className="text-gray-600 text-lg">
+                        Upload your professional credentials and certifications for verification
+                      </p>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                        <p className="text-sm text-yellow-800">
+                          <strong>Note:</strong> Your application will be reviewed by our admin team. 
+                          Please upload clear, legible documents to expedite the verification process.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-4">
+                          Required Documents (Upload at least one):
+                        </h3>
+                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                          <ul className="text-sm text-gray-700 space-y-2">
+                            <li>• Professional License Certificate</li>
+                            <li>• Educational Degrees/Diplomas</li>
+                            <li>• Board Certifications</li>
+                            <li>• Professional Insurance Documents</li>
+                            <li>• Other relevant credentials</li>
+                          </ul>
+                        </div>
+                        
+                        <CloudinaryUpload
+                          uploadType="therapistDocuments"
+                          onUploadComplete={handleTherapistDocumentUpload}
+                          onUploadError={handleTherapistDocumentError}
+                          multiple={true}
+                          maxFiles={10}
+                          buttonText="Upload Professional Documents"
+                          showPreview={true}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {therapistData.documents && therapistData.documents.length > 0 && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-green-800 mb-2">
+                            Documents uploaded successfully! ({therapistData.documents.length})
+                          </h4>
+                          <p className="text-sm text-green-700">
+                            Your documents will be reviewed by our verification team within 24-48 hours.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
