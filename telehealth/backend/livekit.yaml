@@ -1,0 +1,16 @@
+port: 7880
+rtc:
+  port_range_start: 50000
+  port_range_end: 60000
+  use_external_ip: false
+
+keys:
+  devkey: devsecret-very-long-secret-key-for-development-only-32chars
+
+logging:
+  level: info
+  
+room:
+  auto_create: true
+  max_participants: 2
+  empty_timeout: 300

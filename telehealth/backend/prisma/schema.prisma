@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  THERAPIST
+  ADMIN
+}
+
+enum BookingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String?  @unique
+  phone     String?
+  password  String
+  role      Role     @default(PATIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  therapistProfile  TherapistProfile?
+  patientBookings   Booking[]         @relation("PatientBookings")
+  therapistBookings Booking[]         @relation("TherapistBookings")
+
+  @@map("users")
+}
+
+model TherapistProfile {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  specialization  String
+  licenseNumber   String
+  bio             String  @db.Text
+  isApproved      Boolean @default(false)
+  availability    Json    // Stores JSON structure for availability
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("therapist_profiles")
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  patientId   String
+  therapistId String
+  scheduledAt DateTime
+  status      BookingStatus @default(SCHEDULED)
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  patient  User      @relation("PatientBookings", fields: [patientId], references: [id])
+  therapist User     @relation("TherapistBookings", fields: [therapistId], references: [id])
+  session  Session?
+
+  @@map("bookings")
+}
+
+model Session {
+  id          String    @id @default(uuid())
+  bookingId   String    @unique
+  livekitRoom String
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}

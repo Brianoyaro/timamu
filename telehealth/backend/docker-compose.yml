@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: telehealth_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: telehealth
+      MYSQL_USER: telehealth_user
+      MYSQL_PASSWORD: telehealth_pass
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - telehealth_network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      timeout: 20s
+      retries: 10
+
+  # Redis (for future caching/session management)
+  redis:
+    image: redis:7-alpine
+    container_name: telehealth_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - telehealth_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      timeout: 5s
+      retries: 5
+
+  # LiveKit Server
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: telehealth_livekit
+    restart: unless-stopped
+    ports:
+      - '7880:7880'
+      - '7881:7881'
+      - '7882:7882/udp'
+    environment:
+      LIVEKIT_KEYS: 'devkey: devsecret-very-long-secret-key-for-development-only-32chars'
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+    command: --config /etc/livekit.yaml --node-ip=127.0.0.1
+    networks:
+      - telehealth_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: telehealth_backend
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    environment:
+      DATABASE_URL: mysql://telehealth_user:telehealth_pass@mysql:3306/telehealth
+      PORT: 5000
+      NODE_ENV: production
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: devsecret
+      LIVEKIT_URL: ws://livekit:7880
+      FRONTEND_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      livekit:
+        condition: service_started
+    networks:
+      - telehealth_network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+networks:
+  telehealth_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
